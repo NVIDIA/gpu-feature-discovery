@@ -97,11 +97,23 @@ func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 
 	t := template.Must(template.New("Device").Funcs(funcMap).Parse(deviceTemplate))
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	exitChan := make(chan bool)
+
+	go func() {
+		select {
+		case s := <-sigChan:
+			log.Printf("Received signal \"%v\", shutting down.", s)
+			exitChan <- true
+		}
+	}()
+
 
 L:
 	for {
+
 		device, err := nvmlInterface.NewDevice(0)
 		if err != nil {
 			log.Fatal("Error getting device: ", err)
@@ -124,11 +136,10 @@ L:
 		}
 
 		select {
-			case s := <-sigs:
-				log.Printf("Received signal \"%v\", shutting down.", s)
-				break L
+		case <-exitChan:
+			break L
+		case <-time.After(conf.SleepInterval):
+			break
 		}
-
-		time.Sleep(conf.SleepInterval)
 	}
 }
