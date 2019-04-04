@@ -15,12 +15,15 @@ import (
 )
 
 const (
+	// Bin : Name of the binary
 	Bin            = "gpu-feature-discovery"
+	// OutputFilePath : Path to the output file
 	// TODO: Change path and get it by config
 	OutputFilePath = "./output"
 )
 
 var (
+	// Version : Version of the binary
 	// This will be set using ldflags at compile time
 	Version = ""
 )
@@ -31,8 +34,7 @@ func main() {
 
 	if Version == "" {
 		log.Print("Version is not set.")
-		log.Print("Be sure to compile with '-ldflags \"-X main.Version=${GFD_VERSION}\"' and to set $GFD_VERSION")
-		os.Exit(1)
+		log.Fatal("Be sure to compile with '-ldflags \"-X main.Version=${GFD_VERSION}\"' and to set $GFD_VERSION")
 	}
 
 	log.Printf("Running %s in version %s", Bin, Version)
@@ -49,8 +51,7 @@ func main() {
 
 	outputFile, err := os.Create(OutputFilePath)
 	if err != nil {
-		log.Printf("Fail to create output file: %v", err)
-		os.Exit(1)
+		log.Fatalf("Fail to create output file: %v", err)
 	}
 
 	log.Print("Start running")
@@ -126,6 +127,7 @@ L:
 		// TODO: Change label format
 		fmt.Fprintf(out, "nvidia-driver-version=%s\n", driverVersion)
 
+		log.Print("Writing labels to output file")
 		err = t.Execute(out, device)
 		if err != nil {
 			log.Fatal("Template error: ", err)
@@ -134,6 +136,8 @@ L:
 		if conf.Oneshot {
 			break
 		}
+
+		log.Print("Sleeping for ", conf.SleepInterval)
 
 		select {
 		case <-exitChan:
