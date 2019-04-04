@@ -61,7 +61,7 @@ func (conf *Conf) getConfFromEnv() {
 		var err error
 		conf.SleepInterval, err = time.ParseDuration(sleepIntervalString)
 		if err != nil {
-			log.Fatal("Invalid value for --sleep-interval option: ", err)
+			log.Fatal("Invalid value from env for sleep-interval option: ", err)
 		}
 	}
 }

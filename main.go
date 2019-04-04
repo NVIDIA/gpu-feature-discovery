@@ -56,7 +56,12 @@ func main() {
 func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 
 	if err := nvmlInterface.Init(); err != nil {
-		log.Fatal("Failed to initialize NVML: ", err)
+		// TODO: Update README and links
+		log.Printf("Failed to initialize NVML: %s.", err)
+		log.Printf("If this is a GPU node, did you set the docker default runtime to `nvidia`?")
+		log.Printf("You can check the prerequisites at: https://github.com/NVIDIA/gpu-feature-discovery")
+		log.Printf("You can learn how to set the runtime at: https://github.com/NVIDIA/gpu-feature-discovery#quick-start")
+		return
 	}
 	defer nvmlInterface.Shutdown()
 
