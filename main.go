@@ -13,16 +13,45 @@ import (
 )
 
 const (
-	ProgName   = "gpu-feature-discovery"
+	bin            = "gpu-feature-discovery"
 	// TODO: Get version from git
-	Version    = "0.0.1-alpha"
+	version        = "0.0.1-alpha"
 	// TODO: Change path and get it by config
-	OutputFilePath = "./output"
+	outputFilePath = "./output"
 	// TODO: Change label format
-	DEVICEINFO = `{{if .Model}}nvidia-model={{replace .Model " " "-" -1}}{{end}}
+	deviceTemplate = `{{if .Model}}nvidia-model={{replace .Model " " "-" -1}}{{end}}
 {{if .Memory}}nvidia-memory={{.Memory}}{{end}}
 `
 )
+
+func main() {
+
+	log.SetPrefix(bin + ": ")
+
+	log.Printf("Running %s in version %s", bin, version)
+
+	nvmlLib := NvmlLib{}
+
+	conf := Conf{}
+	conf.getConfFromArgv(os.Args)
+	conf.getConfFromEnv()
+	log.Print("Loaded configuration:")
+	log.Print("Oneshot: ", conf.Oneshot)
+	log.Print("SleepInterval: ", conf.SleepInterval)
+	log.Print("OutputFilePath: ", outputFilePath)
+
+	outputFile, err := os.Create(outputFilePath)
+	if err != nil {
+		log.Printf("Fail to create output file: %v", err)
+		os.Exit(1)
+	}
+
+	log.Print("Start running")
+	run(nvmlLib, conf, outputFile)
+	log.Print("Exiting")
+
+	outputFile.Close()
+}
 
 func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 
@@ -44,7 +73,7 @@ func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 		"replace": strings.Replace,
 	}
 
-	t := template.Must(template.New("Device").Funcs(funcMap).Parse(DEVICEINFO))
+	t := template.Must(template.New("Device").Funcs(funcMap).Parse(deviceTemplate))
 
 	for {
 		device, err := nvmlInterface.NewDevice(0)
@@ -70,33 +99,4 @@ func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 
 		time.Sleep(conf.SleepInterval)
 	}
-}
-
-func main() {
-
-	log.SetPrefix(ProgName + ": ")
-
-	log.Printf("Running %s in version %s", ProgName, Version)
-
-	nvmlLib := NvmlLib{}
-
-	log.Print("Load configuration")
-	conf := Conf{}
-	conf.getConfFromArgv(os.Args)
-	conf.getConfFromEnv()
-	log.Print("Oneshot: ", conf.Oneshot)
-	log.Print("SleepInterval: ", conf.SleepInterval)
-	log.Print("OutputFilePath: ", OutputFilePath)
-
-	outputFile, err := os.Create(OutputFilePath)
-	if err != nil {
-		log.Printf("Fail to create output file: %v", err)
-		os.Exit(1)
-	}
-
-	log.Print("Start running")
-	run(nvmlLib, conf, outputFile)
-	log.Print("Exiting")
-
-	outputFile.Close()
 }

@@ -15,7 +15,7 @@ func TestGetConfFromArgv(t *testing.T) {
 	defaultDuration, _ := time.ParseDuration("60s")
 
 	confNoOptions := Conf{}
-	confNoOptionsArgv := []string{ProgName}
+	confNoOptionsArgv := []string{bin}
 	confNoOptions.getConfFromArgv(confNoOptionsArgv)
 	if confNoOptions.Oneshot != false {
 		t.Error("Oneshot option with empty argv: got true, expected false")
@@ -26,7 +26,7 @@ func TestGetConfFromArgv(t *testing.T) {
 	}
 
 	confOneShot := Conf{}
-	confOneShotArgv := []string{ProgName, "--oneshot"}
+	confOneShotArgv := []string{bin, "--oneshot"}
 	confOneShot.getConfFromArgv(confOneShotArgv)
 	if confOneShot.Oneshot != true {
 		t.Error("Oneshot option with '--oneshot' argv: got false, expected true")
@@ -37,7 +37,7 @@ func TestGetConfFromArgv(t *testing.T) {
 	}
 
 	confSleepInterval := Conf{}
-	confSleepIntervalArgv := []string{ProgName, "--sleep-interval=10s"}
+	confSleepIntervalArgv := []string{bin, "--sleep-interval=10s"}
 	confSleepInterval.getConfFromArgv(confSleepIntervalArgv)
 	if confSleepInterval.Oneshot != false {
 		t.Error("Oneshot option with '--sleep-interval=10s' argv: got true, expected false")

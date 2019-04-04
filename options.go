@@ -12,6 +12,7 @@ import (
 	"github.com/docopt/docopt-go"
 )
 
+// Conf : Type to represent options
 type Conf struct {
 	Oneshot       bool
 	SleepInterval time.Duration
@@ -30,9 +31,9 @@ Options:
   --version                   Display version and exit
   --oneshot                   Label once and exit
   --sleep-interval=<seconds>  Time to sleep between labeling [Default: 60s]`,
-		ProgName, ProgName, ProgName, ProgName)
+		bin, bin, bin, bin)
 
-	opts, _ := docopt.ParseArgs(usage, argv[1:], ProgName + " " + Version)
+	opts, _ := docopt.ParseArgs(usage, argv[1:], bin + " " + version)
 
 	var err error
 	conf.Oneshot, err = opts.Bool("--oneshot")
