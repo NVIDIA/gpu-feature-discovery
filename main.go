@@ -7,7 +7,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"text/template"
 	"time"
 )
@@ -63,7 +65,12 @@ func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 		log.Printf("You can learn how to set the runtime at: https://github.com/NVIDIA/gpu-feature-discovery#quick-start")
 		return
 	}
-	defer nvmlInterface.Shutdown()
+	defer func() {
+		err := nvmlInterface.Shutdown()
+		if err != nil {
+			log.Println("Shutdown of NVML returned:", nvmlInterface.Shutdown())
+		}
+	}()
 
 	count, err := nvmlInterface.GetDeviceCount()
 	if err != nil {
@@ -80,6 +87,10 @@ func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 
 	t := template.Must(template.New("Device").Funcs(funcMap).Parse(deviceTemplate))
 
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+L:
 	for {
 		device, err := nvmlInterface.NewDevice(0)
 		if err != nil {
@@ -100,6 +111,12 @@ func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 
 		if conf.Oneshot {
 			break
+		}
+
+		select {
+			case s := <-sigs:
+				log.Printf("Received signal \"%v\", shutting down.", s)
+				break L
 		}
 
 		time.Sleep(conf.SleepInterval)
