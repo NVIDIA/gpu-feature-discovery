@@ -1,0 +1,10 @@
+FROM golang:1.11.2
+
+ADD . /go/src/github.com/NVIDIA/gpu-feature-discovery
+
+WORKDIR /go/src/github.com/NVIDIA/gpu-feature-discovery
+
+RUN go get -u github.com/golang/dep/cmd/dep
+RUN dep ensure
+
+CMD ["bash"]
