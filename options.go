@@ -31,9 +31,9 @@ Options:
   --version                   Display version and exit
   --oneshot                   Label once and exit
   --sleep-interval=<seconds>  Time to sleep between labeling [Default: 60s]`,
-		bin, bin, bin, bin)
+		Bin, Bin, Bin, Bin)
 
-	opts, _ := docopt.ParseArgs(usage, argv[1:], bin + " " + version)
+	opts, _ := docopt.ParseArgs(usage, argv[1:], Bin + " " + Version)
 
 	var err error
 	conf.Oneshot, err = opts.Bool("--oneshot")

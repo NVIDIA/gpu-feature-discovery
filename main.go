@@ -15,31 +15,27 @@ import (
 )
 
 const (
-	bin            = "gpu-feature-discovery"
+	Bin            = "gpu-feature-discovery"
 	// TODO: Change path and get it by config
-	outputFilePath = "./output"
-	// TODO: Change label format
-	deviceTemplate = `{{if .Model}}nvidia-model={{replace .Model " " "-" -1}}{{end}}
-{{if .Memory}}nvidia-memory={{.Memory}}{{end}}
-`
+	OutputFilePath = "./output"
 )
 
 var (
 	// This will be set using ldflags at compile time
-	version = ""
+	Version = ""
 )
 
 func main() {
 
-	log.SetPrefix(bin + ": ")
+	log.SetPrefix(Bin + ": ")
 
-	if version == "" {
+	if Version == "" {
 		log.Print("Version is not set.")
-		log.Print("Be sure to compile with '-ldflags \"-X main.version=${GFD_VERSION}\"' and to set $GFD_VERSION")
+		log.Print("Be sure to compile with '-ldflags \"-X main.Version=${GFD_VERSION}\"' and to set $GFD_VERSION")
 		os.Exit(1)
 	}
 
-	log.Printf("Running %s in version %s", bin, version)
+	log.Printf("Running %s in version %s", Bin, Version)
 
 	nvmlLib := NvmlLib{}
 
@@ -49,9 +45,9 @@ func main() {
 	log.Print("Loaded configuration:")
 	log.Print("Oneshot: ", conf.Oneshot)
 	log.Print("SleepInterval: ", conf.SleepInterval)
-	log.Print("OutputFilePath: ", outputFilePath)
+	log.Print("OutputFilePath: ", OutputFilePath)
 
-	outputFile, err := os.Create(outputFilePath)
+	outputFile, err := os.Create(OutputFilePath)
 	if err != nil {
 		log.Printf("Fail to create output file: %v", err)
 		os.Exit(1)
@@ -89,6 +85,11 @@ func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 	if count < 1 {
 		log.Fatal("Error: no device found on the node")
 	}
+
+	// TODO: Change label format
+	const deviceTemplate = `{{if .Model}}nvidia-model={{replace .Model " " "-" -1}}{{end}}
+{{if .Memory}}nvidia-memory={{.Memory}}{{end}}
+`
 
 	funcMap := template.FuncMap{
 		"replace": strings.Replace,

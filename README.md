@@ -131,12 +131,12 @@ dep ensure
 Build it:
 ```
 export GFD_VERSION=$(git describe --tags --dirty --always)
-go build -ldflags "-X main.version=${GFD_VERSION}"
+go build -ldflags "-X main.Version=${GFD_VERSION}"
 ```
 
 You can also use the Dockerfile.devel:
 ```
 docker build . -f Dockerfile.devel -t gfd-devel
 docker run -it gfd-devel
-go build -ldflags "-X main.version=devel"
+go build -ldflags "-X main.Version=devel"
 ```

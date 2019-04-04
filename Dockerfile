@@ -7,7 +7,7 @@ WORKDIR /go/src/github.com/NVIDIA/gpu-feature-discovery
 RUN go get -u github.com/golang/dep/cmd/dep
 RUN dep ensure
 ARG GFD_VERSION
-RUN go install -ldflags "-X main.version=${GFD_VERSION}" github.com/NVIDIA/gpu-feature-discovery
+RUN go install -ldflags "-X main.Version=${GFD_VERSION}" github.com/NVIDIA/gpu-feature-discovery
 
 RUN go test .
 
