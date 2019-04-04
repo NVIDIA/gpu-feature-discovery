@@ -6,7 +6,8 @@ WORKDIR /go/src/github.com/NVIDIA/gpu-feature-discovery
 
 RUN go get -u github.com/golang/dep/cmd/dep
 RUN dep ensure
-RUN go install github.com/NVIDIA/gpu-feature-discovery
+ARG GFD_VERSION
+RUN go install -ldflags "-X main.version=${GFD_VERSION}" github.com/NVIDIA/gpu-feature-discovery
 
 RUN go test .
 
@@ -14,4 +15,4 @@ FROM nvidia/cuda
 
 COPY --from=build /go/bin/gpu-feature-discovery /usr/bin/gpu-feature-discovery
 
-CMD ["/usr/bin/gpu-feature-discovery"]
+ENTRYPOINT ["/usr/bin/gpu-feature-discovery"]

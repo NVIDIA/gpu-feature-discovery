@@ -14,6 +14,7 @@
       - [Deamonset](#deamonset)
       - [Job](#job)
   * [Labels](#labels)
+  * [Run locally](#run-locally)
   * [Building from source](#building-from-source)
 
 ## Overview
@@ -91,6 +92,30 @@ their meaning:
 | nvidia-model          | String     | Model of the GPU             | GeForce-GT-710 |
 | nvidia-memory         | Interger   | Memory of the GPU in Mb      | 2000           |
 
+## Run locally
+
+Download the source code:
+```shell
+git clone ${GIT_URL}
+```
+
+Build the docker image:
+```
+export GFD_VERSION=$(git describe --tags --dirty --always)
+docker build . --build-arg GFP_VERSION=$GFD_VERSION -t gpu-feature-discovery:${GFD_VERSION}
+```
+
+Run it:
+```
+docker run gpu-feature-discovery:${GFD_VERSION}
+```
+
+You should have set the default runtime of Docker to `nvidia` on your host or
+you can also use the `--runtime=nvidia` option:
+```
+docker run --runtime=nvidia gpu-feature-discovery:${GFD_VERSION}
+```
+
 ## Building from source
 
 Download the source code:
@@ -105,5 +130,13 @@ dep ensure
 
 Build it:
 ```
-go build
+export GFD_VERSION=$(git describe --tags --dirty --always)
+go build -ldflags "-X main.version=${GFD_VERSION}"
+```
+
+You can also use the Dockerfile.devel:
+```
+docker build . -f Dockerfile.devel -t gfd-devel
+docker run -it gfd-devel
+go build -ldflags "-X main.version=devel"
 ```

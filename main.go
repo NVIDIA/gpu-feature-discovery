@@ -16,8 +16,6 @@ import (
 
 const (
 	bin            = "gpu-feature-discovery"
-	// TODO: Get version from git
-	version        = "0.0.1-alpha"
 	// TODO: Change path and get it by config
 	outputFilePath = "./output"
 	// TODO: Change label format
@@ -26,9 +24,20 @@ const (
 `
 )
 
+var (
+	// This will be set using ldflags at compile time
+	version = ""
+)
+
 func main() {
 
 	log.SetPrefix(bin + ": ")
+
+	if version == "" {
+		log.Print("Version is not set.")
+		log.Print("Be sure to compile with '-ldflags \"-X main.version=${GFD_VERSION}\"' and to set $GFD_VERSION")
+		os.Exit(1)
+	}
 
 	log.Printf("Running %s in version %s", bin, version)
 
