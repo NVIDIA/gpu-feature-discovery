@@ -17,9 +17,6 @@ import (
 const (
 	// Bin : Name of the binary
 	Bin            = "gpu-feature-discovery"
-	// OutputFilePath : Path to the output file
-	// TODO: Change path and get it by config
-	OutputFilePath = "./output"
 )
 
 var (
@@ -47,9 +44,9 @@ func main() {
 	log.Print("Loaded configuration:")
 	log.Print("Oneshot: ", conf.Oneshot)
 	log.Print("SleepInterval: ", conf.SleepInterval)
-	log.Print("OutputFilePath: ", OutputFilePath)
+	log.Print("OutputFilePath: ", conf.OutputFilePath)
 
-	outputFile, err := os.Create(OutputFilePath)
+	outputFile, err := os.Create(conf.OutputFilePath)
 	if err != nil {
 		log.Fatalf("Fail to create output file: %v", err)
 	}

@@ -38,15 +38,16 @@ TODO
 ```
 gpu-feature-discovery:
 Usage:
-  gpu-feature-discovery [--oneshot | --sleep-interval=<seconds>]
+  gpu-feature-discovery [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
   gpu-feature-discovery -h | --help
   gpu-feature-discovery --version
 
 Options:
-  -h --help                   Show this help message and exit
-  --version                   Display version and exit
-  --oneshot                   Label once and exit
-  --sleep-interval=<seconds>  Time to sleep between labeling [Default: 60s]
+  -h --help                       Show this help message and exit
+  --version                       Display version and exit
+  --oneshot                       Label once and exit
+  --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
+  -o <file> --output-file=<file>  Path to output file [Default: ./output]
 ```
 
 ## Quick Start

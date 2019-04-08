@@ -91,7 +91,7 @@ func TestGetConfFromEnv(t *testing.T) {
 func TestRun(t *testing.T) {
 	nvmlMock := NvmlMock{}
 	duration, _ := time.ParseDuration("10s")
-	conf := Conf{true, duration}
+	conf := Conf{true, "", duration}
 
 	expected := `nvidia-driver-version=MOCK-DRIVER-VERSION
 nvidia-model=MOCK-MODEL

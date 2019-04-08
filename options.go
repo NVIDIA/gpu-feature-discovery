@@ -14,30 +14,36 @@ import (
 
 // Conf : Type to represent options
 type Conf struct {
-	Oneshot       bool
-	SleepInterval time.Duration
+	Oneshot        bool
+	OutputFilePath string
+	SleepInterval  time.Duration
 }
 
 func (conf *Conf) getConfFromArgv(argv []string) {
 
-	usage := fmt.Sprintf(`%s:
+	// TODO: Change default output file
+	usage := fmt.Sprintf(`%[1]s:
 Usage:
-  %s [--oneshot | --sleep-interval=<seconds>]
-  %s -h | --help
-  %s --version
+  %[1]s [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
+  %[1]s -h | --help
+  %[1]s --version
 
 Options:
-  -h --help                   Show this help message and exit
-  --version                   Display version and exit
-  --oneshot                   Label once and exit
-  --sleep-interval=<seconds>  Time to sleep between labeling [Default: 60s]`,
-		Bin, Bin, Bin, Bin)
+  -h --help                       Show this help message and exit
+  --version                       Display version and exit
+  --oneshot                       Label once and exit
+  --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
+  -o <file> --output-file=<file>  Path to output file [Default: ./output]`,
+		Bin)
 
-	opts, _ := docopt.ParseArgs(usage, argv[1:], Bin + " " + Version)
+	opts, err := docopt.ParseArgs(usage, argv[1:], Bin + " " + Version)
+	if err != nil {
+		log.Fatal("Error while parsing command line options: ", err)
+	}
 
-	var err error
 	conf.Oneshot, err = opts.Bool("--oneshot")
 	sleepIntervalString, err := opts.String("--sleep-interval")
+	conf.OutputFilePath, err = opts.String("--output-file")
 	if err != nil {
 		log.Fatal("Error while parsing command line options: ", err)
 	}
@@ -63,5 +69,9 @@ func (conf *Conf) getConfFromEnv() {
 		if err != nil {
 			log.Fatal("Invalid value from env for sleep-interval option: ", err)
 		}
+	}
+	outputFilePathTmp, ok := os.LookupEnv("NVIDIA_FEATURE_DISCOVERY_OUTPUT_FILE")
+	if ok {
+		conf.OutputFilePath = outputFilePathTmp
 	}
 }
