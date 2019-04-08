@@ -3,16 +3,18 @@
 package main
 
 import (
+	"bytes"
+	"io/ioutil"
 	"os"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
-	"bytes"
-	"strings"
 )
 
 func TestGetConfFromArgv(t *testing.T) {
 
-	defaultDuration, _ := time.ParseDuration("60s")
+	defaultDuration := time.Second * 60
 
 	confNoOptions := Conf{}
 	confNoOptionsArgv := []string{Bin}
@@ -37,14 +39,14 @@ func TestGetConfFromArgv(t *testing.T) {
 	}
 
 	confSleepInterval := Conf{}
-	confSleepIntervalArgv := []string{Bin, "--sleep-interval=10s"}
+	confSleepIntervalArgv := []string{Bin, "--sleep-interval=1s"}
 	confSleepInterval.getConfFromArgv(confSleepIntervalArgv)
 	if confSleepInterval.Oneshot != false {
-		t.Error("Oneshot option with '--sleep-interval=10s' argv: got true, expected false")
+		t.Error("Oneshot option with '--sleep-interval=1s' argv: got true, expected false")
 	}
-	if duration, _ := time.ParseDuration("10s"); confSleepInterval.SleepInterval != duration {
-		t.Errorf("SleepInterval option with '--sleep-interval=10s' argv: got %s, expected %s",
-			confSleepInterval.SleepInterval, duration)
+	if confSleepInterval.SleepInterval != time.Second {
+		t.Errorf("SleepInterval option with '--sleep-interval=1s' argv: got %s, expected %s",
+			confSleepInterval.SleepInterval, time.Second)
 	}
 
 	confOutputFile := Conf{}
@@ -83,15 +85,14 @@ func TestGetConfFromEnv(t *testing.T) {
 	}
 
 	confSleepIntervalEnv := Conf{}
-	duration, _ := time.ParseDuration("10s")
 	os.Clearenv()
-	os.Setenv("GFD_SLEEP_INTERVAL", "10s")
+	os.Setenv("GFD_SLEEP_INTERVAL", "1s")
 	confSleepIntervalEnv.getConfFromEnv()
 	if confSleepIntervalEnv.Oneshot != false {
-		t.Error("Oneshot option with sleep-interval=10s env: got true, expected false")
+		t.Error("Oneshot option with sleep-interval=1s env: got true, expected false")
 	}
-	if confSleepIntervalEnv.SleepInterval != duration {
-		t.Errorf("SleepInterval option with sleep-interval=10s env: got %s, expected %s",
+	if confSleepIntervalEnv.SleepInterval != time.Second {
+		t.Errorf("SleepInterval option with sleep-interval=1s env: got %s, expected %s",
 			confSleepIntervalEnv.SleepInterval, defaultDuration)
 	}
 
@@ -105,20 +106,127 @@ func TestGetConfFromEnv(t *testing.T) {
 	}
 }
 
-func TestRun(t *testing.T) {
+func TestRunOneshot(t *testing.T) {
 	nvmlMock := NvmlMock{}
-	duration, _ := time.ParseDuration("10s")
-	conf := Conf{true, "", duration}
+	conf := Conf{true, "./gfd-test-oneshot", time.Second}
 
-	expected := `nvidia-driver-version=MOCK-DRIVER-VERSION
+	expected, _ := regexp.Compile(`gfd-timestamp=[0-9]{10}
+nvidia-driver-version=MOCK-DRIVER-VERSION
 nvidia-model=MOCK-MODEL
 nvidia-memory=128
-`
+`)
 
-	buf := new(bytes.Buffer)
-	run(nvmlMock, conf, buf)
+	run(nvmlMock, conf)
 
-	if strings.Compare(expected, buf.String()) != 0 {
-		t.Errorf("Output mismatch: expected '%s', got '%s'", expected, buf.String())
+	outFile, err := os.Open(conf.OutputFilePath)
+	if err != nil {
+		t.Fatalf("Error opening output file: %v", err)
+	}
+	defer func () {
+		err = outFile.Close()
+		if err != nil {
+			t.Logf("Error closing output file '%s': %v", conf.OutputFilePath, err)
+		}
+		err = os.Remove(conf.OutputFilePath)
+		if err != nil {
+			t.Logf("Error removing output file '%s': %v", conf.OutputFilePath, err)
+		}
+	}()
+
+	result, err := ioutil.ReadAll(outFile)
+	if err != nil {
+		t.Fatalf("Error reading output file: %v", err)
+	}
+
+	if !expected.Match(result) {
+		t.Errorf("Output mismatch: expected '%s', got '%s'", expected, result)
+	}
+}
+
+func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.File, error) {
+	for i := 0; i < iter - 1; i++ {
+		file, err := os.Open(fileName)
+		if err != nil && os.IsNotExist(err) {
+			time.Sleep(sleepInterval)
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		return file, nil
+	}
+	return os.Open(fileName)
+}
+
+func TestRunSleep(t *testing.T) {
+	nvmlMock := NvmlMock{}
+	conf := Conf{false, "./gfd-test-loop", time.Second}
+	expected, _ := regexp.Compile(`gfd-timestamp=[0-9]{10}
+nvidia-driver-version=MOCK-DRIVER-VERSION
+nvidia-model=MOCK-MODEL
+nvidia-memory=128
+`)
+
+	go run(nvmlMock, conf)
+
+	// Try to get first timestamp
+	outFile, err := waitForFile(conf.OutputFilePath, 5, time.Second)
+	if err != nil {
+		t.Fatalf("Failed to open output file while searching for first timestamp: %v", err)
+	}
+
+	output, err := ioutil.ReadAll(outFile)
+	if err != nil {
+		t.Fatalf("Failed to read output file while searching for first timestamp: %v", err)
+	}
+
+	err = outFile.Close()
+	if err != nil {
+		t.Fatalf("Failed to close output file while searching for first timestamp: %v", err)
+	}
+
+	err = os.Remove(conf.OutputFilePath)
+	if err != nil {
+		t.Fatalf("Failed to remove output file while searching for first timestamp: %v", err)
+	}
+
+	timestampLabel := string(bytes.Split(output, []byte("\n"))[0])
+
+	if !strings.Contains(timestampLabel, "=") {
+		t.Fatal("Invalid timestamp label format")
+	}
+
+	firstTimestamp := strings.Split(timestampLabel, "=")[1]
+
+	// Wait for second timestamp
+	outFile, err = waitForFile(conf.OutputFilePath, 5, time.Second)
+	if err != nil {
+		t.Fatalf("Failed to open output file while searching for second timestamp: %v", err)
+	}
+
+	output, err = ioutil.ReadAll(outFile)
+	if err != nil {
+		t.Fatalf("Failed to read output file while searching for second timestamp: %v", err)
+	}
+
+	err = outFile.Close()
+	if err != nil {
+		t.Fatalf("Failed to close output file while searching for second timestamp: %v", err)
+	}
+
+	timestampLabel = string(bytes.Split(output, []byte("\n"))[0])
+
+	if !strings.Contains(timestampLabel, "=") {
+		t.Fatal("Invalid timestamp label format")
+	}
+
+	currentTimestamp := strings.Split(timestampLabel, "=")[1]
+
+	if firstTimestamp == currentTimestamp {
+		t.Fatalf("Timestamp didn't change")
+	}
+
+	if !expected.Match(output) {
+		t.Errorf("Output mismatch: expected '%s', got '%s'", expected, output)
 	}
 }

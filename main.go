@@ -4,7 +4,7 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"text/template"
 	"time"
+	"path/filepath"
 )
 
 const (
@@ -46,19 +47,12 @@ func main() {
 	log.Print("SleepInterval: ", conf.SleepInterval)
 	log.Print("OutputFilePath: ", conf.OutputFilePath)
 
-	outputFile, err := os.Create(conf.OutputFilePath)
-	if err != nil {
-		log.Fatalf("Fail to create output file: %v", err)
-	}
-
 	log.Print("Start running")
-	run(nvmlLib, conf, outputFile)
+	run(nvmlLib, conf)
 	log.Print("Exiting")
-
-	outputFile.Close()
 }
 
-func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
+func run(nvmlInterface NvmlInterface, conf Conf) {
 
 	if err := nvmlInterface.Init(); err != nil {
 		// TODO: Update README and links
@@ -68,6 +62,7 @@ func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 		log.Printf("You can learn how to set the runtime at: https://github.com/NVIDIA/gpu-feature-discovery#quick-start")
 		return
 	}
+
 	defer func() {
 		err := nvmlInterface.Shutdown()
 		if err != nil {
@@ -108,9 +103,23 @@ func run(nvmlInterface NvmlInterface, conf Conf, out io.Writer) {
 		}
 	}()
 
+	outputFileAbsPath, err := filepath.Abs(conf.OutputFilePath)
+	if err != nil {
+		log.Fatalf("Failed to retrieve absolute path of output file: %v", err)
+	}
+	tmpDirPath := filepath.Dir(outputFileAbsPath) + "/gfd-tmp"
+
+	err = os.Mkdir(tmpDirPath, os.ModePerm)
+	if err != nil && !os.IsExist(err) {
+		log.Fatalf("Failed to create temporary directory: %v", err)
+	}
 
 L:
 	for {
+		tmpOutputFile, err := ioutil.TempFile(tmpDirPath, "gfd-")
+		if err != nil {
+			log.Fatalf("Fail to create temporary output file: %v", err)
+		}
 
 		device, err := nvmlInterface.NewDevice(0)
 		if err != nil {
@@ -121,13 +130,26 @@ L:
 		if err != nil {
 			log.Fatal("Error getting driver version: ", err)
 		}
-		// TODO: Change label format
-		fmt.Fprintf(out, "nvidia-driver-version=%s\n", driverVersion)
 
 		log.Print("Writing labels to output file")
-		err = t.Execute(out, device)
+		fmt.Fprintf(tmpOutputFile, "gfd-timestamp=%d\n", time.Now().Unix())
+
+		// TODO: Change label format
+		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version=%s\n", driverVersion)
+
+		err = t.Execute(tmpOutputFile, device)
 		if err != nil {
 			log.Fatal("Template error: ", err)
+		}
+
+		err = tmpOutputFile.Close()
+		if err != nil {
+			log.Fatalf("Error closing temporary file: %v", err)
+		}
+
+		err = os.Rename(tmpOutputFile.Name(), conf.OutputFilePath)
+		if err != nil {
+			log.Fatalf("Error moving temporary file '%s': %v", conf.OutputFilePath, err)
 		}
 
 		if conf.Oneshot {
