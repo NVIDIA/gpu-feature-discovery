@@ -1,0 +1,38 @@
+image: golang:1.11.2
+
+stages:
+  - build
+  - tests
+
+before_script:
+  - mkdir -p $GOPATH/src/github.com/NVIDIA/
+  - ln -s $CI_PROJECT_DIR $GOPATH/src/github.com/NVIDIA/gpu-feature-discovery
+
+build:
+  stage: build
+  script:
+    - go build -ldflags "-X main.Version=ci-build" github.com/NVIDIA/gpu-feature-discovery
+  tags:
+    - container-dev
+
+lint:
+  stage: tests
+  script:
+    - go get -u golang.org/x/lint/golint
+    - golint -set_exit_status github.com/NVIDIA/gpu-feature-discovery
+  tags:
+    - container-dev
+
+vet:
+  stage: tests
+  script:
+    - go vet github.com/NVIDIA/gpu-feature-discovery
+  tags:
+    - container-dev
+
+test:
+  stage: tests
+  script:
+    - go test github.com/NVIDIA/gpu-feature-discovery
+  tags:
+    - container-dev
