@@ -72,7 +72,7 @@ func TestGetConfFromEnv(t *testing.T) {
 
 	confOneShotEnv := Conf{}
 	os.Clearenv()
-	os.Setenv("NVIDIA_FEATURE_DISCOVERY_ONESHOT", "TrUe")
+	os.Setenv("GFD_ONESHOT", "TrUe")
 	confOneShotEnv.getConfFromEnv()
 	if confOneShotEnv.Oneshot != true {
 		t.Error("Oneshot option with oneshot env: got false, expected true")
@@ -85,7 +85,7 @@ func TestGetConfFromEnv(t *testing.T) {
 	confSleepIntervalEnv := Conf{}
 	duration, _ := time.ParseDuration("10s")
 	os.Clearenv()
-	os.Setenv("NVIDIA_FEATURE_DISCOVERY_SLEEP_INTERVAL", "10s")
+	os.Setenv("GFD_SLEEP_INTERVAL", "10s")
 	confSleepIntervalEnv.getConfFromEnv()
 	if confSleepIntervalEnv.Oneshot != false {
 		t.Error("Oneshot option with sleep-interval=10s env: got true, expected false")
@@ -97,7 +97,7 @@ func TestGetConfFromEnv(t *testing.T) {
 
 	confOutputFileEnv := Conf{}
 	os.Clearenv()
-	os.Setenv("NVIDIA_FEATURE_DISCOVERY_OUTPUT_FILE", "test")
+	os.Setenv("GFD_OUTPUT_FILE", "test")
 	confOutputFileEnv.getConfFromEnv()
 	if confOutputFileEnv.OutputFilePath != "test" {
 		t.Errorf("OutputFilePath option with output-file=test env: got %s, expected %s",

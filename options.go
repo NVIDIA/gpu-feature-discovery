@@ -57,12 +57,11 @@ Options:
 }
 
 func (conf *Conf) getConfFromEnv() {
-	// TODO: Change env vars name
-	val, ok := os.LookupEnv("NVIDIA_FEATURE_DISCOVERY_ONESHOT")
+	val, ok := os.LookupEnv("GFD_ONESHOT")
 	if ok && strings.EqualFold(val, "true") {
 		conf.Oneshot = true
 	}
-	sleepIntervalString, ok := os.LookupEnv("NVIDIA_FEATURE_DISCOVERY_SLEEP_INTERVAL")
+	sleepIntervalString, ok := os.LookupEnv("GFD_SLEEP_INTERVAL")
 	if ok {
 		var err error
 		conf.SleepInterval, err = time.ParseDuration(sleepIntervalString)
@@ -70,7 +69,7 @@ func (conf *Conf) getConfFromEnv() {
 			log.Fatal("Invalid value from env for sleep-interval option: ", err)
 		}
 	}
-	outputFilePathTmp, ok := os.LookupEnv("NVIDIA_FEATURE_DISCOVERY_OUTPUT_FILE")
+	outputFilePathTmp, ok := os.LookupEnv("GFD_OUTPUT_FILE")
 	if ok {
 		conf.OutputFilePath = outputFilePathTmp
 	}
