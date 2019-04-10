@@ -47,7 +47,8 @@ Options:
   --version                       Display version and exit
   --oneshot                       Label once and exit
   --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
-  -o <file> --output-file=<file>  Path to output file [Default: ./output]
+  -o <file> --output-file=<file>  Path to output file
+                                  [Default: /etc/kubernetes/node-feature-discovery/features.d/gfd]
 ```
 
 ## Quick Start

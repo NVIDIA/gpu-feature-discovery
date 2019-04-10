@@ -20,8 +20,6 @@ type Conf struct {
 }
 
 func (conf *Conf) getConfFromArgv(argv []string) {
-
-	// TODO: Change default output file
 	usage := fmt.Sprintf(`%[1]s:
 Usage:
   %[1]s [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
@@ -33,7 +31,8 @@ Options:
   --version                       Display version and exit
   --oneshot                       Label once and exit
   --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
-  -o <file> --output-file=<file>  Path to output file [Default: ./output]`,
+  -o <file> --output-file=<file>  Path to output file
+                                  [Default: /etc/kubernetes/node-feature-discovery/features.d/gfd]`,
 		Bin)
 
 	opts, err := docopt.ParseArgs(usage, argv[1:], Bin + " " + Version)
