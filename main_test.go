@@ -46,6 +46,14 @@ func TestGetConfFromArgv(t *testing.T) {
 		t.Errorf("SleepInterval option with '--sleep-interval=10s' argv: got %s, expected %s",
 			confSleepInterval.SleepInterval, duration)
 	}
+
+	confOutputFile := Conf{}
+	confOutputFileArgv := []string{Bin, "--output-file=test"}
+	confOutputFile.getConfFromArgv(confOutputFileArgv)
+	if confOutputFile.OutputFilePath != "test" {
+		t.Errorf("OutputFilePath option with '--output-file=test' argv: got %s, expected %s",
+			confOutputFile.OutputFilePath, "test")
+	}
 }
 
 func TestGetConfFromEnv(t *testing.T) {
@@ -85,6 +93,15 @@ func TestGetConfFromEnv(t *testing.T) {
 	if confSleepIntervalEnv.SleepInterval != duration {
 		t.Errorf("SleepInterval option with sleep-interval=10s env: got %s, expected %s",
 			confSleepIntervalEnv.SleepInterval, defaultDuration)
+	}
+
+	confOutputFileEnv := Conf{}
+	os.Clearenv()
+	os.Setenv("NVIDIA_FEATURE_DISCOVERY_OUTPUT_FILE", "test")
+	confOutputFileEnv.getConfFromEnv()
+	if confOutputFileEnv.OutputFilePath != "test" {
+		t.Errorf("OutputFilePath option with output-file=test env: got %s, expected %s",
+			confOutputFileEnv.OutputFilePath, "test")
 	}
 }
 
