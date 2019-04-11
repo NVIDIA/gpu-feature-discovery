@@ -110,7 +110,7 @@ func TestRunOneshot(t *testing.T) {
 	nvmlMock := NvmlMock{}
 	conf := Conf{true, "./gfd-test-oneshot", time.Second}
 
-	expected, _ := regexp.Compile(`gfd-timestamp=[0-9]{10}
+	expected, _ := regexp.Compile(`nvidia-timestamp=[0-9]{10}
 nvidia-driver-version=MOCK-DRIVER-VERSION
 nvidia-model=MOCK-MODEL
 nvidia-memory=128
@@ -161,7 +161,7 @@ func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.Fi
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NvmlMock{}
 	conf := Conf{false, "./gfd-test-loop", time.Second}
-	expected, _ := regexp.Compile(`gfd-timestamp=[0-9]{10}
+	expected, _ := regexp.Compile(`nvidia-timestamp=[0-9]{10}
 nvidia-driver-version=MOCK-DRIVER-VERSION
 nvidia-model=MOCK-MODEL
 nvidia-memory=128

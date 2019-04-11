@@ -132,7 +132,7 @@ L:
 		}
 
 		log.Print("Writing labels to output file")
-		fmt.Fprintf(tmpOutputFile, "gfd-timestamp=%d\n", time.Now().Unix())
+		fmt.Fprintf(tmpOutputFile, "nvidia-timestamp=%d\n", time.Now().Unix())
 
 		// TODO: Change label format
 		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version=%s\n", driverVersion)
