@@ -88,13 +88,21 @@ or as a Job.
 $ kubectl apply -f gpu-feature-discovery-daemonset.yaml
 ```
 
+The GPU Feature Discovery should be running on each nodes and generating labels
+for the Node Feature Discovery.
+
 #### Job
 
+You must change the `NODE_NAME` value in the template to match the name of the
+node you want to label:
+
 ```shell
+$ export NODE_NAME=<your-node-name>
+$ sed "s/NODE_NAME/${NODE_NAME}/" gpu-feature-discovery-job.yaml.template > gpu-feature-discovery-job.yaml
 $ kubectl apply -f gpu-feature-discovery-job.yaml
 ```
 
-The GPU Feature Discovery should be running on each nodes and generating labels
+The GPU Feature Discovery should be running on the node and generating labels
 for the Node Feature Discovery.
 
 ## Labels
