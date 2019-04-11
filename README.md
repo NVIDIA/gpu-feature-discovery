@@ -35,6 +35,7 @@ TODO
 
 ## Command line interface
 
+Available options:
 ```
 gpu-feature-discovery:
 Usage:
@@ -47,8 +48,19 @@ Options:
   --version                       Display version and exit
   --oneshot                       Label once and exit
   --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
-  -o <file> --output-file=<file>  Path to output file [Default: ./output]
+  -o <file> --output-file=<file>  Path to output file
+                                  [Default: /etc/kubernetes/node-feature-discovery/features.d/gfd]
 ```
+
+You can also use environment variables:
+
+| Env Variable       | Option           | Example |
+| ------------------ | ---------------- | ------- |
+| GFD_ONESHOT        | --oneshot        | TRUE    |
+| GFD_OUTPUT_FILE    | --output-file    | output  |
+| GFD_SLEEP_INTERVAL | --sleep-interval | 10s     |
+
+Environment variables override the command line options if they conflict.
 
 ## Quick Start
 
@@ -73,14 +85,17 @@ or as a Job.
 #### Deamonset
 
 ```shell
-$ kubectl apply -f ${YAML_DAEMONSET}
+$ kubectl apply -f gpu-feature-discovery-daemonset.yaml
 ```
 
 #### Job
 
 ```shell
-$ kubectl apply -f ${YAML_JOB}
+$ kubectl apply -f gpu-feature-discovery-job.yaml
 ```
+
+The GPU Feature Discovery should be running on each nodes and generating labels
+for the Node Feature Discovery.
 
 ## Labels
 
@@ -97,7 +112,7 @@ their meaning:
 
 Download the source code:
 ```shell
-git clone ${GIT_URL}
+git clone https://github.com/NVIDIA/gpu-feature-discovery
 ```
 
 Build the docker image:
@@ -121,7 +136,7 @@ docker run --runtime=nvidia gpu-feature-discovery:${GFD_VERSION}
 
 Download the source code:
 ```shell
-git clone ${GIT_URL}
+git clone https://github.com/NVIDIA/gpu-feature-discovery
 ```
 
 Get dependies:

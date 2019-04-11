@@ -20,8 +20,6 @@ type Conf struct {
 }
 
 func (conf *Conf) getConfFromArgv(argv []string) {
-
-	// TODO: Change default output file
 	usage := fmt.Sprintf(`%[1]s:
 Usage:
   %[1]s [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
@@ -33,7 +31,8 @@ Options:
   --version                       Display version and exit
   --oneshot                       Label once and exit
   --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
-  -o <file> --output-file=<file>  Path to output file [Default: ./output]`,
+  -o <file> --output-file=<file>  Path to output file
+                                  [Default: /etc/kubernetes/node-feature-discovery/features.d/gfd]`,
 		Bin)
 
 	opts, err := docopt.ParseArgs(usage, argv[1:], Bin + " " + Version)
@@ -57,12 +56,11 @@ Options:
 }
 
 func (conf *Conf) getConfFromEnv() {
-	// TODO: Change env vars name
-	val, ok := os.LookupEnv("NVIDIA_FEATURE_DISCOVERY_ONESHOT")
+	val, ok := os.LookupEnv("GFD_ONESHOT")
 	if ok && strings.EqualFold(val, "true") {
 		conf.Oneshot = true
 	}
-	sleepIntervalString, ok := os.LookupEnv("NVIDIA_FEATURE_DISCOVERY_SLEEP_INTERVAL")
+	sleepIntervalString, ok := os.LookupEnv("GFD_SLEEP_INTERVAL")
 	if ok {
 		var err error
 		conf.SleepInterval, err = time.ParseDuration(sleepIntervalString)
@@ -70,7 +68,7 @@ func (conf *Conf) getConfFromEnv() {
 			log.Fatal("Invalid value from env for sleep-interval option: ", err)
 		}
 	}
-	outputFilePathTmp, ok := os.LookupEnv("NVIDIA_FEATURE_DISCOVERY_OUTPUT_FILE")
+	outputFilePathTmp, ok := os.LookupEnv("GFD_OUTPUT_FILE")
 	if ok {
 		conf.OutputFilePath = outputFilePathTmp
 	}
