@@ -1,22 +1,55 @@
 image: golang:1.11.2
 
+variables:
+  DOCKER_IMAGE_NAME: "gpu-feature-discovery"
+  DOCKER_REPO: "nvidia"
+  DOCKER_STAGING_REPO: "containerdevk8s"
+  DOCKER_STAGING_IMAGE: "${DOCKER_STAGING_REPO}/${DOCKER_IMAGE_NAME}"
+  DOCKER_PROD_IMAGE: "${DOCKER_REPO}/${DOCKER_IMAGE_NAME}"
+  GIT_SUBMODULE_STRATEGY: recursive
+  TF_VAR_FILE: "$CI_PROJECT_DIR/tests/terraform.tfvars"
+
 stages:
-  - build
+  - versionning
+  - check_yamls
   - tests
+  - docker_build
+  - aws_kube_setup
+  - e2e_tests
+  - aws_kube_clean
+  - deploy
 
-before_script:
-  - mkdir -p $GOPATH/src/github.com/NVIDIA/
-  - ln -s $CI_PROJECT_DIR $GOPATH/src/github.com/NVIDIA/gpu-feature-discovery
-
-build:
-  stage: build
+versionning:
+  stage: versionning
+  image:
+    name: alpine/git
+    entrypoint: ['/usr/bin/env']
   script:
-    - go build -ldflags "-X main.Version=ci-build" github.com/NVIDIA/gpu-feature-discovery
+    - echo export VERSION=$(git describe --tags --dirty --always) > version
+    - echo export LAST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1)) >> version
   tags:
     - container-dev
+  artifacts:
+    paths:
+      - version
+
+check_yamls:
+  stage: check_yamls
+  script:
+    - source version
+    - cd tests && ./check-yamls.sh ${VERSION}
+  tags:
+    - container-dev
+  dependencies:
+    - versionning
+  only:
+    - tags
 
 lint:
   stage: tests
+  before_script:
+    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
+    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
   script:
     - go get -u golang.org/x/lint/golint
     - golint -set_exit_status github.com/NVIDIA/gpu-feature-discovery
@@ -25,13 +58,19 @@ lint:
 
 vet:
   stage: tests
+  before_script:
+    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
+    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
   script:
     - go vet github.com/NVIDIA/gpu-feature-discovery
   tags:
     - container-dev
 
-test:
+unit_test:
   stage: tests
+  before_script:
+    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
+    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
   script:
     - go test github.com/NVIDIA/gpu-feature-discovery
   tags:
@@ -61,3 +100,57 @@ misspell:
     - misspell *.go
   tags:
     - container-dev
+  
+docker_build:
+  stage: docker_build
+  services:
+    - docker:dind
+  image: docker:dind
+  script:
+    - source version
+    - docker login -u ${DOCKER_STAGING_USER} -p ${DOCKER_STAGING_PASSWORD}
+    - docker build --build-arg GFD_VERSION=${VERSION} . -t ${DOCKER_STAGING_IMAGE}:${VERSION}
+    - docker push ${DOCKER_STAGING_IMAGE}:${VERSION}
+  tags:
+    - container-dev
+  dependencies:
+    - versionning
+
+e2e_tests:
+  stage: e2e_tests
+  image: docker:dind
+  services:
+    - docker:dind
+  script:
+    - source version
+    - source aws-kube-ci/hostname
+    - apk add --no-cache openssh-client
+    - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
+    - ssh -i aws-kube-ci/key ${instance_hostname} \
+      "cd ~/project/tests && ./ci-run-e2e.sh ${DOCKER_STAGING_IMAGE} ${VERSION} ${CI_COMMIT_TAG}"
+  dependencies:
+    - aws_kube_setup
+    - versionning
+  tags:
+    - container-dev
+
+deploy:
+  stage: deploy
+  image: docker:dind
+  services:
+    - docker:dind
+  script:
+    - source version
+    - docker pull ${DOCKER_STAGING_IMAGE}:${VERSION}
+    - docker tag ${DOCKER_STAGING_IMAGE}:${VERSION} ${DOCKER_PROD_IMAGE}:${VERSION}
+    - docker push ${DOCKER_PROD_IMAGE}:${VERSION}
+  tags:
+    - container-dev
+  dependencies:
+    - versionning
+  only:
+    - tags
+
+include:
+  project: dl/container-dev/cicd/aws-kube-ci
+  file: aws-kube-ci.yml

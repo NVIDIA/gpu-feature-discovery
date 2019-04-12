@@ -1,0 +1,4 @@
+[submodule "aws-kube-ci"]
+	path = aws-kube-ci
+	url = ../cicd/aws-kube-ci.git
+	branch = master
