@@ -142,6 +142,11 @@ L:
 			log.Fatal("Template error: ", err)
 		}
 
+		err = tmpOutputFile.Chmod(0644)
+		if err != nil {
+			log.Fatalf("Error chmod temporary file: %v", err)
+		}
+
 		err = tmpOutputFile.Close()
 		if err != nil {
 			log.Fatalf("Error closing temporary file: %v", err)
