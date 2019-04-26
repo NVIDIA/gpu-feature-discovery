@@ -1,3 +1,4 @@
+*.yaml
 .git/
 .gitignore
 Dockerfile
