@@ -21,3 +21,10 @@ spec:
       containers:
         - image: nvidia/gpu-feature-discovery:1.0.0-alpha
           name: gpu-feature-discovery
+          volumeMounts:
+            - name: output-dir
+              mountPath: "/etc/kubernetes/node-feature-discovery/features.d"
+      volumes:
+        - name: output-dir
+          hostPath:
+            path: "/etc/kubernetes/node-feature-discovery/features.d"
