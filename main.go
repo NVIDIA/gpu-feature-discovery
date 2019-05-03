@@ -48,11 +48,14 @@ func main() {
 	log.Print("OutputFilePath: ", conf.OutputFilePath)
 
 	log.Print("Start running")
-	run(nvmlLib, conf)
+	err := run(nvmlLib, conf)
+	if err != nil {
+		log.Printf("Unexpected error: %v", err)
+	}
 	log.Print("Exiting")
 }
 
-func run(nvmlInterface NvmlInterface, conf Conf) {
+func run(nvmlInterface NvmlInterface, conf Conf) error {
 
 	if err := nvmlInterface.Init(); err != nil {
 		// TODO: Update README and links
@@ -60,7 +63,7 @@ func run(nvmlInterface NvmlInterface, conf Conf) {
 		log.Printf("If this is a GPU node, did you set the docker default runtime to `nvidia`?")
 		log.Printf("You can check the prerequisites at: https://github.com/NVIDIA/gpu-feature-discovery")
 		log.Printf("You can learn how to set the runtime at: https://github.com/NVIDIA/gpu-feature-discovery#quick-start")
-		return
+		return err
 	}
 
 	defer func() {
@@ -72,11 +75,11 @@ func run(nvmlInterface NvmlInterface, conf Conf) {
 
 	count, err := nvmlInterface.GetDeviceCount()
 	if err != nil {
-		log.Fatal("Error getting device count: ", err)
+		return fmt.Errorf("Error getting device count: %v", err)
 	}
 
 	if count < 1 {
-		log.Fatal("Error: no device found on the node")
+		return fmt.Errorf("Error: no device found on the node")
 	}
 
 	// TODO: Change label format
@@ -105,30 +108,30 @@ func run(nvmlInterface NvmlInterface, conf Conf) {
 
 	outputFileAbsPath, err := filepath.Abs(conf.OutputFilePath)
 	if err != nil {
-		log.Fatalf("Failed to retrieve absolute path of output file: %v", err)
+		return fmt.Errorf("Failed to retrieve absolute path of output file: %v", err)
 	}
 	tmpDirPath := filepath.Dir(outputFileAbsPath) + "/gfd-tmp"
 
 	err = os.Mkdir(tmpDirPath, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
-		log.Fatalf("Failed to create temporary directory: %v", err)
+		return fmt.Errorf("Failed to create temporary directory: %v", err)
 	}
 
 L:
 	for {
 		tmpOutputFile, err := ioutil.TempFile(tmpDirPath, "gfd-")
 		if err != nil {
-			log.Fatalf("Fail to create temporary output file: %v", err)
+			return fmt.Errorf("Fail to create temporary output file: %v", err)
 		}
 
 		device, err := nvmlInterface.NewDevice(0)
 		if err != nil {
-			log.Fatal("Error getting device: ", err)
+			return fmt.Errorf("Error getting device: %v", err)
 		}
 
 		driverVersion, err := nvmlInterface.GetDriverVersion()
 		if err != nil {
-			log.Fatal("Error getting driver version: ", err)
+			return fmt.Errorf("Error getting driver version: %v", err)
 		}
 
 		log.Print("Writing labels to output file")
@@ -139,22 +142,22 @@ L:
 
 		err = t.Execute(tmpOutputFile, device)
 		if err != nil {
-			log.Fatal("Template error: ", err)
+			return fmt.Errorf("Template error: %v", err)
 		}
 
 		err = tmpOutputFile.Chmod(0644)
 		if err != nil {
-			log.Fatalf("Error chmod temporary file: %v", err)
+			return fmt.Errorf("Error chmod temporary file: %v", err)
 		}
 
 		err = tmpOutputFile.Close()
 		if err != nil {
-			log.Fatalf("Error closing temporary file: %v", err)
+			return fmt.Errorf("Error closing temporary file: %v", err)
 		}
 
 		err = os.Rename(tmpOutputFile.Name(), conf.OutputFilePath)
 		if err != nil {
-			log.Fatalf("Error moving temporary file '%s': %v", conf.OutputFilePath, err)
+			return fmt.Errorf("Error moving temporary file '%s': %v", conf.OutputFilePath, err)
 		}
 
 		if conf.Oneshot {
@@ -170,4 +173,6 @@ L:
 			break
 		}
 	}
+
+	return nil
 }
