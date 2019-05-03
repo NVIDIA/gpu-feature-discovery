@@ -116,7 +116,10 @@ nvidia-model=MOCK-MODEL
 nvidia-memory=128
 `)
 
-	run(nvmlMock, conf)
+	err := run(nvmlMock, conf)
+	if err != nil {
+		t.Fatalf("Error from run: %v", err)
+	}
 
 	outFile, err := os.Open(conf.OutputFilePath)
 	if err != nil {
@@ -167,7 +170,10 @@ nvidia-model=MOCK-MODEL
 nvidia-memory=128
 `)
 
-	go run(nvmlMock, conf)
+	var runError error
+	go func() {
+		runError = run(nvmlMock, conf)
+	}()
 
 	// Try to get first timestamp
 	outFile, err := waitForFile(conf.OutputFilePath, 5, time.Second)
@@ -228,5 +234,9 @@ nvidia-memory=128
 
 	if !expected.Match(output) {
 		t.Errorf("Output mismatch: expected '%s', got '%s'", expected, output)
+	}
+
+	if runError != nil {
+		t.Errorf("Error from run: %v", runError)
 	}
 }
