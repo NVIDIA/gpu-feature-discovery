@@ -35,13 +35,19 @@ Options:
                                   [Default: /etc/kubernetes/node-feature-discovery/features.d/gfd]`,
 		Bin)
 
-	opts, err := docopt.ParseArgs(usage, argv[1:], Bin + " " + Version)
+	opts, err := docopt.ParseArgs(usage, argv[1:], Bin+" "+Version)
 	if err != nil {
 		log.Fatal("Error while parsing command line options: ", err)
 	}
 
 	conf.Oneshot, err = opts.Bool("--oneshot")
+	if err != nil {
+		log.Fatal("Error while parsing command line options: ", err)
+	}
 	sleepIntervalString, err := opts.String("--sleep-interval")
+	if err != nil {
+		log.Fatal("Error while parsing command line options: ", err)
+	}
 	conf.OutputFilePath, err = opts.String("--output-file")
 	if err != nil {
 		log.Fatal("Error while parsing command line options: ", err)

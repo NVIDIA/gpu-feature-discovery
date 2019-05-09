@@ -125,7 +125,7 @@ nvidia-memory=128
 	if err != nil {
 		t.Fatalf("Error opening output file: %v", err)
 	}
-	defer func () {
+	defer func() {
 		err = outFile.Close()
 		if err != nil {
 			t.Logf("Error closing output file '%s': %v", conf.OutputFilePath, err)
@@ -147,7 +147,7 @@ nvidia-memory=128
 }
 
 func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.File, error) {
-	for i := 0; i < iter - 1; i++ {
+	for i := 0; i < iter-1; i++ {
 		file, err := os.Open(fileName)
 		if err != nil && os.IsNotExist(err) {
 			time.Sleep(sleepInterval)

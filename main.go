@@ -8,16 +8,16 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"text/template"
 	"time"
-	"path/filepath"
 )
 
 const (
 	// Bin : Name of the binary
-	Bin            = "gpu-feature-discovery"
+	Bin = "gpu-feature-discovery"
 )
 
 var (
