@@ -1,4 +1,5 @@
 nvidia-timestamp=[0-9]{10}
 nvidia-driver-version=[0-9.]+
+nvidia-cuda-version=[0-9.]+
 nvidia-model=[A-Za-z_-]+
 nvidia-memory=[0-9]*

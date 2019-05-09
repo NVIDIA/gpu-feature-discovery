@@ -133,11 +133,17 @@ L:
 			return fmt.Errorf("Error getting driver version: %v", err)
 		}
 
+		cudaMajor, cudaMinor, err := nvmlInterface.GetCudaDriverVersion()
+		if err != nil {
+			return fmt.Errorf("Error getting cuda driver version: %v", err)
+		}
+
 		log.Print("Writing labels to output file")
 		fmt.Fprintf(tmpOutputFile, "nvidia-timestamp=%d\n", time.Now().Unix())
 
 		// TODO: Change label format
 		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version=%s\n", driverVersion)
+		fmt.Fprintf(tmpOutputFile, "nvidia-cuda-version=%d.%d\n", *cudaMajor, *cudaMinor)
 
 		err = t.Execute(tmpOutputFile, device)
 		if err != nil {

@@ -37,3 +37,10 @@ func (nvmlMock NvmlMock) NewDevice(id uint) (*nvml.Device, error) {
 func (nvmlMock NvmlMock) GetDriverVersion() (string, error) {
 	return "400.300", nil
 }
+
+// GetCudaDriverVersion : Return a fake cuda version
+func (nvmlMock NvmlMock) GetCudaDriverVersion() (*uint, *uint, error) {
+	major := uint(1)
+	minor := uint(1)
+	return &major, &minor, nil
+}
