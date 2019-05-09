@@ -36,3 +36,28 @@ test:
     - go test github.com/NVIDIA/gpu-feature-discovery
   tags:
     - container-dev
+
+fmt:
+  stage: tests
+  script:
+    - res=$(gofmt -l *.go)
+    - echo "$res"
+    - test -z "$res"
+  tags:
+    - container-dev
+
+ineffassign:
+  stage: tests
+  script:
+    - go get -u github.com/gordonklaus/ineffassign
+    - ineffassign *.go
+  tags:
+    - container-dev
+
+misspell:
+  stage: tests
+  script:
+    - go get -u github.com/client9/misspell/cmd/misspell
+    - misspell *.go
+  tags:
+    - container-dev
