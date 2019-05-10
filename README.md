@@ -1,5 +1,8 @@
 # NVIDIA GPU feature discovery
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/NVIDIA/gpu-feature-discovery)](https://goreportcard.com/report/github.com/NVIDIA/gpu-feature-discovery)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 ## Table of Contents
 
 - [NVIDIA GPU feature discovery](#nvidia-gpu-feature-discovery)
