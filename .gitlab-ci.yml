@@ -15,6 +15,7 @@ stages:
   - tests
   - docker_build
   - aws_kube_setup
+  - integration_tests
   - e2e_tests
   - aws_kube_clean
   - deploy
@@ -115,6 +116,22 @@ docker_build:
     - container-dev
   dependencies:
     - versionning
+
+integration_tests:
+  stage: integration_tests
+  image: alpine
+  script:
+    - source version
+    - source aws-kube-ci/hostname
+    - apk add --no-cache openssh-client
+    - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
+    - ssh -i aws-kube-ci/key ${instance_hostname} \
+      "cd ~/project/tests && ./ci-run-integration.sh ${DOCKER_STAGING_IMAGE}:${VERSION}"
+  dependencies:
+    - aws_kube_setup
+    - versionning
+  tags:
+    - container-dev
 
 e2e_tests:
   stage: e2e_tests

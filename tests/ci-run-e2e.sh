@@ -13,7 +13,7 @@ GFD_YAML_FILE=../gpu-feature-discovery-daemonset.yaml
 NFD_YAML_FILE=./nfd.yaml
 
 sudo apt install -y python3-pip
-sudo pip3 install -r requirements.txt
+sudo pip3 install -r e2e-requirements.txt
 
 # Should be remove once:
 # https://github.com/kubernetes-sigs/node-feature-discovery/pull/236 is merged
