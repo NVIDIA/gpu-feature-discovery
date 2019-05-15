@@ -9,14 +9,12 @@ from kubernetes import client, config, watch
 
 
 def get_expected_labels_regexs():
-    expected_labels = [
-        "feature.node.kubernetes.io/gfd-nvidia-driver-version=[0-9.]+",
-        "feature.node.kubernetes.io/gfd-nvidia-model=[A-Za-z]+",
-        "feature.node.kubernetes.io/gfd-nvidia-memory=[0-9]*",
-        "feature.node.kubernetes.io/gfd-nvidia-timestamp=[0-9]{10}",
-    ]
 
-    return [re.compile(label) for label in expected_labels]
+    with open("./expected-output.txt") as f:
+        expected_labels = f.readlines()
+        expected_labels = ["feature.node.kubernetes.io/gfd-" + x.strip()
+                for x in expected_labels]
+        return [re.compile(label) for label in expected_labels]
 
 
 def deploy_yaml_file(core_api, apps_api, rbac_api, daemonset_yaml_file):

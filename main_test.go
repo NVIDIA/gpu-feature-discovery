@@ -94,13 +94,12 @@ func TestRunOneshot(t *testing.T) {
 	nvmlMock := NvmlMock{}
 	conf := Conf{true, "./gfd-test-oneshot", time.Second}
 
-	expected := regexp.MustCompile(`nvidia-timestamp=[0-9]{10}
-nvidia-driver-version=MOCK-DRIVER-VERSION
-nvidia-model=MOCK-MODEL
-nvidia-memory=128
-`)
+	expected, err := ioutil.ReadFile("tests/expected-output.txt")
+	require.NoError(t, err, "Opening expected output file")
 
-	err := run(nvmlMock, conf)
+	expectedRegexp := regexp.MustCompile(string(expected))
+
+	err = run(nvmlMock, conf)
 	require.NoError(t, err, "Error from run function")
 
 	outFile, err := os.Open(conf.OutputFilePath)
@@ -115,7 +114,7 @@ nvidia-memory=128
 
 	result, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
-	require.Regexp(t, expected, string(result), "Output mismatch")
+	require.Regexp(t, expectedRegexp, string(result), "Output mismatch")
 }
 
 func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.File, error) {
@@ -136,11 +135,11 @@ func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.Fi
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NvmlMock{}
 	conf := Conf{false, "./gfd-test-loop", time.Second}
-	expected := regexp.MustCompile(`nvidia-timestamp=[0-9]{10}
-nvidia-driver-version=MOCK-DRIVER-VERSION
-nvidia-model=MOCK-MODEL
-nvidia-memory=128
-`)
+
+	expected, err := ioutil.ReadFile("tests/expected-output.txt")
+	require.NoError(t, err, "Opening expected output file")
+
+	expectedRegexp := regexp.MustCompile(string(expected))
 
 	var runError error
 	go func() {
@@ -181,6 +180,6 @@ nvidia-memory=128
 	currentTimestamp := strings.Split(timestampLabel, "=")[1]
 
 	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
-	require.Regexp(t, expected, string(output), "Output mismatch")
+	require.Regexp(t, expectedRegexp, string(output), "Output mismatch")
 	require.NoError(t, runError, "Error from run")
 }

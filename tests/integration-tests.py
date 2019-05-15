@@ -9,14 +9,11 @@ import time
 
 
 def get_expected_labels_regexs():
-    expected_labels = [		
-        "nvidia-driver-version=[0-9.]+",
-        "nvidia-model=[A-Za-z]+",
-        "nvidia-memory=[0-9]*",
-        "nvidia-timestamp=[0-9]{10}",
-    ]
 
-    return [re.compile(label) for label in expected_labels]
+    with open("./expected-output.txt") as f:
+        expected_labels = f.readlines()
+        expected_labels = [x.strip() for x in expected_labels]
+        return [re.compile(label) for label in expected_labels]
 
 def check_labels(expected_labels_regexs, labels):
     for label in labels[:]:
