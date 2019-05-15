@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetConfFromArgv(t *testing.T) {
@@ -19,43 +21,34 @@ func TestGetConfFromArgv(t *testing.T) {
 	confNoOptions := Conf{}
 	confNoOptionsArgv := []string{Bin}
 	confNoOptions.getConfFromArgv(confNoOptionsArgv)
-	if confNoOptions.Oneshot != false {
-		t.Error("Oneshot option with empty argv: got true, expected false")
-	}
-	if confNoOptions.SleepInterval != defaultDuration {
-		t.Errorf("SleepInterval option with empty argv: got %s, expected %s",
-			confNoOptions.SleepInterval, defaultDuration)
-	}
+
+	require.False(t, confNoOptions.Oneshot, "Oneshot option with empty argv")
+	require.Equal(t, confNoOptions.SleepInterval, defaultDuration,
+		"SleepInterval option with empty argv")
 
 	confOneShot := Conf{}
 	confOneShotArgv := []string{Bin, "--oneshot"}
 	confOneShot.getConfFromArgv(confOneShotArgv)
-	if confOneShot.Oneshot != true {
-		t.Error("Oneshot option with '--oneshot' argv: got false, expected true")
-	}
-	if confOneShot.SleepInterval != defaultDuration {
-		t.Errorf("SleepInterval option with '--oneshot' argv: got %s, expected %s",
-			confOneShot.SleepInterval, defaultDuration)
-	}
+
+	require.True(t, confOneShot.Oneshot, "Oneshot option with '--oneshot' argv")
+	require.Equal(t, confOneShot.SleepInterval, defaultDuration,
+		"SleepInterval option with '--oneshot' argv")
 
 	confSleepInterval := Conf{}
 	confSleepIntervalArgv := []string{Bin, "--sleep-interval=1s"}
 	confSleepInterval.getConfFromArgv(confSleepIntervalArgv)
-	if confSleepInterval.Oneshot != false {
-		t.Error("Oneshot option with '--sleep-interval=1s' argv: got true, expected false")
-	}
-	if confSleepInterval.SleepInterval != time.Second {
-		t.Errorf("SleepInterval option with '--sleep-interval=1s' argv: got %s, expected %s",
-			confSleepInterval.SleepInterval, time.Second)
-	}
+
+	require.False(t, confSleepInterval.Oneshot,
+		"Oneshot option with '--sleep-interval=1s' argv")
+	require.Equal(t, confSleepInterval.SleepInterval, time.Second,
+		"SleepInterval option with '--sleep-interval=1s' argv")
 
 	confOutputFile := Conf{}
 	confOutputFileArgv := []string{Bin, "--output-file=test"}
 	confOutputFile.getConfFromArgv(confOutputFileArgv)
-	if confOutputFile.OutputFilePath != "test" {
-		t.Errorf("OutputFilePath option with '--output-file=test' argv: got %s, expected %s",
-			confOutputFile.OutputFilePath, "test")
-	}
+
+	require.Equal(t, confOutputFile.OutputFilePath, "test",
+		"OutputFilePath option with '--output-file=test' argv")
 }
 
 func TestGetConfFromEnv(t *testing.T) {
@@ -64,86 +57,65 @@ func TestGetConfFromEnv(t *testing.T) {
 
 	confNoEnv := Conf{}
 	confNoEnv.getConfFromEnv()
-	if confNoEnv.Oneshot != false {
-		t.Error("Oneshot option with empty env: got true, expected false")
-	}
-	if confNoEnv.SleepInterval != defaultDuration {
-		t.Errorf("SleepInterval option with empty env: got %s, expected %s",
-			confNoEnv.SleepInterval, defaultDuration)
-	}
+
+	require.False(t, confNoEnv.Oneshot, "Oneshot option with empty env")
+	require.Equal(t, confNoEnv.SleepInterval, defaultDuration,
+		"SleepInterval option with empty env")
 
 	confOneShotEnv := Conf{}
 	os.Clearenv()
 	os.Setenv("GFD_ONESHOT", "TrUe")
 	confOneShotEnv.getConfFromEnv()
-	if confOneShotEnv.Oneshot != true {
-		t.Error("Oneshot option with oneshot env: got false, expected true")
-	}
-	if confOneShotEnv.SleepInterval != defaultDuration {
-		t.Errorf("SleepInterval option with oneshot env: got %s, expected %s",
-			confOneShotEnv.SleepInterval, defaultDuration)
-	}
+
+	require.True(t, confOneShotEnv.Oneshot, "Oneshot option with oneshot env")
+	require.Equal(t, confOneShotEnv.SleepInterval, defaultDuration,
+		"SleepInterval option with oneshot env")
 
 	confSleepIntervalEnv := Conf{}
 	os.Clearenv()
 	os.Setenv("GFD_SLEEP_INTERVAL", "1s")
 	confSleepIntervalEnv.getConfFromEnv()
-	if confSleepIntervalEnv.Oneshot != false {
-		t.Error("Oneshot option with sleep-interval=1s env: got true, expected false")
-	}
-	if confSleepIntervalEnv.SleepInterval != time.Second {
-		t.Errorf("SleepInterval option with sleep-interval=1s env: got %s, expected %s",
-			confSleepIntervalEnv.SleepInterval, defaultDuration)
-	}
+
+	require.False(t, confSleepIntervalEnv.Oneshot,
+		"Oneshot option with sleep-interval=1s env")
+	require.Equal(t, confSleepIntervalEnv.SleepInterval, time.Second,
+		"SleepInterval option with sleep-interval=1s env")
 
 	confOutputFileEnv := Conf{}
 	os.Clearenv()
 	os.Setenv("GFD_OUTPUT_FILE", "test")
 	confOutputFileEnv.getConfFromEnv()
-	if confOutputFileEnv.OutputFilePath != "test" {
-		t.Errorf("OutputFilePath option with output-file=test env: got %s, expected %s",
-			confOutputFileEnv.OutputFilePath, "test")
-	}
+
+	require.Equal(t, confOutputFileEnv.OutputFilePath, "test",
+		"OutputFilePath option with output-file=test env")
 }
 
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NvmlMock{}
 	conf := Conf{true, "./gfd-test-oneshot", time.Second}
 
-	expected, _ := regexp.Compile(`nvidia-timestamp=[0-9]{10}
+	expected := regexp.MustCompile(`nvidia-timestamp=[0-9]{10}
 nvidia-driver-version=MOCK-DRIVER-VERSION
 nvidia-model=MOCK-MODEL
 nvidia-memory=128
 `)
 
 	err := run(nvmlMock, conf)
-	if err != nil {
-		t.Fatalf("Error from run: %v", err)
-	}
+	require.NoError(t, err, "Error from run function")
 
 	outFile, err := os.Open(conf.OutputFilePath)
-	if err != nil {
-		t.Fatalf("Error opening output file: %v", err)
-	}
+	require.NoError(t, err, "Opening output file")
+
 	defer func() {
 		err = outFile.Close()
-		if err != nil {
-			t.Logf("Error closing output file '%s': %v", conf.OutputFilePath, err)
-		}
+		require.NoError(t, err, "Closing output file")
 		err = os.Remove(conf.OutputFilePath)
-		if err != nil {
-			t.Logf("Error removing output file '%s': %v", conf.OutputFilePath, err)
-		}
+		require.NoError(t, err, "Removing output file")
 	}()
 
 	result, err := ioutil.ReadAll(outFile)
-	if err != nil {
-		t.Fatalf("Error reading output file: %v", err)
-	}
-
-	if !expected.Match(result) {
-		t.Errorf("Output mismatch: expected '%s', got '%s'", expected, result)
-	}
+	require.NoError(t, err, "Reading output file")
+	require.Regexp(t, expected, string(result), "Output mismatch")
 }
 
 func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.File, error) {
@@ -164,7 +136,7 @@ func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.Fi
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NvmlMock{}
 	conf := Conf{false, "./gfd-test-loop", time.Second}
-	expected, _ := regexp.Compile(`nvidia-timestamp=[0-9]{10}
+	expected := regexp.MustCompile(`nvidia-timestamp=[0-9]{10}
 nvidia-driver-version=MOCK-DRIVER-VERSION
 nvidia-model=MOCK-MODEL
 nvidia-memory=128
@@ -177,66 +149,38 @@ nvidia-memory=128
 
 	// Try to get first timestamp
 	outFile, err := waitForFile(conf.OutputFilePath, 5, time.Second)
-	if err != nil {
-		t.Fatalf("Failed to open output file while searching for first timestamp: %v", err)
-	}
+	require.NoError(t, err, "Open output file while searching for first timestamp")
 
 	output, err := ioutil.ReadAll(outFile)
-	if err != nil {
-		t.Fatalf("Failed to read output file while searching for first timestamp: %v", err)
-	}
+	require.NoError(t, err, "Read output file while searching for first timestamp")
 
 	err = outFile.Close()
-	if err != nil {
-		t.Fatalf("Failed to close output file while searching for first timestamp: %v", err)
-	}
+	require.NoError(t, err, "Close output file while searching for first timestamp")
 
 	err = os.Remove(conf.OutputFilePath)
-	if err != nil {
-		t.Fatalf("Failed to remove output file while searching for first timestamp: %v", err)
-	}
+	require.NoError(t, err, "Remove output file while searching for first timestamp")
 
 	timestampLabel := string(bytes.Split(output, []byte("\n"))[0])
-
-	if !strings.Contains(timestampLabel, "=") {
-		t.Fatal("Invalid timestamp label format")
-	}
+	require.Contains(t, timestampLabel, "=", "Invalid timestamp label format")
 
 	firstTimestamp := strings.Split(timestampLabel, "=")[1]
 
 	// Wait for second timestamp
 	outFile, err = waitForFile(conf.OutputFilePath, 5, time.Second)
-	if err != nil {
-		t.Fatalf("Failed to open output file while searching for second timestamp: %v", err)
-	}
+	require.NoError(t, err, "Open output file while searching for second timestamp")
 
 	output, err = ioutil.ReadAll(outFile)
-	if err != nil {
-		t.Fatalf("Failed to read output file while searching for second timestamp: %v", err)
-	}
+	require.NoError(t, err, "Read output file while searching for second timestamp")
 
 	err = outFile.Close()
-	if err != nil {
-		t.Fatalf("Failed to close output file while searching for second timestamp: %v", err)
-	}
+	require.NoError(t, err, "Close output file while searching for second timestamp")
 
 	timestampLabel = string(bytes.Split(output, []byte("\n"))[0])
-
-	if !strings.Contains(timestampLabel, "=") {
-		t.Fatal("Invalid timestamp label format")
-	}
+	require.Contains(t, timestampLabel, "=", "Invalid timestamp label format")
 
 	currentTimestamp := strings.Split(timestampLabel, "=")[1]
 
-	if firstTimestamp == currentTimestamp {
-		t.Fatalf("Timestamp didn't change")
-	}
-
-	if !expected.Match(output) {
-		t.Errorf("Output mismatch: expected '%s', got '%s'", expected, output)
-	}
-
-	if runError != nil {
-		t.Errorf("Error from run: %v", runError)
-	}
+	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
+	require.Regexp(t, expected, string(output), "Output mismatch")
+	require.NoError(t, runError, "Error from run")
 }
