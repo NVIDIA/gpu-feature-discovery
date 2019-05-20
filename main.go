@@ -24,6 +24,9 @@ var (
 	// Version : Version of the binary
 	// This will be set using ldflags at compile time
 	Version = ""
+	// MachineTypePath : Path to the file describing the machine type
+	// This will be override during unit testing
+	MachineTypePath = "/sys/class/dmi/id/product_name"
 )
 
 func main() {
@@ -53,6 +56,15 @@ func main() {
 		log.Printf("Unexpected error: %v", err)
 	}
 	log.Print("Exiting")
+}
+
+func getMachineType() (string, error) {
+	data, err := ioutil.ReadFile(MachineTypePath)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(data)), nil
 }
 
 func run(nvmlInterface NvmlInterface, conf Conf) error {
@@ -138,12 +150,18 @@ L:
 			return fmt.Errorf("Error getting cuda driver version: %v", err)
 		}
 
+		machineType, err := getMachineType()
+		if err != nil {
+			return fmt.Errorf("Error getting machine type: %v", err)
+		}
+
 		log.Print("Writing labels to output file")
 		fmt.Fprintf(tmpOutputFile, "nvidia-timestamp=%d\n", time.Now().Unix())
 
 		// TODO: Change label format
 		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version=%s\n", driverVersion)
 		fmt.Fprintf(tmpOutputFile, "nvidia-cuda-version=%d.%d\n", *cudaMajor, *cudaMinor)
+		fmt.Fprintf(tmpOutputFile, "nvidia-machine-type=%s\n", strings.Replace(machineType, " ", "-", -1))
 
 		err = t.Execute(tmpOutputFile, device)
 		if err != nil {
