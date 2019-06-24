@@ -26,7 +26,7 @@ func (nvmlMock NvmlMock) GetDeviceCount() (uint, error) {
 // NewDevice : Get information about a fake GPU
 func (nvmlMock NvmlMock) NewDevice(id uint) (*nvml.Device, error) {
 	device := nvml.Device{}
-	model := "MOCK-MODEL"
+	model := "MOCKMODEL"
 	memory := uint64(128)
 	device.Model = &model
 	device.Memory = &memory
@@ -35,5 +35,5 @@ func (nvmlMock NvmlMock) NewDevice(id uint) (*nvml.Device, error) {
 
 // GetDriverVersion : Return a fake driver version
 func (nvmlMock NvmlMock) GetDriverVersion() (string, error) {
-	return "MOCK-DRIVER-VERSION", nil
+	return "400.300", nil
 }
