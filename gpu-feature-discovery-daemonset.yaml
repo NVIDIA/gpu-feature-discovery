@@ -24,6 +24,8 @@ spec:
           volumeMounts:
             - name: output-dir
               mountPath: "/etc/kubernetes/node-feature-discovery/features.d"
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true" # NVIDIA GPU
       volumes:
         - name: output-dir
           hostPath:
