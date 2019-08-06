@@ -58,6 +58,22 @@ func main() {
 	log.Print("Exiting")
 }
 
+func getArchFamily(cudaComputeMajor int) string {
+	m := map[int]string{
+		1: "tesla",
+		2: "fermi",
+		3: "kepler",
+		5: "maxwell",
+		6: "pascal",
+	}
+
+	f, ok := m[cudaComputeMajor]
+	if !ok {
+		return "undefined"
+	}
+	return f
+}
+
 func getMachineType() (string, error) {
 	data, err := ioutil.ReadFile(MachineTypePath)
 	if err != nil {
@@ -96,10 +112,12 @@ func run(nvmlInterface NvmlInterface, conf Conf) error {
 	// TODO: Change label format
 	const deviceTemplate = `{{if .Model}}nvidia-model={{replace .Model " " "-" -1}}{{end}}
 {{if .Memory}}nvidia-memory={{.Memory}}{{end}}
+{{if .CudaComputeCapability.Major}}nvidia-family={{getArchFamily .CudaComputeCapability.Major}}{{end}}
 `
 
 	funcMap := template.FuncMap{
-		"replace": strings.Replace,
+		"replace":       strings.Replace,
+		"getArchFamily": getArchFamily,
 	}
 
 	t := template.Must(template.New("Device").Funcs(funcMap).Parse(deviceTemplate))
