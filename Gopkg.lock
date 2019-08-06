@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/NVIDIA/gpu-monitoring-tools"
   packages = ["bindings/go/nvml"]
-  revision = "d50172b8f2da8a6654a43642eceda3a90f94dc99"
+  revision = "89aebf4ec67834a40022ca497761c92a2ea38044"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
