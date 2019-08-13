@@ -12,9 +12,7 @@ def get_expected_labels_regexs():
 
     with open("./expected-output.txt") as f:
         expected_labels = f.readlines()
-        expected_labels = ["feature.node.kubernetes.io/gfd-" + x.strip()
-                for x in expected_labels]
-        return [re.compile(label) for label in expected_labels]
+        return [re.compile(label.strip()) for label in expected_labels]
 
 
 def deploy_yaml_file(core_api, apps_api, rbac_api, daemonset_yaml_file):
@@ -37,10 +35,9 @@ def deploy_yaml_file(core_api, apps_api, rbac_api, daemonset_yaml_file):
 
 def check_labels(expected_labels_regexs, labels):
     for label in labels[:]:
-        if label.startswith("feature.node.kubernetes.io/") and \
-            not label.startswith("feature.node.kubernetes.io/gfd-"):
-                labels.remove(label)
-                continue
+        if label.startswith("feature.node.kubernetes.io/"):
+            labels.remove(label)
+            continue
         for label_regex in expected_labels_regexs[:]:
             if label_regex.match(label):
                 expected_labels_regexs.remove(label_regex)
@@ -81,11 +78,10 @@ if __name__ == '__main__':
         regexs.append(re.compile(k + "=" + v))
 
     print("Deploy NFD and GFD")
-    # TODO: Use real yamls
     deploy_yaml_file(core_api, apps_api, rbac_api, sys.argv[1]) # GFD
     deploy_yaml_file(core_api, apps_api, rbac_api, sys.argv[2]) # NFD
 
-    timestamp_label_name = "feature.node.kubernetes.io/gfd-nvidia-timestamp"
+    timestamp_label_name = "nvidia.com/gfd.timestamp"
 
     print("Watching node updates")
     stop = False

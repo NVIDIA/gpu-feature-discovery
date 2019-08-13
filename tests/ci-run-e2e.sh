@@ -18,6 +18,9 @@ wget -O "${NFD_YAML_FILE}" "${NFD_YAML_FILE_URL}"
 sudo apt install -y python3-pip
 sudo pip3 install -r e2e-requirements.txt
 
+# Add "--extra-label-ns=nvidia.com" args to the nfd-master
+docker run --rm -v "${PWD}":/workdir mikefarah/yq yq w -d3 -i -- "${NFD_YAML_FILE}" spec.template.spec.containers[0].args[+] --extra-label-ns=nvidia.com
+
 # If it's a tag
 if [ -n "$CI_COMMIT_TAG" ]; then
 	sed -i "s|nvidia/gpu-feature-discovery:|${IMAGE_NAME}:|" ${GFD_YAML_FILE}
