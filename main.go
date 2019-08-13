@@ -165,6 +165,18 @@ L:
 			return fmt.Errorf("Error getting driver version: %v", err)
 		}
 
+		driverVersionSplit := strings.Split(driverVersion, ".")
+		if len(driverVersionSplit) > 3 || len(driverVersionSplit) < 2 {
+			return fmt.Errorf("Error getting driver version: Version \"%s\" does not match format \"X.Y[.Z]\"", driverVersion)
+		}
+
+		driverMajor := driverVersionSplit[0]
+		driverMinor := driverVersionSplit[1]
+		driverRev := ""
+		if len(driverVersionSplit) > 2 {
+			driverRev = driverVersionSplit[2]
+		}
+
 		cudaMajor, cudaMinor, err := nvmlInterface.GetCudaDriverVersion()
 		if err != nil {
 			return fmt.Errorf("Error getting cuda driver version: %v", err)
@@ -179,8 +191,11 @@ L:
 		fmt.Fprintf(tmpOutputFile, "nvidia-timestamp=%d\n", time.Now().Unix())
 
 		// TODO: Change label format
-		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version=%s\n", driverVersion)
-		fmt.Fprintf(tmpOutputFile, "nvidia-cuda-version=%d.%d\n", *cudaMajor, *cudaMinor)
+		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version.major=%s\n", driverMajor)
+		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version.minor=%s\n", driverMinor)
+		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version.rev=%s\n", driverRev)
+		fmt.Fprintf(tmpOutputFile, "nvidia-cuda-version.major=%d\n", *cudaMajor)
+		fmt.Fprintf(tmpOutputFile, "nvidia-cuda-version.minor=%d\n", *cudaMinor)
 		fmt.Fprintf(tmpOutputFile, "nvidia-machine-type=%s\n", strings.Replace(machineType, " ", "-", -1))
 
 		err = t.Execute(tmpOutputFile, device)

@@ -1,6 +1,9 @@
 nvidia-timestamp=[0-9]{10}
-nvidia-driver-version=[0-9.]+
-nvidia-cuda-version=[0-9.]+
+nvidia-driver-version.major=[0-9.]+
+nvidia-driver-version.minor=[0-9.]+
+nvidia-driver-version.rev=[0-9.]*
+nvidia-cuda-version.major=[0-9.]+
+nvidia-cuda-version.minor=[0-9.]+
 nvidia-machine-type=.*
 nvidia-model=[A-Za-z_-]+
 nvidia-memory=[0-9]*
