@@ -11,6 +11,7 @@ type NvmlInterface interface {
 	GetDeviceCount() (uint, error)
 	NewDevice(id uint) (device *nvml.Device, err error)
 	GetDriverVersion() (string, error)
+	GetCudaDriverVersion() (*uint, *uint, error)
 }
 
 // NvmlLib : Implementation of NvmlInterface using the NVML lib
@@ -40,4 +41,9 @@ func (nvmlLib NvmlLib) NewDevice(id uint) (device *nvml.Device, err error) {
 // GetDriverVersion : Return the driver version using NVML
 func (nvmlLib NvmlLib) GetDriverVersion() (string, error) {
 	return nvml.GetDriverVersion()
+}
+
+// GetCudaDriverVersion : Return the cuda version using NVML
+func (nvmlLib NvmlLib) GetCudaDriverVersion() (*uint, *uint, error) {
+	return nvml.GetCudaDriverVersion()
 }

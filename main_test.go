@@ -99,6 +99,16 @@ func TestRunOneshot(t *testing.T) {
 
 	expectedRegexp := regexp.MustCompile(string(expected))
 
+	MachineTypePath = "/tmp/machine-type"
+	machineType := []byte("product-name\n")
+	err = ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
+	require.NoError(t, err, "Write machine type mock file")
+
+	defer func() {
+		err = os.Remove(MachineTypePath)
+		require.NoError(t, err, "Removing machine type mock file")
+	}()
+
 	err = run(nvmlMock, conf)
 	require.NoError(t, err, "Error from run function")
 
@@ -140,6 +150,16 @@ func TestRunSleep(t *testing.T) {
 	require.NoError(t, err, "Opening expected output file")
 
 	expectedRegexp := regexp.MustCompile(string(expected))
+
+	MachineTypePath = "/tmp/machine-type"
+	machineType := []byte("product-name\n")
+	err = ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
+	require.NoError(t, err, "Write machine type mock file")
+
+	defer func() {
+		err = os.Remove(MachineTypePath)
+		require.NoError(t, err, "Removing machine type mock file")
+	}()
 
 	var runError error
 	go func() {

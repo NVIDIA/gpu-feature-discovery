@@ -122,7 +122,10 @@ their meaning:
 
 | Label Name            | Value Type | Meaning                           | Example        |
 | --------------------- | ---------- | --------------------------------- | -------------- |
+| nvidia-cuda-version   | String     | Version of CUDA                   | 10.1           |
 | nvidia-driver-version | String     | Version of the NVIDIA driver      | 418.56         |
+| nvidia-family         | String     | Architecture family of the GPU    | Kepler         |
+| nvidia-machine-type   | String     | Machine type                      | DGX-1          |
 | nvidia-model          | String     | Model of the GPU                  | GeForce-GT-710 |
 | nvidia-memory         | Interger   | Memory of the GPU in Mb           | 2000           |
 | nvidia-timestamp      | Interger   | Timestamp of the generated labels | 1555019244     |

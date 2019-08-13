@@ -149,6 +149,20 @@ func shutdown() error {
 	return errorString(C.nvmlShutdown_dl())
 }
 
+func systemGetCudaDriverVersion() (*uint, *uint, error) {
+	var v C.int
+
+	r := C.nvmlSystemGetCudaDriverVersion_v2(&v)
+	if r != C.NVML_SUCCESS {
+		return nil, nil, errorString(r)
+	}
+
+	major := uint(v / 1000)
+	minor := uint(v % 1000 / 10)
+
+	return &major, &minor, errorString(r)
+}
+
 func systemGetDriverVersion() (string, error) {
 	var driver [szDriver]C.char
 
@@ -185,6 +199,20 @@ func deviceGetTopologyCommonAncestor(h1, h2 handle) (*uint, error) {
 		return nil, nil
 	}
 	return uintPtr(C.uint(level)), errorString(r)
+}
+
+func (h handle) deviceGetCudaComputeCapability() (*int, *int, error) {
+	var major, minor C.int
+
+	r := C.nvmlDeviceGetCudaComputeCapability(h.dev, &major, &minor)
+	if r != C.NVML_SUCCESS {
+		return nil, nil, errorString(r)
+	}
+
+	intMajor := int(major)
+	intMinor := int(minor)
+
+	return &intMajor, &intMinor, errorString(r)
 }
 
 func (h handle) deviceGetName() (*string, error) {
