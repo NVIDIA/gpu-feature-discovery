@@ -112,7 +112,9 @@ func run(nvmlInterface NvmlInterface, conf Conf) error {
 	// TODO: Change label format
 	const deviceTemplate = `{{if .Model}}nvidia-model={{replace .Model " " "-" -1}}{{end}}
 {{if .Memory}}nvidia-memory={{.Memory}}{{end}}
-{{if .CudaComputeCapability.Major}}nvidia-family={{getArchFamily .CudaComputeCapability.Major}}{{end}}
+{{if .CudaComputeCapability.Major}}nvidia-family={{getArchFamily .CudaComputeCapability.Major}}
+nvidia-compute-capabilities.major={{.CudaComputeCapability.Major}}
+nvidia-compute-capabilities.minor={{.CudaComputeCapability.Minor}}{{end}}
 `
 
 	funcMap := template.FuncMap{
