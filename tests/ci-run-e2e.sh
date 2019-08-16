@@ -10,16 +10,10 @@ IMAGE_NAME=$1
 VERSION=$2
 CI_COMMIT_TAG=$3
 GFD_YAML_FILE="../gpu-feature-discovery-daemonset.yaml"
-NFD_YAML_FILE_URL="https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/v0.4.0/nfd-daemonset-combined.yaml.template"
 NFD_YAML_FILE="nfd.yaml"
-
-wget -O "${NFD_YAML_FILE}" "${NFD_YAML_FILE_URL}"
 
 sudo apt install -y python3-pip
 sudo pip3 install -r e2e-requirements.txt
-
-# Add "--extra-label-ns=nvidia.com" args to the nfd-master
-docker run --rm -v "${PWD}":/workdir mikefarah/yq yq w -d3 -i -- "${NFD_YAML_FILE}" spec.template.spec.containers[0].args[+] --extra-label-ns=nvidia.com
 
 # If it's a tag
 if [ -n "$CI_COMMIT_TAG" ]; then
