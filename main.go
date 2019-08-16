@@ -109,12 +109,11 @@ func run(nvmlInterface NvmlInterface, conf Conf) error {
 		return fmt.Errorf("Error: no device found on the node")
 	}
 
-	// TODO: Change label format
-	const deviceTemplate = `{{if .Model}}nvidia-model={{replace .Model " " "-" -1}}{{end}}
-{{if .Memory}}nvidia-memory={{.Memory}}{{end}}
-{{if .CudaComputeCapability.Major}}nvidia-family={{getArchFamily .CudaComputeCapability.Major}}
-nvidia-compute-capabilities.major={{.CudaComputeCapability.Major}}
-nvidia-compute-capabilities.minor={{.CudaComputeCapability.Minor}}{{end}}
+	const deviceTemplate = `{{if .Model}}nvidia.com/gpu.product={{replace .Model " " "-" -1}}{{end}}
+{{if .Memory}}nvidia.com/gpu.memory={{.Memory}}{{end}}
+{{if .CudaComputeCapability.Major}}nvidia.com/gpu.family={{getArchFamily .CudaComputeCapability.Major}}
+nvidia.com/gpu.compute.major={{.CudaComputeCapability.Major}}
+nvidia.com/gpu.compute.minor={{.CudaComputeCapability.Minor}}{{end}}
 `
 
 	funcMap := template.FuncMap{
@@ -188,15 +187,14 @@ L:
 		}
 
 		log.Print("Writing labels to output file")
-		fmt.Fprintf(tmpOutputFile, "nvidia-timestamp=%d\n", time.Now().Unix())
+		fmt.Fprintf(tmpOutputFile, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
 
-		// TODO: Change label format
-		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version.major=%s\n", driverMajor)
-		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version.minor=%s\n", driverMinor)
-		fmt.Fprintf(tmpOutputFile, "nvidia-driver-version.rev=%s\n", driverRev)
-		fmt.Fprintf(tmpOutputFile, "nvidia-cuda-version.major=%d\n", *cudaMajor)
-		fmt.Fprintf(tmpOutputFile, "nvidia-cuda-version.minor=%d\n", *cudaMinor)
-		fmt.Fprintf(tmpOutputFile, "nvidia-machine-type=%s\n", strings.Replace(machineType, " ", "-", -1))
+		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.driver.major=%s\n", driverMajor)
+		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.driver.minor=%s\n", driverMinor)
+		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.driver.rev=%s\n", driverRev)
+		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.runtime.major=%d\n", *cudaMajor)
+		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
+		fmt.Fprintf(tmpOutputFile, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
 
 		err = t.Execute(tmpOutputFile, device)
 		if err != nil {
