@@ -54,10 +54,10 @@ if __name__ == '__main__':
 
         print("Waiting for GFD output file")
 
-        while not os.path.exists(tmpdirname + "/gfd"):
+        while container.status == "running" and not os.path.exists(tmpdirname + "/gfd"):
             time.sleep(1)
 
-        print("GFD output file found. Stoping GFD")
+        print("Container logs:\n{}".format(container.logs().decode()))
 
         container.stop()
 
