@@ -1,6 +1,7 @@
 image: golang:1.11.2
 
 variables:
+  AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin --nvcr"
   DOCKER_IMAGE_NAME: "gpu-feature-discovery"
   DOCKER_REPO: "nvidia"
   DOCKER_STAGING_REPO: "containerdevk8s"
