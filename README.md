@@ -30,7 +30,7 @@ from Kubernetes to label nodes.
 ## Beta Version
 
 This tool is in beta version, we may break the API. However we will setup a
-depreciation policy.
+deprecation policy.
 
 ## Prerequisites
 
