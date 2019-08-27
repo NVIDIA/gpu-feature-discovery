@@ -7,7 +7,7 @@
 
 - [NVIDIA GPU feature discovery](#nvidia-gpu-feature-discovery)
   * [Overview](#overview)
-  * [Alpha Version](#alpha-version)
+  * [Beta Version](#beta-version)
   * [Prerequisites](#prerequisites)
   * [Command line interface](#command-line-interface)
   * [Quick Start](#quick-start)
@@ -27,10 +27,10 @@ automatically generate label depending on the GPU available on the node. It uses
 the [Node Feature Discovery](https://github.com/kubernetes-sigs/node-feature-discovery)
 from Kubernetes to label nodes.
 
-## Alpha Version
+## Beta Version
 
-**WARNING:** This tool is in alpha version. We may break the API without notice
-between releases.
+This tool is in beta version, we may break the API. However we will setup a
+depreciation policy.
 
 ## Prerequisites
 
