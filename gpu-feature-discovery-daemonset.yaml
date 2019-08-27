@@ -27,7 +27,7 @@ spec:
             - name: dmi-product-name
               mountPath: "/sys/class/dmi/id/product_name"
       nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true" # NVIDIA GPU
+        feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
       volumes:
         - name: output-dir
           hostPath:

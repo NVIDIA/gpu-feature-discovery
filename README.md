@@ -81,6 +81,10 @@ is running on every node you want to label. NVIDIA GPU Feature Discovery use
 the `local` source so be sure to mount volumes. See
 https://github.com/kubernetes-sigs/node-feature-discovery for more details.
 
+You also need to configure the `Node Feature Discovery` to only expose vendor
+IDs in the PCI source. To do so, please refer to the Node Feature Discovery
+documentation.
+
 ### Preparing your GPU Nodes
 
 Be sure that [nvidia-docker2](https://github.com/NVIDIA/nvidia-docker) is
