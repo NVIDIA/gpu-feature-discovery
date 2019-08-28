@@ -135,6 +135,7 @@ deploy:
   services:
     - docker:dind
   script:
+    - docker login -u ${REGISTRY_USER} -p ${REGISTRY_TOKEN}
     - source version
     - docker pull ${DOCKER_STAGING_IMAGE}:${VERSION}
     - docker tag ${DOCKER_STAGING_IMAGE}:${VERSION} ${DOCKER_PROD_IMAGE}:${VERSION}
