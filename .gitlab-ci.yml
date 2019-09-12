@@ -9,7 +9,6 @@ variables:
 
 stages:
   - versionning
-  - check_yamls
   - tests
   - docker_build
   - aws_kube_setup
@@ -31,7 +30,7 @@ versionning:
       - version
 
 check_yamls:
-  stage: check_yamls
+  stage: tests
   script:
     - source version
     - cd tests && ./check-yamls.sh ${VERSION}
