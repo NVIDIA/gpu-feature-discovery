@@ -1,12 +1,12 @@
 image: golang:1.11.2
 
 variables:
+  AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin --nvcr"
   DOCKER_IMAGE_NAME: "gpu-feature-discovery"
   DOCKER_REPO: "nvidia"
   DOCKER_STAGING_REPO: "containerdevk8s"
   DOCKER_STAGING_IMAGE: "${DOCKER_STAGING_REPO}/${DOCKER_IMAGE_NAME}"
   DOCKER_PROD_IMAGE: "${DOCKER_REPO}/${DOCKER_IMAGE_NAME}"
-  GIT_SUBMODULE_STRATEGY: recursive
   TF_VAR_FILE: "$CI_PROJECT_DIR/tests/terraform.tfvars"
 
 stages:
