@@ -4,14 +4,11 @@ variables:
   AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin --nvcr"
   DOCKER_IMAGE_NAME: "gpu-feature-discovery"
   DOCKER_REPO: "nvidia"
-  DOCKER_STAGING_REPO: "containerdevk8s"
-  DOCKER_STAGING_IMAGE: "${DOCKER_STAGING_REPO}/${DOCKER_IMAGE_NAME}"
   DOCKER_PROD_IMAGE: "${DOCKER_REPO}/${DOCKER_IMAGE_NAME}"
   TF_VAR_FILE: "$CI_PROJECT_DIR/tests/terraform.tfvars"
 
 stages:
   - versionning
-  - check_yamls
   - tests
   - docker_build
   - aws_kube_setup
@@ -33,7 +30,7 @@ versionning:
       - version
 
 check_yamls:
-  stage: check_yamls
+  stage: tests
   script:
     - source version
     - cd tests && ./check-yamls.sh ${VERSION}
@@ -93,9 +90,9 @@ docker_build:
   image: docker:dind
   script:
     - source version
-    - docker login -u ${DOCKER_STAGING_USER} -p ${DOCKER_STAGING_PASSWORD}
-    - docker build --build-arg GFD_VERSION=${VERSION} . -t ${DOCKER_STAGING_IMAGE}:${VERSION}
-    - docker push ${DOCKER_STAGING_IMAGE}:${VERSION}
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - docker build --build-arg GFD_VERSION=${VERSION} . -t ${CI_REGISTRY_IMAGE}:${VERSION}
+    - docker push ${CI_REGISTRY_IMAGE}:${VERSION}
   dependencies:
     - versionning
 
@@ -108,7 +105,7 @@ integration_tests:
     - apk add --no-cache openssh-client
     - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
     - ssh -i aws-kube-ci/key ${instance_hostname} \
-      "cd ~/project/tests && ./ci-run-integration.sh ${DOCKER_STAGING_IMAGE}:${VERSION}"
+      "cd ~/project/tests && ./ci-run-integration.sh ${CI_REGISTRY_IMAGE}:${VERSION}"
   dependencies:
     - aws_kube_setup
     - versionning
@@ -124,7 +121,7 @@ e2e_tests:
     - apk add --no-cache openssh-client
     - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
     - ssh -i aws-kube-ci/key ${instance_hostname} \
-      "cd ~/project/tests && ./ci-run-e2e.sh ${DOCKER_STAGING_IMAGE} ${VERSION} ${CI_COMMIT_TAG}"
+      "cd ~/project/tests && ./ci-run-e2e.sh ${CI_REGISTRY_IMAGE} ${VERSION} ${CI_COMMIT_TAG}"
   dependencies:
     - aws_kube_setup
     - versionning
@@ -137,8 +134,8 @@ deploy:
   script:
     - docker login -u ${REGISTRY_USER} -p ${REGISTRY_TOKEN}
     - source version
-    - docker pull ${DOCKER_STAGING_IMAGE}:${VERSION}
-    - docker tag ${DOCKER_STAGING_IMAGE}:${VERSION} ${DOCKER_PROD_IMAGE}:${VERSION}
+    - docker pull ${CI_REGISTRY_IMAGE}:${VERSION}
+    - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${DOCKER_PROD_IMAGE}:${VERSION}
     - docker push ${DOCKER_PROD_IMAGE}:${VERSION}
   dependencies:
     - versionning
