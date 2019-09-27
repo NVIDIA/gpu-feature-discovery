@@ -11,7 +11,7 @@ RUN go install -ldflags "-X main.Version=${GFD_VERSION}" github.com/NVIDIA/gpu-f
 
 RUN go test .
 
-FROM nvidia/cuda
+FROM fedora-minimal
 
 COPY --from=build /go/bin/gpu-feature-discovery /usr/bin/gpu-feature-discovery
 
