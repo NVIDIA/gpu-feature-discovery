@@ -195,6 +195,7 @@ L:
 		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.runtime.major=%d\n", *cudaMajor)
 		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
 		fmt.Fprintf(tmpOutputFile, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
+		fmt.Fprintf(tmpOutputFile, "nvidia.com/gpu.count=%s\n", count)
 
 		err = t.Execute(tmpOutputFile, device)
 		if err != nil {

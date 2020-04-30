@@ -5,6 +5,7 @@ nvidia\.com\/cuda\.driver\.rev=[0-9]*
 nvidia\.com\/cuda\.runtime\.major=[0-9]+
 nvidia\.com\/cuda\.runtime\.minor=[0-9]+
 nvidia\.com\/gpu\.machine=.*
+nvidia\.com\/gpu\.count=[0-9]+
 nvidia\.com\/gpu\.product=[A-Za-z_-]+
 nvidia\.com\/gpu\.memory=[0-9]+
 nvidia\.com\/gpu\.family=[a-z]+
