@@ -145,3 +145,4 @@ deploy:
 include:
   project: nvidia/container-infrastructure/aws-kube-ci
   file: aws-kube-ci.yml
+  ref: 20.05.05
