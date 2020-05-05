@@ -82,7 +82,7 @@ misspell:
   script:
     - go get -u github.com/client9/misspell/cmd/misspell
     - misspell *.go
-
+  
 docker_build:
   stage: docker_build
   services:
@@ -95,12 +95,6 @@ docker_build:
     - docker push ${CI_REGISTRY_IMAGE}:${VERSION}
   dependencies:
     - versionning
-
-aws_kube_setup:
-  extends: .aws_kube_setup
-  only:
-    - master
-    - tags
 
 integration_tests:
   stage: integration_tests
@@ -115,9 +109,6 @@ integration_tests:
   dependencies:
     - aws_kube_setup
     - versionning
-  only:
-    - master
-    - tags
 
 e2e_tests:
   stage: e2e_tests
@@ -134,15 +125,6 @@ e2e_tests:
   dependencies:
     - aws_kube_setup
     - versionning
-  only:
-    - master
-    - tags
-
-aws_kube_clean:
-  extends: .aws_kube_clean
-  only:
-    - master
-    - tags
 
 deploy:
   stage: deploy
@@ -163,4 +145,3 @@ deploy:
 include:
   project: nvidia/container-infrastructure/aws-kube-ci
   file: aws-kube-ci.yml
-  ref: jobs-templates # Replace with ref once the PR is merged on aws-kube-ci
