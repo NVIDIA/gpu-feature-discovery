@@ -144,7 +144,7 @@ func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.Fi
 
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NvmlMock{}
-	conf := Conf{false, "./gfd-test-loop", time.Second}
+	conf := Conf{false, "./gfd-test-loop", 500 * time.Millisecond}
 
 	expected, err := ioutil.ReadFile("tests/expected-output.txt")
 	require.NoError(t, err, "Opening expected output file")

@@ -3,12 +3,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"text/template"
@@ -136,24 +136,8 @@ nvidia.com/gpu.compute.minor={{.CudaComputeCapability.Minor}}{{end}}
 		}
 	}()
 
-	outputFileAbsPath, err := filepath.Abs(conf.OutputFilePath)
-	if err != nil {
-		return fmt.Errorf("Failed to retrieve absolute path of output file: %v", err)
-	}
-	tmpDirPath := filepath.Dir(outputFileAbsPath) + "/gfd-tmp"
-
-	err = os.Mkdir(tmpDirPath, os.ModePerm)
-	if err != nil && !os.IsExist(err) {
-		return fmt.Errorf("Failed to create temporary directory: %v", err)
-	}
-
 L:
 	for {
-		tmpOutputFile, err := ioutil.TempFile(tmpDirPath, "gfd-")
-		if err != nil {
-			return fmt.Errorf("Fail to create temporary output file: %v", err)
-		}
-
 		device, err := nvmlInterface.NewDevice(0)
 		if err != nil {
 			return fmt.Errorf("Error getting device: %v", err)
@@ -186,35 +170,27 @@ L:
 			return fmt.Errorf("Error getting machine type: %v", err)
 		}
 
-		log.Print("Writing labels to output file")
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
+		output := new(bytes.Buffer)
 
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.driver.major=%s\n", driverMajor)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.driver.minor=%s\n", driverMinor)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.driver.rev=%s\n", driverRev)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.runtime.major=%d\n", *cudaMajor)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/gpu.count=%d\n", count)
+		log.Print("Writing labels to output buffer")
+		fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
 
-		err = t.Execute(tmpOutputFile, device)
+		fmt.Fprintf(output, "nvidia.com/cuda.driver.major=%s\n", driverMajor)
+		fmt.Fprintf(output, "nvidia.com/cuda.driver.minor=%s\n", driverMinor)
+		fmt.Fprintf(output, "nvidia.com/cuda.driver.rev=%s\n", driverRev)
+		fmt.Fprintf(output, "nvidia.com/cuda.runtime.major=%d\n", *cudaMajor)
+		fmt.Fprintf(output, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
+		fmt.Fprintf(output, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
+		fmt.Fprintf(output, "nvidia.com/gpu.count=%d\n", count)
+
+		err = t.Execute(output, device)
 		if err != nil {
 			return fmt.Errorf("Template error: %v", err)
 		}
 
-		err = tmpOutputFile.Chmod(0644)
+		err = ioutil.WriteFile(conf.OutputFilePath, output.Bytes(), 0644)
 		if err != nil {
-			return fmt.Errorf("Error chmod temporary file: %v", err)
-		}
-
-		err = tmpOutputFile.Close()
-		if err != nil {
-			return fmt.Errorf("Error closing temporary file: %v", err)
-		}
-
-		err = os.Rename(tmpOutputFile.Name(), conf.OutputFilePath)
-		if err != nil {
-			return fmt.Errorf("Error moving temporary file '%s': %v", conf.OutputFilePath, err)
+			return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
 		}
 
 		if conf.Oneshot {
