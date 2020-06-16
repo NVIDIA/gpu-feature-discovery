@@ -44,6 +44,13 @@ func TestGetConfFromArgv(t *testing.T) {
 	require.Equal(t, confSleepInterval.SleepInterval, time.Second,
 		"SleepInterval option with '--sleep-interval=1s' argv")
 
+	confMigStrategy := Conf{}
+	confMigStrategyArgv := []string{Bin, "--mig-strategy=bogus"}
+	confMigStrategy.getConfFromArgv(confMigStrategyArgv)
+
+	require.Equal(t, confMigStrategy.MigStrategy, "bogus",
+		"MigStrategy option with '--mig-strategy=bogus' argv")
+
 	confOutputFile := Conf{}
 	confOutputFileArgv := []string{Bin, "--output-file=test"}
 	confOutputFile.getConfFromArgv(confOutputFileArgv)
@@ -72,6 +79,14 @@ func TestGetConfFromEnv(t *testing.T) {
 	require.Equal(t, confOneShotEnv.SleepInterval, defaultDuration,
 		"SleepInterval option with oneshot env")
 
+	confMigStrategyEnv := Conf{}
+	os.Clearenv()
+	os.Setenv("GFD_MIG_STRATEGY", "bogus")
+	confMigStrategyEnv.getConfFromEnv()
+
+	require.Equal(t, confMigStrategyEnv.MigStrategy, "bogus",
+		"MigStrategy option with mig-strategy=bogus env")
+
 	confSleepIntervalEnv := Conf{}
 	os.Clearenv()
 	os.Setenv("GFD_SLEEP_INTERVAL", "1s")
@@ -93,7 +108,7 @@ func TestGetConfFromEnv(t *testing.T) {
 
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NvmlMock{}
-	conf := Conf{true, "./gfd-test-oneshot", time.Second}
+	conf := Conf{true, "none", "./gfd-test-oneshot", time.Second}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -165,7 +180,7 @@ func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.Fi
 
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NvmlMock{}
-	conf := Conf{false, "./gfd-test-loop", 500 * time.Millisecond}
+	conf := Conf{false, "none", "./gfd-test-loop", 500 * time.Millisecond}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
