@@ -2,7 +2,7 @@
 
 package nvml
 
-// #include "nvml_dl.h"
+// #include "nvml.h"
 import "C"
 
 import (
@@ -291,21 +291,24 @@ func GetCudaDriverVersion() (*uint, *uint, error) {
 	return systemGetCudaDriverVersion()
 }
 
-func numaNode(busid string) (uint, error) {
+func numaNode(busid string) (*uint, error) {
 	// discard leading zeros of busid
 	b, err := ioutil.ReadFile(fmt.Sprintf("/sys/bus/pci/devices/%s/numa_node", strings.ToLower(busid[4:])))
 	if err != nil {
-		// XXX report node 0 if NUMA support isn't enabled
-		return 0, nil
+		// XXX report nil if NUMA support isn't enabled
+		return nil, nil
 	}
 	node, err := strconv.ParseInt(string(bytes.TrimSpace(b)), 10, 8)
 	if err != nil {
-		return 0, fmt.Errorf("%v: %v", ErrCPUAffinity, err)
+		return nil, fmt.Errorf("%v: %v", ErrCPUAffinity, err)
 	}
 	if node < 0 {
-		node = 0 // XXX report node 0 instead of NUMA_NO_NODE
+		// XXX report nil instead of NUMA_NO_NODE
+		return nil, nil
 	}
-	return uint(node), nil
+
+	numaNode := uint(node)
+	return &numaNode, nil
 }
 
 func pciBandwidth(gen, width *uint) *uint {
@@ -368,7 +371,7 @@ func NewDevice(idx uint) (device *Device, err error) {
 		Model:       model,
 		Power:       power,
 		Memory:      totalMem,
-		CPUAffinity: &node,
+		CPUAffinity: node,
 		PCI: PCIInfo{
 			BusID:     *busid,
 			BAR1:      bar1,
@@ -412,11 +415,14 @@ func NewDeviceLite(idx uint) (device *Device, err error) {
 		return nil, ErrUnsupportedGPU
 	}
 	path := fmt.Sprintf("/dev/nvidia%d", *minor)
+	node, err := numaNode(*busid)
+	assert(err)
 
 	device = &Device{
-		handle: h,
-		UUID:   *uuid,
-		Path:   path,
+		handle:      h,
+		UUID:        *uuid,
+		Path:        path,
+		CPUAffinity: node,
 		PCI: PCIInfo{
 			BusID: *busid,
 		},
@@ -537,8 +543,8 @@ func GetNVLink(dev1, dev2 *Device) (link P2PLinkType, err error) {
 	}
 
 	nvlink := P2PLinkUnknown
-	for _, nvbusId1 := range nvbusIds1 {
-		if *nvbusId1 == dev2.PCI.BusID {
+	for _, nvbusID1 := range nvbusIds1 {
+		if *nvbusID1 == dev2.PCI.BusID {
 			switch nvlink {
 			case P2PLinkUnknown:
 				nvlink = SingleNVLINKLink
@@ -595,4 +601,98 @@ func (d *Device) GetDeviceMode() (mode *DeviceMode, err error) {
 		AccountingInfo: accounting,
 	}
 	return
+}
+
+func (d *Device) IsMigEnabled() (bool, error) {
+	return d.handle.isMigEnabled()
+}
+
+func (d *Device) GetMigDevices() ([]*Device, error) {
+	handles, err := d.handle.getMigDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	var devices []*Device
+	for _, h := range handles {
+		uuid, err := h.deviceGetUUID()
+		if err != nil {
+			return nil, err
+		}
+
+		model, err := d.deviceGetName()
+		if err != nil {
+			return nil, err
+		}
+
+		totalMem, _, err := h.deviceGetMemoryInfo()
+		if err != nil {
+			return nil, err
+		}
+
+		device := &Device{
+			handle:      h,
+			UUID:        *uuid,
+			Model:       model,
+			Memory:      totalMem,
+			CPUAffinity: d.CPUAffinity,
+			Path:        d.Path,
+		}
+
+		devices = append(devices, device)
+	}
+
+	return devices, nil
+}
+
+func (d *Device) GetMigParentDevice() (*Device, error) {
+	parent, err := d.handle.deviceGetDeviceHandleFromMigDeviceHandle()
+	if err != nil {
+		return nil, err
+	}
+
+	index, err := parent.deviceGetIndex()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewDevice(*index)
+}
+
+func (d *Device) GetMigParentDeviceLite() (*Device, error) {
+	parent, err := d.handle.deviceGetDeviceHandleFromMigDeviceHandle()
+	if err != nil {
+		return nil, err
+	}
+
+	index, err := parent.deviceGetIndex()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewDeviceLite(*index)
+}
+
+func ParseMigDeviceUUID(mig string) (string, uint, uint, error) {
+	tokens := strings.SplitN(mig, "-", 2)
+	if len(tokens) != 2 || tokens[0] != "MIG" {
+		return "", 0, 0, fmt.Errorf("Unable to parse UUID as MIG device")
+	}
+
+	tokens = strings.SplitN(tokens[1], "/", 3)
+	if len(tokens) != 3 || !strings.HasPrefix(tokens[0], "GPU-") {
+		return "", 0, 0, fmt.Errorf("Unable to parse UUID as MIG device")
+	}
+
+	gi, err := strconv.Atoi(tokens[1])
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("Unable to parse UUID as MIG device")
+	}
+
+	ci, err := strconv.Atoi(tokens[2])
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("Unable to parse UUID as MIG device")
+	}
+
+	return tokens[0], uint(gi), uint(ci), nil
 }
