@@ -126,18 +126,19 @@ their meaning:
 
 | Label Name                     | Value Type | Meaning                                  | Example        |
 | -------------------------------| ---------- | ---------------------------------------- | -------------- |
-| nvidia.com/cuda.runtime.major  | Integer    | Major of the version of CUDA             | 10             |
-| nvidia.com/cuda.runtime.minor  | Integer    | Minor of the version of CUDA             | 1              |
 | nvidia.com/cuda.driver.major   | Integer    | Major of the version of NVIDIA driver    | 418            |
 | nvidia.com/cuda.driver.minor   | Integer    | Minor of the version of NVIDIA driver    | 30             |
 | nvidia.com/cuda.driver.rev     | Integer    | Revision of the version of NVIDIA driver | 40             |
-| nvidia.com/gpu.family          | String     | Architecture family of the GPU           | kepler         |
-| nvidia.com/gpu.machine         | String     | Machine type                             | DGX-1          |
-| nvidia.com/gpu.product         | String     | Model of the GPU                         | GeForce-GT-710 |
-| nvidia.com/gpu.memory          | Integer    | Memory of the GPU in Mb                  | 2048           |
+| nvidia.com/cuda.runtime.major  | Integer    | Major of the version of CUDA             | 10             |
+| nvidia.com/cuda.runtime.minor  | Integer    | Minor of the version of CUDA             | 1              |
+| nvidia.com/gfd.timestamp       | Integer    | Timestamp of the generated labels        | 1555019244     |
 | nvidia.com/gpu.compute.major   | Integer    | Major of the compute capabilities        | 3              |
 | nvidia.com/gpu.compute.minor   | Integer    | Minor of the compute capabilities        | 3              |
-| nvidia.com/gfd.timestamp       | Integer    | Timestamp of the generated labels        | 1555019244     |
+| nvidia.com/gpu.count           | Integer    | Number of GPUs                           | 2              |
+| nvidia.com/gpu.family          | String     | Architecture family of the GPU           | kepler         |
+| nvidia.com/gpu.machine         | String     | Machine type                             | DGX-1          |
+| nvidia.com/gpu.memory          | Integer    | Memory of the GPU in Mb                  | 2048           |
+| nvidia.com/gpu.product         | String     | Model of the GPU                         | GeForce-GT-710 |
 
 ## Run locally
 
