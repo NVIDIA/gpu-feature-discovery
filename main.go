@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-	"text/template"
 	"time"
 )
 
@@ -110,20 +109,6 @@ func run(nvmlInterface NvmlInterface, conf Conf) error {
 		return fmt.Errorf("Error: no device found on the node")
 	}
 
-	const deviceTemplate = `{{if .Model}}nvidia.com/gpu.product={{replace .Model " " "-" -1}}{{end}}
-{{if .Memory}}nvidia.com/gpu.memory={{.Memory}}{{end}}
-{{if .CudaComputeCapability.Major}}nvidia.com/gpu.family={{getArchFamily .CudaComputeCapability.Major}}
-nvidia.com/gpu.compute.major={{.CudaComputeCapability.Major}}
-nvidia.com/gpu.compute.minor={{.CudaComputeCapability.Minor}}{{end}}
-`
-
-	funcMap := template.FuncMap{
-		"replace":       strings.Replace,
-		"getArchFamily": getArchFamily,
-	}
-
-	t := template.Must(template.New("Device").Funcs(funcMap).Parse(deviceTemplate))
-
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
@@ -175,7 +160,6 @@ L:
 
 		log.Print("Writing labels to output buffer")
 		fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
-
 		fmt.Fprintf(output, "nvidia.com/cuda.driver.major=%s\n", driverMajor)
 		fmt.Fprintf(output, "nvidia.com/cuda.driver.minor=%s\n", driverMinor)
 		fmt.Fprintf(output, "nvidia.com/cuda.driver.rev=%s\n", driverRev)
@@ -183,10 +167,21 @@ L:
 		fmt.Fprintf(output, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
 		fmt.Fprintf(output, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
 		fmt.Fprintf(output, "nvidia.com/gpu.count=%d\n", count)
-
-		err = t.Execute(output, device)
-		if err != nil {
-			return fmt.Errorf("Template error: %v", err)
+		if device.Model != nil {
+			model := strings.Replace(*device.Model, " ", "-", -1)
+			fmt.Fprintf(output, "nvidia.com/gpu.product=%s\n", model)
+		}
+		if device.Memory != nil {
+			memory := *device.Memory
+			fmt.Fprintf(output, "nvidia.com/gpu.memory=%d\n", memory)
+		}
+		if device.CudaComputeCapability.Major != nil {
+			major := *device.CudaComputeCapability.Major
+			minor := *device.CudaComputeCapability.Minor
+			family := getArchFamily(major, minor)
+			fmt.Fprintf(output, "nvidia.com/gpu.family=%s\n", family)
+			fmt.Fprintf(output, "nvidia.com/gpu.compute.major=%d\n", major)
+			fmt.Fprintf(output, "nvidia.com/gpu.compute.minor=%d\n", minor)
 		}
 
 		err = writeFileAtomically(conf.OutputFilePath, output.Bytes(), 0644)
