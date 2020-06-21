@@ -4,9 +4,8 @@ package main
 
 import "github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 
-// NvmlMock : Implementation of NvmlInterface using mocked calls
-type NvmlMock struct {
-}
+// NvmlMock : Implementation of Nvml using mocked calls
+type NvmlMock struct{}
 
 // Init : Init the mock
 func (nvmlMock NvmlMock) Init() error {

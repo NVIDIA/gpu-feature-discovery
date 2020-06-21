@@ -90,9 +90,9 @@ func getMachineType() (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
-func run(nvmlInterface NvmlInterface, conf Conf) error {
+func run(nvml Nvml, conf Conf) error {
 
-	if err := nvmlInterface.Init(); err != nil {
+	if err := nvml.Init(); err != nil {
 		log.Printf("Failed to initialize NVML: %s.", err)
 		log.Printf("If this is a GPU node, did you set the docker default runtime to `nvidia`?")
 		log.Printf("You can check the prerequisites at: https://github.com/NVIDIA/gpu-feature-discovery#prerequisites")
@@ -101,13 +101,13 @@ func run(nvmlInterface NvmlInterface, conf Conf) error {
 	}
 
 	defer func() {
-		err := nvmlInterface.Shutdown()
+		err := nvml.Shutdown()
 		if err != nil {
-			log.Println("Shutdown of NVML returned:", nvmlInterface.Shutdown())
+			log.Println("Shutdown of NVML returned:", nvml.Shutdown())
 		}
 	}()
 
-	count, err := nvmlInterface.GetDeviceCount()
+	count, err := nvml.GetDeviceCount()
 	if err != nil {
 		return fmt.Errorf("Error getting device count: %v", err)
 	}
@@ -131,12 +131,12 @@ func run(nvmlInterface NvmlInterface, conf Conf) error {
 
 L:
 	for {
-		device, err := nvmlInterface.NewDevice(0)
+		device, err := nvml.NewDevice(0)
 		if err != nil {
 			return fmt.Errorf("Error getting device: %v", err)
 		}
 
-		driverVersion, err := nvmlInterface.GetDriverVersion()
+		driverVersion, err := nvml.GetDriverVersion()
 		if err != nil {
 			return fmt.Errorf("Error getting driver version: %v", err)
 		}
@@ -153,7 +153,7 @@ L:
 			driverRev = driverVersionSplit[2]
 		}
 
-		cudaMajor, cudaMinor, err := nvmlInterface.GetCudaDriverVersion()
+		cudaMajor, cudaMinor, err := nvml.GetCudaDriverVersion()
 		if err != nil {
 			return fmt.Errorf("Error getting cuda driver version: %v", err)
 		}

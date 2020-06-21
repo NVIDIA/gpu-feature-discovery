@@ -4,8 +4,8 @@ package main
 
 import "github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 
-// NvmlInterface : Type to reprensent interactions with NVML
-type NvmlInterface interface {
+// Nvml : Type to represent interactions with NVML
+type Nvml interface {
 	Init() error
 	Shutdown() error
 	GetDeviceCount() (uint, error)
@@ -14,9 +14,8 @@ type NvmlInterface interface {
 	GetCudaDriverVersion() (*uint, *uint, error)
 }
 
-// NvmlLib : Implementation of NvmlInterface using the NVML lib
-type NvmlLib struct {
-}
+// NvmlLib : Implementation of Nvml using the NVML lib
+type NvmlLib struct{}
 
 // Init : Init NVML lib
 func (nvmlLib NvmlLib) Init() error {
