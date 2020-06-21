@@ -7,6 +7,11 @@ import "github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 // NvmlMock : Implementation of Nvml using mocked calls
 type NvmlMock struct{}
 
+// NvmlMockDevice : Implementation of NvmlDevice using mocked calls
+type NvmlMockDevice struct {
+	device *nvml.Device
+}
+
 // Init : Init the mock
 func (nvmlMock NvmlMock) Init() error {
 	return nil
@@ -23,7 +28,7 @@ func (nvmlMock NvmlMock) GetDeviceCount() (uint, error) {
 }
 
 // NewDevice : Get information about a fake GPU
-func (nvmlMock NvmlMock) NewDevice(id uint) (*nvml.Device, error) {
+func (nvmlMock NvmlMock) NewDevice(id uint) (NvmlDevice, error) {
 	device := nvml.Device{}
 	one := 1
 	model := "MOCKMODEL"
@@ -32,7 +37,7 @@ func (nvmlMock NvmlMock) NewDevice(id uint) (*nvml.Device, error) {
 	device.Memory = &memory
 	device.CudaComputeCapability.Major = &one
 	device.CudaComputeCapability.Minor = &one
-	return &device, nil
+	return NvmlMockDevice{&device}, nil
 }
 
 // GetDriverVersion : Return a fake driver version
@@ -45,4 +50,9 @@ func (nvmlMock NvmlMock) GetCudaDriverVersion() (*uint, *uint, error) {
 	major := uint(1)
 	minor := uint(1)
 	return &major, &minor, nil
+}
+
+// Instance : Return the underlying NVML device instance
+func (d NvmlMockDevice) Instance() *nvml.Device {
+	return d.device
 }

@@ -174,17 +174,17 @@ L:
 		fmt.Fprintf(output, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
 		fmt.Fprintf(output, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
 		fmt.Fprintf(output, "nvidia.com/gpu.count=%d\n", count)
-		if device.Model != nil {
-			model := strings.Replace(*device.Model, " ", "-", -1)
+		if device.Instance().Model != nil {
+			model := strings.Replace(*device.Instance().Model, " ", "-", -1)
 			fmt.Fprintf(output, "nvidia.com/gpu.product=%s\n", model)
 		}
-		if device.Memory != nil {
-			memory := *device.Memory
+		if device.Instance().Memory != nil {
+			memory := *device.Instance().Memory
 			fmt.Fprintf(output, "nvidia.com/gpu.memory=%d\n", memory)
 		}
-		if device.CudaComputeCapability.Major != nil {
-			major := *device.CudaComputeCapability.Major
-			minor := *device.CudaComputeCapability.Minor
+		if device.Instance().CudaComputeCapability.Major != nil {
+			major := *device.Instance().CudaComputeCapability.Major
+			minor := *device.Instance().CudaComputeCapability.Minor
 			family := getArchFamily(major, minor)
 			fmt.Fprintf(output, "nvidia.com/gpu.family=%s\n", family)
 			fmt.Fprintf(output, "nvidia.com/gpu.compute.major=%d\n", major)
