@@ -11,7 +11,7 @@ RUN go install -ldflags "-X main.Version=${GFD_VERSION}" github.com/NVIDIA/gpu-f
 
 RUN go test .
 
-FROM nvidia/cuda
+FROM nvidia/cuda:10.0-base
 
 COPY --from=build /go/bin/gpu-feature-discovery /usr/bin/gpu-feature-discovery
 
