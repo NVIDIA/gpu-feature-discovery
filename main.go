@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -101,13 +102,18 @@ L:
 			return fmt.Errorf("Error creating MIG strategy: %v", err)
 		}
 
-		output, err := strategy.GenerateLabels()
+		labels, err := strategy.GenerateLabels()
 		if err != nil {
 			return fmt.Errorf("Error generating labels: %v", err)
 		}
 
+		output := new(bytes.Buffer)
+		for k, v := range labels {
+			fmt.Fprintf(output, "%s=%s\n", k, v)
+		}
+
 		log.Print("Writing labels to output file")
-		err = writeFileAtomically(conf.OutputFilePath, output, 0644)
+		err = writeFileAtomically(conf.OutputFilePath, output.Bytes(), 0644)
 		if err != nil {
 			return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
 		}

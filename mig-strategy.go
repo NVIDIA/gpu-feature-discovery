@@ -17,7 +17,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -31,7 +30,7 @@ const (
 
 // MigStrategy defines the strategy to use for setting labels on MIG devices.
 type MigStrategy interface {
-	GenerateLabels() ([]byte, error)
+	GenerateLabels() (map[string]string, error)
 }
 
 // NewMigStrategy creates a new MIG strategy to generate labels with.
@@ -81,7 +80,7 @@ func getMachineType(path string) (string, error) {
 }
 
 // migStrategyNone
-func (s *migStrategyNone) GenerateLabels() ([]byte, error) {
+func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 	count, err := s.nvml.GetDeviceCount()
 	if err != nil {
 		return nil, fmt.Errorf("Error getting device count: %v", err)
@@ -119,32 +118,31 @@ func (s *migStrategyNone) GenerateLabels() ([]byte, error) {
 		return nil, fmt.Errorf("Error getting machine type: %v", err)
 	}
 
-	output := new(bytes.Buffer)
-
-	fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
-	fmt.Fprintf(output, "nvidia.com/cuda.driver.major=%s\n", driverMajor)
-	fmt.Fprintf(output, "nvidia.com/cuda.driver.minor=%s\n", driverMinor)
-	fmt.Fprintf(output, "nvidia.com/cuda.driver.rev=%s\n", driverRev)
-	fmt.Fprintf(output, "nvidia.com/cuda.runtime.major=%d\n", *cudaMajor)
-	fmt.Fprintf(output, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
-	fmt.Fprintf(output, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
-	fmt.Fprintf(output, "nvidia.com/gpu.count=%d\n", count)
+	labels := make(map[string]string)
+	labels["nvidia.com/gfd.timestamp"] = fmt.Sprintf("%d", time.Now().Unix())
+	labels["nvidia.com/cuda.driver.major"] = driverMajor
+	labels["nvidia.com/cuda.driver.minor"] = driverMinor
+	labels["nvidia.com/cuda.driver.rev"] = driverRev
+	labels["nvidia.com/cuda.runtime.major"] = fmt.Sprintf("%d", *cudaMajor)
+	labels["nvidia.com/cuda.runtime.minor"] = fmt.Sprintf("%d", *cudaMinor)
+	labels["nvidia.com/gpu.machine"] = strings.Replace(machineType, " ", "-", -1)
+	labels["nvidia.com/gpu.count"] = fmt.Sprintf("%d", count)
 	if device.Instance().Model != nil {
 		model := strings.Replace(*device.Instance().Model, " ", "-", -1)
-		fmt.Fprintf(output, "nvidia.com/gpu.product=%s\n", model)
+		labels["nvidia.com/gpu.product"] = model
 	}
 	if device.Instance().Memory != nil {
 		memory := *device.Instance().Memory
-		fmt.Fprintf(output, "nvidia.com/gpu.memory=%d\n", memory)
+		labels["nvidia.com/gpu.memory"] = fmt.Sprintf("%d", memory)
 	}
 	if device.Instance().CudaComputeCapability.Major != nil {
 		major := *device.Instance().CudaComputeCapability.Major
 		minor := *device.Instance().CudaComputeCapability.Minor
 		family := getArchFamily(major, minor)
-		fmt.Fprintf(output, "nvidia.com/gpu.family=%s\n", family)
-		fmt.Fprintf(output, "nvidia.com/gpu.compute.major=%d\n", major)
-		fmt.Fprintf(output, "nvidia.com/gpu.compute.minor=%d\n", minor)
+		labels["nvidia.com/gpu.family"] = family
+		labels["nvidia.com/gpu.compute.major"] = fmt.Sprintf("%d", major)
+		labels["nvidia.com/gpu.compute.minor"] = fmt.Sprintf("%d", minor)
 	}
 
-	return output.Bytes(), nil
+	return labels, nil
 }
