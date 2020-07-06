@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"text/template"
@@ -188,7 +189,7 @@ L:
 			return fmt.Errorf("Template error: %v", err)
 		}
 
-		err = ioutil.WriteFile(conf.OutputFilePath, output.Bytes(), 0644)
+		err = writeFileAtomically(conf.OutputFilePath, output.Bytes(), 0644)
 		if err != nil {
 			return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
 		}
@@ -205,6 +206,54 @@ L:
 		case <-time.After(conf.SleepInterval):
 			break
 		}
+	}
+
+	return nil
+}
+
+func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("Failed to retrieve absolute path of output file: %v", err)
+	}
+
+	absDir := filepath.Dir(absPath)
+	tmpDir := filepath.Join(absDir, "gfd-tmp")
+
+	err = os.Mkdir(tmpDir, os.ModePerm)
+	if err != nil && !os.IsExist(err) {
+		return fmt.Errorf("Failed to create temporary directory: %v", err)
+	}
+	defer func() {
+		if err != nil {
+			os.RemoveAll(tmpDir)
+		}
+	}()
+
+	tmpFile, err := ioutil.TempFile(tmpDir, "gfd-")
+	if err != nil {
+		return fmt.Errorf("Fail to create temporary output file: %v", err)
+	}
+	defer func() {
+		if err != nil {
+			tmpFile.Close()
+			os.Remove(tmpFile.Name())
+		}
+	}()
+
+	err = ioutil.WriteFile(tmpFile.Name(), contents, perm)
+	if err != nil {
+		return fmt.Errorf("Error writing temporary file '%v': %v", tmpFile.Name(), err)
+	}
+
+	err = os.Rename(tmpFile.Name(), path)
+	if err != nil {
+		return fmt.Errorf("Error moving temporary file to '%v': %v", path, err)
+	}
+
+	err = os.Chmod(path, perm)
+	if err != nil {
+		return fmt.Errorf("Error setting permissions on '%v': %v", path, err)
 	}
 
 	return nil
