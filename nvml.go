@@ -4,18 +4,27 @@ package main
 
 import "github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 
-// NvmlInterface : Type to reprensent interactions with NVML
-type NvmlInterface interface {
+// Nvml : Type to represent interactions with NVML
+type Nvml interface {
 	Init() error
 	Shutdown() error
 	GetDeviceCount() (uint, error)
-	NewDevice(id uint) (device *nvml.Device, err error)
+	NewDevice(id uint) (device NvmlDevice, err error)
 	GetDriverVersion() (string, error)
 	GetCudaDriverVersion() (*uint, *uint, error)
 }
 
-// NvmlLib : Implementation of NvmlInterface using the NVML lib
-type NvmlLib struct {
+// NvmlDevice : Type to represent interactions with an nvml.Device
+type NvmlDevice interface {
+	Instance() *nvml.Device
+}
+
+// NvmlLib : Implementation of Nvml using the NVML lib
+type NvmlLib struct{}
+
+// NvmlLibDevice : Implementation of NvmlDevice using a device from the NVML lib
+type NvmlLibDevice struct {
+	device *nvml.Device
 }
 
 // Init : Init NVML lib
@@ -34,8 +43,12 @@ func (nvmlLib NvmlLib) GetDeviceCount() (uint, error) {
 }
 
 // NewDevice : Get all information about a GPU using NVML
-func (nvmlLib NvmlLib) NewDevice(id uint) (device *nvml.Device, err error) {
-	return nvml.NewDevice(id)
+func (nvmlLib NvmlLib) NewDevice(id uint) (device NvmlDevice, err error) {
+	d, err := nvml.NewDevice(id)
+	if err != nil {
+		return nil, err
+	}
+	return NvmlLibDevice{d}, err
 }
 
 // GetDriverVersion : Return the driver version using NVML
@@ -46,4 +59,9 @@ func (nvmlLib NvmlLib) GetDriverVersion() (string, error) {
 // GetCudaDriverVersion : Return the cuda version using NVML
 func (nvmlLib NvmlLib) GetCudaDriverVersion() (*uint, *uint, error) {
 	return nvml.GetCudaDriverVersion()
+}
+
+// Instance : Return the underlying NVML device instance
+func (d NvmlLibDevice) Instance() *nvml.Device {
+	return d.device
 }

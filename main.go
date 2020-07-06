@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-	"text/template"
 	"time"
 )
 
@@ -58,20 +58,27 @@ func main() {
 	log.Print("Exiting")
 }
 
-func getArchFamily(cudaComputeMajor int) string {
-	m := map[int]string{
-		1: "tesla",
-		2: "fermi",
-		3: "kepler",
-		5: "maxwell",
-		6: "pascal",
+func getArchFamily(computeMajor, computeMinor int) string {
+	switch computeMajor {
+	case 1:
+		return "tesla"
+	case 2:
+		return "fermi"
+	case 3:
+		return "kepler"
+	case 5:
+		return "maxwell"
+	case 6:
+		return "pascal"
+	case 7:
+		if computeMinor < 5 {
+			return "volta"
+		}
+		return "turing"
+	case 8:
+		return "ampere"
 	}
-
-	f, ok := m[cudaComputeMajor]
-	if !ok {
-		return "undefined"
-	}
-	return f
+	return "undefined"
 }
 
 func getMachineType() (string, error) {
@@ -83,9 +90,9 @@ func getMachineType() (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
-func run(nvmlInterface NvmlInterface, conf Conf) error {
+func run(nvml Nvml, conf Conf) error {
 
-	if err := nvmlInterface.Init(); err != nil {
+	if err := nvml.Init(); err != nil {
 		log.Printf("Failed to initialize NVML: %s.", err)
 		log.Printf("If this is a GPU node, did you set the docker default runtime to `nvidia`?")
 		log.Printf("You can check the prerequisites at: https://github.com/NVIDIA/gpu-feature-discovery#prerequisites")
@@ -94,13 +101,13 @@ func run(nvmlInterface NvmlInterface, conf Conf) error {
 	}
 
 	defer func() {
-		err := nvmlInterface.Shutdown()
+		err := nvml.Shutdown()
 		if err != nil {
-			log.Println("Shutdown of NVML returned:", nvmlInterface.Shutdown())
+			log.Println("Shutdown of NVML returned:", nvml.Shutdown())
 		}
 	}()
 
-	count, err := nvmlInterface.GetDeviceCount()
+	count, err := nvml.GetDeviceCount()
 	if err != nil {
 		return fmt.Errorf("Error getting device count: %v", err)
 	}
@@ -108,20 +115,6 @@ func run(nvmlInterface NvmlInterface, conf Conf) error {
 	if count < 1 {
 		return fmt.Errorf("Error: no device found on the node")
 	}
-
-	const deviceTemplate = `{{if .Model}}nvidia.com/gpu.product={{replace .Model " " "-" -1}}{{end}}
-{{if .Memory}}nvidia.com/gpu.memory={{.Memory}}{{end}}
-{{if .CudaComputeCapability.Major}}nvidia.com/gpu.family={{getArchFamily .CudaComputeCapability.Major}}
-nvidia.com/gpu.compute.major={{.CudaComputeCapability.Major}}
-nvidia.com/gpu.compute.minor={{.CudaComputeCapability.Minor}}{{end}}
-`
-
-	funcMap := template.FuncMap{
-		"replace":       strings.Replace,
-		"getArchFamily": getArchFamily,
-	}
-
-	t := template.Must(template.New("Device").Funcs(funcMap).Parse(deviceTemplate))
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
@@ -136,30 +129,14 @@ nvidia.com/gpu.compute.minor={{.CudaComputeCapability.Minor}}{{end}}
 		}
 	}()
 
-	outputFileAbsPath, err := filepath.Abs(conf.OutputFilePath)
-	if err != nil {
-		return fmt.Errorf("Failed to retrieve absolute path of output file: %v", err)
-	}
-	tmpDirPath := filepath.Dir(outputFileAbsPath) + "/gfd-tmp"
-
-	err = os.Mkdir(tmpDirPath, os.ModePerm)
-	if err != nil && !os.IsExist(err) {
-		return fmt.Errorf("Failed to create temporary directory: %v", err)
-	}
-
 L:
 	for {
-		tmpOutputFile, err := ioutil.TempFile(tmpDirPath, "gfd-")
-		if err != nil {
-			return fmt.Errorf("Fail to create temporary output file: %v", err)
-		}
-
-		device, err := nvmlInterface.NewDevice(0)
+		device, err := nvml.NewDevice(0)
 		if err != nil {
 			return fmt.Errorf("Error getting device: %v", err)
 		}
 
-		driverVersion, err := nvmlInterface.GetDriverVersion()
+		driverVersion, err := nvml.GetDriverVersion()
 		if err != nil {
 			return fmt.Errorf("Error getting driver version: %v", err)
 		}
@@ -176,7 +153,7 @@ L:
 			driverRev = driverVersionSplit[2]
 		}
 
-		cudaMajor, cudaMinor, err := nvmlInterface.GetCudaDriverVersion()
+		cudaMajor, cudaMinor, err := nvml.GetCudaDriverVersion()
 		if err != nil {
 			return fmt.Errorf("Error getting cuda driver version: %v", err)
 		}
@@ -186,35 +163,37 @@ L:
 			return fmt.Errorf("Error getting machine type: %v", err)
 		}
 
-		log.Print("Writing labels to output file")
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
+		output := new(bytes.Buffer)
 
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.driver.major=%s\n", driverMajor)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.driver.minor=%s\n", driverMinor)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.driver.rev=%s\n", driverRev)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.runtime.major=%d\n", *cudaMajor)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
-		fmt.Fprintf(tmpOutputFile, "nvidia.com/gpu.count=%d\n", count)
-
-		err = t.Execute(tmpOutputFile, device)
-		if err != nil {
-			return fmt.Errorf("Template error: %v", err)
+		log.Print("Writing labels to output buffer")
+		fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
+		fmt.Fprintf(output, "nvidia.com/cuda.driver.major=%s\n", driverMajor)
+		fmt.Fprintf(output, "nvidia.com/cuda.driver.minor=%s\n", driverMinor)
+		fmt.Fprintf(output, "nvidia.com/cuda.driver.rev=%s\n", driverRev)
+		fmt.Fprintf(output, "nvidia.com/cuda.runtime.major=%d\n", *cudaMajor)
+		fmt.Fprintf(output, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
+		fmt.Fprintf(output, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
+		fmt.Fprintf(output, "nvidia.com/gpu.count=%d\n", count)
+		if device.Instance().Model != nil {
+			model := strings.Replace(*device.Instance().Model, " ", "-", -1)
+			fmt.Fprintf(output, "nvidia.com/gpu.product=%s\n", model)
+		}
+		if device.Instance().Memory != nil {
+			memory := *device.Instance().Memory
+			fmt.Fprintf(output, "nvidia.com/gpu.memory=%d\n", memory)
+		}
+		if device.Instance().CudaComputeCapability.Major != nil {
+			major := *device.Instance().CudaComputeCapability.Major
+			minor := *device.Instance().CudaComputeCapability.Minor
+			family := getArchFamily(major, minor)
+			fmt.Fprintf(output, "nvidia.com/gpu.family=%s\n", family)
+			fmt.Fprintf(output, "nvidia.com/gpu.compute.major=%d\n", major)
+			fmt.Fprintf(output, "nvidia.com/gpu.compute.minor=%d\n", minor)
 		}
 
-		err = tmpOutputFile.Chmod(0644)
+		err = writeFileAtomically(conf.OutputFilePath, output.Bytes(), 0644)
 		if err != nil {
-			return fmt.Errorf("Error chmod temporary file: %v", err)
-		}
-
-		err = tmpOutputFile.Close()
-		if err != nil {
-			return fmt.Errorf("Error closing temporary file: %v", err)
-		}
-
-		err = os.Rename(tmpOutputFile.Name(), conf.OutputFilePath)
-		if err != nil {
-			return fmt.Errorf("Error moving temporary file '%s': %v", conf.OutputFilePath, err)
+			return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
 		}
 
 		if conf.Oneshot {
@@ -229,6 +208,54 @@ L:
 		case <-time.After(conf.SleepInterval):
 			break
 		}
+	}
+
+	return nil
+}
+
+func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("Failed to retrieve absolute path of output file: %v", err)
+	}
+
+	absDir := filepath.Dir(absPath)
+	tmpDir := filepath.Join(absDir, "gfd-tmp")
+
+	err = os.Mkdir(tmpDir, os.ModePerm)
+	if err != nil && !os.IsExist(err) {
+		return fmt.Errorf("Failed to create temporary directory: %v", err)
+	}
+	defer func() {
+		if err != nil {
+			os.RemoveAll(tmpDir)
+		}
+	}()
+
+	tmpFile, err := ioutil.TempFile(tmpDir, "gfd-")
+	if err != nil {
+		return fmt.Errorf("Fail to create temporary output file: %v", err)
+	}
+	defer func() {
+		if err != nil {
+			tmpFile.Close()
+			os.Remove(tmpFile.Name())
+		}
+	}()
+
+	err = ioutil.WriteFile(tmpFile.Name(), contents, perm)
+	if err != nil {
+		return fmt.Errorf("Error writing temporary file '%v': %v", tmpFile.Name(), err)
+	}
+
+	err = os.Rename(tmpFile.Name(), path)
+	if err != nil {
+		return fmt.Errorf("Error moving temporary file to '%v': %v", path, err)
+	}
+
+	err = os.Chmod(path, perm)
+	if err != nil {
+		return fmt.Errorf("Error setting permissions on '%v': %v", path, err)
 	}
 
 	return nil

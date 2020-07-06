@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -94,14 +95,9 @@ func TestRunOneshot(t *testing.T) {
 	nvmlMock := NvmlMock{}
 	conf := Conf{true, "./gfd-test-oneshot", time.Second}
 
-	expected, err := ioutil.ReadFile("tests/expected-output.txt")
-	require.NoError(t, err, "Opening expected output file")
-
-	expectedRegexp := regexp.MustCompile(string(expected))
-
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
-	err = ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
+	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
 	require.NoError(t, err, "Write machine type mock file")
 
 	defer func() {
@@ -124,7 +120,32 @@ func TestRunOneshot(t *testing.T) {
 
 	result, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
-	require.Regexp(t, expectedRegexp, string(result), "Output mismatch")
+
+	err = checkResult(result)
+	require.NoError(t, err, "Checking result")
+}
+
+func checkResult(result []byte) error {
+	expected, err := ioutil.ReadFile("tests/expected-output.txt")
+	if err != nil {
+		return fmt.Errorf("Opening expected output file: %v", err)
+	}
+
+	var expectedRegexps []*regexp.Regexp
+	for _, line := range strings.Split(strings.TrimRight(string(expected), "\n"), "\n") {
+		expectedRegexps = append(expectedRegexps, regexp.MustCompile(line))
+	}
+
+LOOP:
+	for _, line := range strings.Split(strings.TrimRight(string(result), "\n"), "\n") {
+		for _, regex := range expectedRegexps {
+			if regex.MatchString(line) {
+				continue LOOP
+			}
+		}
+		return fmt.Errorf("Line does not match any regexp: %v", string(line))
+	}
+	return nil
 }
 
 func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.File, error) {
@@ -144,16 +165,11 @@ func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.Fi
 
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NvmlMock{}
-	conf := Conf{false, "./gfd-test-loop", time.Second}
-
-	expected, err := ioutil.ReadFile("tests/expected-output.txt")
-	require.NoError(t, err, "Opening expected output file")
-
-	expectedRegexp := regexp.MustCompile(string(expected))
+	conf := Conf{false, "./gfd-test-loop", 500 * time.Millisecond}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
-	err = ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
+	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
 	require.NoError(t, err, "Write machine type mock file")
 
 	defer func() {
@@ -176,6 +192,9 @@ func TestRunSleep(t *testing.T) {
 	err = outFile.Close()
 	require.NoError(t, err, "Close output file while searching for first timestamp")
 
+	err = checkResult(output)
+	require.NoError(t, err, "Checking result")
+
 	err = os.Remove(conf.OutputFilePath)
 	require.NoError(t, err, "Remove output file while searching for first timestamp")
 
@@ -194,12 +213,17 @@ func TestRunSleep(t *testing.T) {
 	err = outFile.Close()
 	require.NoError(t, err, "Close output file while searching for second timestamp")
 
+	err = checkResult(output)
+	require.NoError(t, err, "Checking result")
+
+	err = os.Remove(conf.OutputFilePath)
+	require.NoError(t, err, "Remove output file while searching for second timestamp")
+
 	timestampLabel = string(bytes.Split(output, []byte("\n"))[0])
 	require.Contains(t, timestampLabel, "=", "Invalid timestamp label format")
 
 	currentTimestamp := strings.Split(timestampLabel, "=")[1]
 
 	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
-	require.Regexp(t, expectedRegexp, string(output), "Output mismatch")
 	require.NoError(t, runError, "Error from run")
 }
