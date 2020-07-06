@@ -20,7 +20,9 @@ def deploy_yaml_file(core_api, apps_api, rbac_api, daemonset_yaml_file):
         bodies = yaml.safe_load_all(f)
         for body in bodies:
             namespace = body["metadata"].get("namespace", "default")
-            if body["kind"] == "DaemonSet":
+            if body["kind"] == "Namespace":
+                core_api.create_namespace(body)
+            elif body["kind"] == "DaemonSet":
                 apps_api.create_namespaced_daemon_set(namespace, body)
             elif body["kind"] == "ServiceAccount":
                 core_api.create_namespaced_service_account(namespace, body)
