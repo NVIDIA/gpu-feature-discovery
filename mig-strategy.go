@@ -67,3 +67,51 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 
 	return labels, nil
 }
+
+// getAllMigDevices() across all full GPUs
+func getAllMigDevices(nvml Nvml) ([]NvmlDevice, error) {
+	n, err := nvml.GetDeviceCount()
+	if err != nil {
+		return nil, err
+	}
+
+	var migs []NvmlDevice
+	for i := uint(0); i < n; i++ {
+		d, err := nvml.NewDevice(i)
+		if err != nil {
+			return nil, err
+		}
+
+		migEnabled, err := d.IsMigEnabled()
+		if err != nil {
+			return nil, err
+		}
+
+		if !migEnabled {
+			continue
+		}
+
+		devs, err := d.GetMigDevices()
+		if err != nil {
+			return nil, err
+		}
+
+		migs = append(migs, devs...)
+	}
+
+	return migs, nil
+}
+
+// getMigDeviceName() returns the canonical name of the MIG device
+func getMigDeviceName(mig NvmlDevice) (string, error) {
+	attr, err := mig.GetAttributes()
+	if err != nil {
+		return "", err
+	}
+
+	g := attr.GpuInstanceSliceCount
+	gb := ((attr.MemorySizeMB + 1000 - 1) / 1000)
+	r := fmt.Sprintf("%dg.%dgb", g, gb)
+
+	return r, nil
+}
