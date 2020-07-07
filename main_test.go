@@ -11,8 +11,32 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 	"github.com/stretchr/testify/require"
 )
+
+func NewTestNvmlMock() *NvmlMock {
+	one := 1
+	model := "MOCKMODEL"
+	memory := uint64(128)
+
+	device := nvml.Device{}
+	device.Model = &model
+	device.Memory = &memory
+	device.CudaComputeCapability.Major = &one
+	device.CudaComputeCapability.Minor = &one
+
+	return &NvmlMock{
+		devices: []NvmlMockDevice{
+			NvmlMockDevice{
+				instance: &device,
+			},
+		},
+		driverVersion: "400.300",
+		cudaMajor:     1,
+		cudaMinor:     1,
+	}
+}
 
 func TestGetConfFromArgv(t *testing.T) {
 
@@ -106,7 +130,7 @@ func TestGetConfFromEnv(t *testing.T) {
 }
 
 func TestRunOneshot(t *testing.T) {
-	nvmlMock := NvmlMock{}
+	nvmlMock := NewTestNvmlMock()
 	conf := Conf{true, "none", "./gfd-test-oneshot", time.Second}
 
 	MachineTypePath = "/tmp/machine-type"
@@ -140,7 +164,7 @@ func TestRunOneshot(t *testing.T) {
 }
 
 func TestRunSleep(t *testing.T) {
-	nvmlMock := NvmlMock{}
+	nvmlMock := NewTestNvmlMock()
 	conf := Conf{false, "none", "./gfd-test-loop", 500 * time.Millisecond}
 
 	MachineTypePath = "/tmp/machine-type"
