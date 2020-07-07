@@ -17,6 +17,9 @@ type Nvml interface {
 // NvmlDevice : Type to represent interactions with an nvml.Device
 type NvmlDevice interface {
 	Instance() *nvml.Device
+	IsMigEnabled() (bool, error)
+	GetMigDevices() ([]NvmlDevice, error)
+	GetAttributes() (nvml.DeviceAttributes, error)
 }
 
 // NvmlLib : Implementation of Nvml using the NVML lib
@@ -64,4 +67,29 @@ func (nvmlLib NvmlLib) GetCudaDriverVersion() (*uint, *uint, error) {
 // Instance : Return the underlying NVML device instance
 func (d NvmlLibDevice) Instance() *nvml.Device {
 	return d.device
+}
+
+// IsMigEnabled : Returns whether MIG is enabled on the device or not
+func (d NvmlLibDevice) IsMigEnabled() (bool, error) {
+	return d.device.IsMigEnabled()
+}
+
+// GetMigDevices : Returns the list of MIG devices configured on this device
+func (d NvmlLibDevice) GetMigDevices() ([]NvmlDevice, error) {
+	devs, err := d.device.GetMigDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	var migs []NvmlDevice
+	for _, d := range devs {
+		migs = append(migs, NvmlLibDevice{d})
+	}
+
+	return migs, nil
+}
+
+// GetAttributes : Returns the set of of Devices attributes
+func (d NvmlLibDevice) GetAttributes() (nvml.DeviceAttributes, error) {
+	return d.device.GetAttributes()
 }

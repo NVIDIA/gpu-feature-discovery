@@ -17,7 +17,10 @@ type NvmlMock struct {
 
 // NvmlMockDevice : Implementation of NvmlDevice using mocked calls
 type NvmlMockDevice struct {
-	instance *nvml.Device
+	instance   *nvml.Device
+	attributes *nvml.DeviceAttributes
+	migEnabled bool
+	migDevices []NvmlMockDevice
 }
 
 // Init : Init the mock
@@ -56,4 +59,23 @@ func (nvmlMock NvmlMock) GetCudaDriverVersion() (*uint, *uint, error) {
 // Instance : Return the underlying NVML device instance
 func (d NvmlMockDevice) Instance() *nvml.Device {
 	return d.instance
+}
+
+// IsMigEnabled : Returns whether MIG is enabled on the device or not
+func (d NvmlMockDevice) IsMigEnabled() (bool, error) {
+	return d.migEnabled, nil
+}
+
+// GetMigDevices : Returns the list of MIG devices configured on this device
+func (d NvmlMockDevice) GetMigDevices() ([]NvmlDevice, error) {
+	var devices []NvmlDevice
+	for _, m := range d.migDevices {
+		devices = append(devices, m)
+	}
+	return devices, nil
+}
+
+// GetAttributes : Returns the set of of Devices attributes
+func (d NvmlMockDevice) GetAttributes() (nvml.DeviceAttributes, error) {
+	return *d.attributes, nil
 }
