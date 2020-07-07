@@ -49,7 +49,7 @@ Available options:
 ```
 gpu-feature-discovery:
 Usage:
-  gpu-feature-discovery [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
+  gpu-feature-discovery [--mig-strategy=<strategy>] [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
   gpu-feature-discovery -h | --help
   gpu-feature-discovery --version
 
@@ -58,6 +58,7 @@ Options:
   --version                       Display version and exit
   --oneshot                       Label once and exit
   --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
+  --mig-strategy=<strategy>       Strategy to use for MIG-related labels [Default: none]
   -o <file> --output-file=<file>  Path to output file
                                   [Default: /etc/kubernetes/node-feature-discovery/features.d/gfd]
 ```
@@ -66,6 +67,7 @@ You can also use environment variables:
 
 | Env Variable       | Option           | Example |
 | ------------------ | ---------------- | ------- |
+| GFD_MIG_STRATEGY   | --mig-strategy   | none    |
 | GFD_ONESHOT        | --oneshot        | TRUE    |
 | GFD_OUTPUT_FILE    | --output-file    | output  |
 | GFD_SLEEP_INTERVAL | --sleep-interval | 10s     |

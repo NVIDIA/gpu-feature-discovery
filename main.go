@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -58,40 +57,7 @@ func main() {
 	log.Print("Exiting")
 }
 
-func getArchFamily(computeMajor, computeMinor int) string {
-	switch computeMajor {
-	case 1:
-		return "tesla"
-	case 2:
-		return "fermi"
-	case 3:
-		return "kepler"
-	case 5:
-		return "maxwell"
-	case 6:
-		return "pascal"
-	case 7:
-		if computeMinor < 5 {
-			return "volta"
-		}
-		return "turing"
-	case 8:
-		return "ampere"
-	}
-	return "undefined"
-}
-
-func getMachineType() (string, error) {
-	data, err := ioutil.ReadFile(MachineTypePath)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(string(data)), nil
-}
-
 func run(nvml Nvml, conf Conf) error {
-
 	if err := nvml.Init(); err != nil {
 		log.Printf("Failed to initialize NVML: %s.", err)
 		log.Printf("If this is a GPU node, did you set the docker default runtime to `nvidia`?")
@@ -131,66 +97,22 @@ func run(nvml Nvml, conf Conf) error {
 
 L:
 	for {
-		device, err := nvml.NewDevice(0)
+		strategy, err := NewMigStrategy(conf.MigStrategy, MachineTypePath, nvml)
 		if err != nil {
-			return fmt.Errorf("Error getting device: %v", err)
+			return fmt.Errorf("Error creating MIG strategy: %v", err)
 		}
 
-		driverVersion, err := nvml.GetDriverVersion()
+		labels, err := strategy.GenerateLabels()
 		if err != nil {
-			return fmt.Errorf("Error getting driver version: %v", err)
-		}
-
-		driverVersionSplit := strings.Split(driverVersion, ".")
-		if len(driverVersionSplit) > 3 || len(driverVersionSplit) < 2 {
-			return fmt.Errorf("Error getting driver version: Version \"%s\" does not match format \"X.Y[.Z]\"", driverVersion)
-		}
-
-		driverMajor := driverVersionSplit[0]
-		driverMinor := driverVersionSplit[1]
-		driverRev := ""
-		if len(driverVersionSplit) > 2 {
-			driverRev = driverVersionSplit[2]
-		}
-
-		cudaMajor, cudaMinor, err := nvml.GetCudaDriverVersion()
-		if err != nil {
-			return fmt.Errorf("Error getting cuda driver version: %v", err)
-		}
-
-		machineType, err := getMachineType()
-		if err != nil {
-			return fmt.Errorf("Error getting machine type: %v", err)
+			return fmt.Errorf("Error generating labels: %v", err)
 		}
 
 		output := new(bytes.Buffer)
-
-		log.Print("Writing labels to output buffer")
-		fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
-		fmt.Fprintf(output, "nvidia.com/cuda.driver.major=%s\n", driverMajor)
-		fmt.Fprintf(output, "nvidia.com/cuda.driver.minor=%s\n", driverMinor)
-		fmt.Fprintf(output, "nvidia.com/cuda.driver.rev=%s\n", driverRev)
-		fmt.Fprintf(output, "nvidia.com/cuda.runtime.major=%d\n", *cudaMajor)
-		fmt.Fprintf(output, "nvidia.com/cuda.runtime.minor=%d\n", *cudaMinor)
-		fmt.Fprintf(output, "nvidia.com/gpu.machine=%s\n", strings.Replace(machineType, " ", "-", -1))
-		fmt.Fprintf(output, "nvidia.com/gpu.count=%d\n", count)
-		if device.Instance().Model != nil {
-			model := strings.Replace(*device.Instance().Model, " ", "-", -1)
-			fmt.Fprintf(output, "nvidia.com/gpu.product=%s\n", model)
-		}
-		if device.Instance().Memory != nil {
-			memory := *device.Instance().Memory
-			fmt.Fprintf(output, "nvidia.com/gpu.memory=%d\n", memory)
-		}
-		if device.Instance().CudaComputeCapability.Major != nil {
-			major := *device.Instance().CudaComputeCapability.Major
-			minor := *device.Instance().CudaComputeCapability.Minor
-			family := getArchFamily(major, minor)
-			fmt.Fprintf(output, "nvidia.com/gpu.family=%s\n", family)
-			fmt.Fprintf(output, "nvidia.com/gpu.compute.major=%d\n", major)
-			fmt.Fprintf(output, "nvidia.com/gpu.compute.minor=%d\n", minor)
+		for k, v := range labels {
+			fmt.Fprintf(output, "%s=%s\n", k, v)
 		}
 
+		log.Print("Writing labels to output file")
 		err = writeFileAtomically(conf.OutputFilePath, output.Bytes(), 0644)
 		if err != nil {
 			return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
