@@ -2,14 +2,22 @@
 
 package main
 
-import "github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
+import (
+	"fmt"
+	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
+)
 
 // NvmlMock : Implementation of Nvml using mocked calls
-type NvmlMock struct{}
+type NvmlMock struct {
+	devices       []NvmlMockDevice
+	driverVersion string
+	cudaMajor     uint
+	cudaMinor     uint
+}
 
 // NvmlMockDevice : Implementation of NvmlDevice using mocked calls
 type NvmlMockDevice struct {
-	device *nvml.Device
+	instance *nvml.Device
 }
 
 // Init : Init the mock
@@ -24,35 +32,28 @@ func (nvmlMock NvmlMock) Shutdown() error {
 
 // GetDeviceCount : Return a fake number of devices
 func (nvmlMock NvmlMock) GetDeviceCount() (uint, error) {
-	return 1, nil
+	return uint(len(nvmlMock.devices)), nil
 }
 
 // NewDevice : Get information about a fake GPU
 func (nvmlMock NvmlMock) NewDevice(id uint) (NvmlDevice, error) {
-	device := nvml.Device{}
-	one := 1
-	model := "MOCKMODEL"
-	memory := uint64(128)
-	device.Model = &model
-	device.Memory = &memory
-	device.CudaComputeCapability.Major = &one
-	device.CudaComputeCapability.Minor = &one
-	return NvmlMockDevice{&device}, nil
+	if int(id) <= len(nvmlMock.devices) {
+		return nvmlMock.devices[id], nil
+	}
+	return nil, fmt.Errorf("Invalid index: %d", id)
 }
 
 // GetDriverVersion : Return a fake driver version
 func (nvmlMock NvmlMock) GetDriverVersion() (string, error) {
-	return "400.300", nil
+	return nvmlMock.driverVersion, nil
 }
 
 // GetCudaDriverVersion : Return a fake cuda version
 func (nvmlMock NvmlMock) GetCudaDriverVersion() (*uint, *uint, error) {
-	major := uint(1)
-	minor := uint(1)
-	return &major, &minor, nil
+	return &nvmlMock.cudaMajor, &nvmlMock.cudaMinor, nil
 }
 
 // Instance : Return the underlying NVML device instance
 func (d NvmlMockDevice) Instance() *nvml.Device {
-	return d.device
+	return d.instance
 }

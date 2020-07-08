@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,8 +11,32 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 	"github.com/stretchr/testify/require"
 )
+
+func NewTestNvmlMock() *NvmlMock {
+	one := 1
+	model := "MOCKMODEL"
+	memory := uint64(128)
+
+	device := nvml.Device{}
+	device.Model = &model
+	device.Memory = &memory
+	device.CudaComputeCapability.Major = &one
+	device.CudaComputeCapability.Minor = &one
+
+	return &NvmlMock{
+		devices: []NvmlMockDevice{
+			NvmlMockDevice{
+				instance: &device,
+			},
+		},
+		driverVersion: "400.300",
+		cudaMajor:     1,
+		cudaMinor:     1,
+	}
+}
 
 func TestGetConfFromArgv(t *testing.T) {
 
@@ -107,7 +130,7 @@ func TestGetConfFromEnv(t *testing.T) {
 }
 
 func TestRunOneshot(t *testing.T) {
-	nvmlMock := NvmlMock{}
+	nvmlMock := NewTestNvmlMock()
 	conf := Conf{true, "none", "./gfd-test-oneshot", time.Second}
 
 	MachineTypePath = "/tmp/machine-type"
@@ -136,12 +159,94 @@ func TestRunOneshot(t *testing.T) {
 	result, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(result)
+	err = checkResult(result, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
 }
 
-func checkResult(result []byte) error {
-	expected, err := ioutil.ReadFile("tests/expected-output.txt")
+func TestRunSleep(t *testing.T) {
+	nvmlMock := NewTestNvmlMock()
+	conf := Conf{false, "none", "./gfd-test-loop", 500 * time.Millisecond}
+
+	MachineTypePath = "/tmp/machine-type"
+	machineType := []byte("product-name\n")
+	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
+	require.NoError(t, err, "Write machine type mock file")
+
+	defer func() {
+		err = os.Remove(MachineTypePath)
+		require.NoError(t, err, "Removing machine type mock file")
+	}()
+
+	var runError error
+	go func() {
+		runError = run(nvmlMock, conf)
+	}()
+
+	// Try to get first timestamp
+	outFile, err := waitForFile(conf.OutputFilePath, 5, time.Second)
+	require.NoError(t, err, "Open output file while searching for first timestamp")
+
+	output, err := ioutil.ReadAll(outFile)
+	require.NoError(t, err, "Read output file while searching for first timestamp")
+
+	err = outFile.Close()
+	require.NoError(t, err, "Close output file while searching for first timestamp")
+
+	err = checkResult(output, "tests/expected-output.txt")
+	require.NoError(t, err, "Checking result")
+
+	err = os.Remove(conf.OutputFilePath)
+	require.NoError(t, err, "Remove output file while searching for first timestamp")
+
+	labels, err := buildLabelMapFromOutput(output)
+	require.NoError(t, err, "Building map of labels from output file")
+	require.Contains(t, labels, "nvidia.com/gfd.timestamp", "Missing timestamp")
+
+	firstTimestamp := labels["nvidia.com/gfd.timestamp"]
+
+	// Wait for second timestamp
+	outFile, err = waitForFile(conf.OutputFilePath, 5, time.Second)
+	require.NoError(t, err, "Open output file while searching for second timestamp")
+
+	output, err = ioutil.ReadAll(outFile)
+	require.NoError(t, err, "Read output file while searching for second timestamp")
+
+	err = outFile.Close()
+	require.NoError(t, err, "Close output file while searching for second timestamp")
+
+	err = checkResult(output, "tests/expected-output.txt")
+	require.NoError(t, err, "Checking result")
+
+	err = os.Remove(conf.OutputFilePath)
+	require.NoError(t, err, "Remove output file while searching for second timestamp")
+
+	labels, err = buildLabelMapFromOutput(output)
+	require.NoError(t, err, "Building map of labels from output file")
+	require.Contains(t, labels, "nvidia.com/gfd.timestamp", "Missing timestamp")
+
+	currentTimestamp := labels["nvidia.com/gfd.timestamp"]
+
+	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
+	require.NoError(t, runError, "Error from run")
+}
+
+func buildLabelMapFromOutput(output []byte) (map[string]string, error) {
+	labels := make(map[string]string)
+
+	lines := strings.Split(strings.TrimRight(string(output), "\n"), "\n")
+	for _, line := range lines {
+		split := strings.Split(line, "=")
+		if len(split) != 2 {
+			return nil, fmt.Errorf("Unexpected format in line: '%v'", line)
+		}
+		labels[split[0]] = split[1]
+	}
+
+	return labels, nil
+}
+
+func checkResult(result []byte, expectedOutputPath string) error {
+	expected, err := ioutil.ReadFile(expectedOutputPath)
 	if err != nil {
 		return fmt.Errorf("Opening expected output file: %v", err)
 	}
@@ -176,69 +281,4 @@ func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.Fi
 		return file, nil
 	}
 	return os.Open(fileName)
-}
-
-func TestRunSleep(t *testing.T) {
-	nvmlMock := NvmlMock{}
-	conf := Conf{false, "none", "./gfd-test-loop", 500 * time.Millisecond}
-
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
-
-	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-	}()
-
-	var runError error
-	go func() {
-		runError = run(nvmlMock, conf)
-	}()
-
-	// Try to get first timestamp
-	outFile, err := waitForFile(conf.OutputFilePath, 5, time.Second)
-	require.NoError(t, err, "Open output file while searching for first timestamp")
-
-	output, err := ioutil.ReadAll(outFile)
-	require.NoError(t, err, "Read output file while searching for first timestamp")
-
-	err = outFile.Close()
-	require.NoError(t, err, "Close output file while searching for first timestamp")
-
-	err = checkResult(output)
-	require.NoError(t, err, "Checking result")
-
-	err = os.Remove(conf.OutputFilePath)
-	require.NoError(t, err, "Remove output file while searching for first timestamp")
-
-	timestampLabel := string(bytes.Split(output, []byte("\n"))[0])
-	require.Contains(t, timestampLabel, "=", "Invalid timestamp label format")
-
-	firstTimestamp := strings.Split(timestampLabel, "=")[1]
-
-	// Wait for second timestamp
-	outFile, err = waitForFile(conf.OutputFilePath, 5, time.Second)
-	require.NoError(t, err, "Open output file while searching for second timestamp")
-
-	output, err = ioutil.ReadAll(outFile)
-	require.NoError(t, err, "Read output file while searching for second timestamp")
-
-	err = outFile.Close()
-	require.NoError(t, err, "Close output file while searching for second timestamp")
-
-	err = checkResult(output)
-	require.NoError(t, err, "Checking result")
-
-	err = os.Remove(conf.OutputFilePath)
-	require.NoError(t, err, "Remove output file while searching for second timestamp")
-
-	timestampLabel = string(bytes.Split(output, []byte("\n"))[0])
-	require.Contains(t, timestampLabel, "=", "Invalid timestamp label format")
-
-	currentTimestamp := strings.Split(timestampLabel, "=")[1]
-
-	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
-	require.NoError(t, runError, "Error from run")
 }
