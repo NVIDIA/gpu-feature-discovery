@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -175,10 +174,11 @@ func TestRunSleep(t *testing.T) {
 	err = os.Remove(conf.OutputFilePath)
 	require.NoError(t, err, "Remove output file while searching for first timestamp")
 
-	timestampLabel := string(bytes.Split(output, []byte("\n"))[0])
-	require.Contains(t, timestampLabel, "=", "Invalid timestamp label format")
+	labels, err := buildLabelMapFromOutput(output)
+	require.NoError(t, err, "Building map of labels from output file")
+	require.Contains(t, labels, "nvidia.com/gfd.timestamp", "Missing timestamp")
 
-	firstTimestamp := strings.Split(timestampLabel, "=")[1]
+	firstTimestamp := labels["nvidia.com/gfd.timestamp"]
 
 	// Wait for second timestamp
 	outFile, err = waitForFile(conf.OutputFilePath, 5, time.Second)
@@ -196,13 +196,29 @@ func TestRunSleep(t *testing.T) {
 	err = os.Remove(conf.OutputFilePath)
 	require.NoError(t, err, "Remove output file while searching for second timestamp")
 
-	timestampLabel = string(bytes.Split(output, []byte("\n"))[0])
-	require.Contains(t, timestampLabel, "=", "Invalid timestamp label format")
+	labels, err = buildLabelMapFromOutput(output)
+	require.NoError(t, err, "Building map of labels from output file")
+	require.Contains(t, labels, "nvidia.com/gfd.timestamp", "Missing timestamp")
 
-	currentTimestamp := strings.Split(timestampLabel, "=")[1]
+	currentTimestamp := labels["nvidia.com/gfd.timestamp"]
 
 	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
 	require.NoError(t, runError, "Error from run")
+}
+
+func buildLabelMapFromOutput(output []byte) (map[string]string, error) {
+	labels := make(map[string]string)
+
+	lines := strings.Split(strings.TrimRight(string(output), "\n"), "\n")
+	for _, line := range lines {
+		split := strings.Split(line, "=")
+		if len(split) != 2 {
+			return nil, fmt.Errorf("Unexpected format in line: '%v'", line)
+		}
+		labels[split[0]] = split[1]
+	}
+
+	return labels, nil
 }
 
 func checkResult(result []byte, expectedOutputPath string) error {
