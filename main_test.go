@@ -136,12 +136,12 @@ func TestRunOneshot(t *testing.T) {
 	result, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(result)
+	err = checkResult(result, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
 }
 
-func checkResult(result []byte) error {
-	expected, err := ioutil.ReadFile("tests/expected-output.txt")
+func checkResult(result []byte, expectedOutputPath string) error {
+	expected, err := ioutil.ReadFile(expectedOutputPath)
 	if err != nil {
 		return fmt.Errorf("Opening expected output file: %v", err)
 	}
@@ -207,7 +207,7 @@ func TestRunSleep(t *testing.T) {
 	err = outFile.Close()
 	require.NoError(t, err, "Close output file while searching for first timestamp")
 
-	err = checkResult(output)
+	err = checkResult(output, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
 
 	err = os.Remove(conf.OutputFilePath)
@@ -228,7 +228,7 @@ func TestRunSleep(t *testing.T) {
 	err = outFile.Close()
 	require.NoError(t, err, "Close output file while searching for second timestamp")
 
-	err = checkResult(output)
+	err = checkResult(output, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
 
 	err = os.Remove(conf.OutputFilePath)
