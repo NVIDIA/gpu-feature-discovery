@@ -140,44 +140,6 @@ func TestRunOneshot(t *testing.T) {
 	require.NoError(t, err, "Checking result")
 }
 
-func checkResult(result []byte, expectedOutputPath string) error {
-	expected, err := ioutil.ReadFile(expectedOutputPath)
-	if err != nil {
-		return fmt.Errorf("Opening expected output file: %v", err)
-	}
-
-	var expectedRegexps []*regexp.Regexp
-	for _, line := range strings.Split(strings.TrimRight(string(expected), "\n"), "\n") {
-		expectedRegexps = append(expectedRegexps, regexp.MustCompile(line))
-	}
-
-LOOP:
-	for _, line := range strings.Split(strings.TrimRight(string(result), "\n"), "\n") {
-		for _, regex := range expectedRegexps {
-			if regex.MatchString(line) {
-				continue LOOP
-			}
-		}
-		return fmt.Errorf("Line does not match any regexp: %v", string(line))
-	}
-	return nil
-}
-
-func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.File, error) {
-	for i := 0; i < iter-1; i++ {
-		file, err := os.Open(fileName)
-		if err != nil && os.IsNotExist(err) {
-			time.Sleep(sleepInterval)
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		return file, nil
-	}
-	return os.Open(fileName)
-}
-
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NvmlMock{}
 	conf := Conf{false, "none", "./gfd-test-loop", 500 * time.Millisecond}
@@ -241,4 +203,42 @@ func TestRunSleep(t *testing.T) {
 
 	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
 	require.NoError(t, runError, "Error from run")
+}
+
+func checkResult(result []byte, expectedOutputPath string) error {
+	expected, err := ioutil.ReadFile(expectedOutputPath)
+	if err != nil {
+		return fmt.Errorf("Opening expected output file: %v", err)
+	}
+
+	var expectedRegexps []*regexp.Regexp
+	for _, line := range strings.Split(strings.TrimRight(string(expected), "\n"), "\n") {
+		expectedRegexps = append(expectedRegexps, regexp.MustCompile(line))
+	}
+
+LOOP:
+	for _, line := range strings.Split(strings.TrimRight(string(result), "\n"), "\n") {
+		for _, regex := range expectedRegexps {
+			if regex.MatchString(line) {
+				continue LOOP
+			}
+		}
+		return fmt.Errorf("Line does not match any regexp: %v", string(line))
+	}
+	return nil
+}
+
+func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.File, error) {
+	for i := 0; i < iter-1; i++ {
+		file, err := os.Open(fileName)
+		if err != nil && os.IsNotExist(err) {
+			time.Sleep(sleepInterval)
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		return file, nil
+	}
+	return os.Open(fileName)
 }
