@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -97,18 +98,26 @@ func run(nvml Nvml, conf Conf) error {
 
 L:
 	for {
-		strategy, err := NewMigStrategy(conf.MigStrategy, MachineTypePath, nvml)
+		commonLabels, err := generateCommonLabels(nvml)
+		if err != nil {
+			return fmt.Errorf("Error generating common labels: %v", err)
+		}
+
+		migStrategy, err := NewMigStrategy(conf.MigStrategy, nvml)
 		if err != nil {
 			return fmt.Errorf("Error creating MIG strategy: %v", err)
 		}
 
-		labels, err := strategy.GenerateLabels()
+		migStrategyLabels, err := migStrategy.GenerateLabels()
 		if err != nil {
-			return fmt.Errorf("Error generating labels: %v", err)
+			return fmt.Errorf("Error generating labels from MIG strategy: %v", err)
 		}
 
 		output := new(bytes.Buffer)
-		for k, v := range labels {
+		for k, v := range commonLabels {
+			fmt.Fprintf(output, "%s=%s\n", k, v)
+		}
+		for k, v := range migStrategyLabels {
 			fmt.Fprintf(output, "%s=%s\n", k, v)
 		}
 
@@ -133,6 +142,90 @@ L:
 	}
 
 	return nil
+}
+
+func generateCommonLabels(nvml Nvml) (map[string]string, error) {
+	driverVersion, err := nvml.GetDriverVersion()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting driver version: %v", err)
+	}
+
+	driverVersionSplit := strings.Split(driverVersion, ".")
+	if len(driverVersionSplit) > 3 || len(driverVersionSplit) < 2 {
+		return nil, fmt.Errorf("Error getting driver version: Version \"%s\" does not match format \"X.Y[.Z]\"", driverVersion)
+	}
+
+	driverMajor := driverVersionSplit[0]
+	driverMinor := driverVersionSplit[1]
+	driverRev := ""
+	if len(driverVersionSplit) > 2 {
+		driverRev = driverVersionSplit[2]
+	}
+
+	cudaMajor, cudaMinor, err := nvml.GetCudaDriverVersion()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting cuda driver version: %v", err)
+	}
+
+	machineType, err := getMachineType(MachineTypePath)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting machine type: %v", err)
+	}
+
+	device, err := nvml.NewDevice(0)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting device: %v", err)
+	}
+
+	labels := make(map[string]string)
+	labels["nvidia.com/gfd.timestamp"] = fmt.Sprintf("%d", time.Now().Unix())
+	labels["nvidia.com/cuda.driver.major"] = driverMajor
+	labels["nvidia.com/cuda.driver.minor"] = driverMinor
+	labels["nvidia.com/cuda.driver.rev"] = driverRev
+	labels["nvidia.com/cuda.runtime.major"] = fmt.Sprintf("%d", *cudaMajor)
+	labels["nvidia.com/cuda.runtime.minor"] = fmt.Sprintf("%d", *cudaMinor)
+	labels["nvidia.com/gpu.machine"] = strings.Replace(machineType, " ", "-", -1)
+	if device.Instance().CudaComputeCapability.Major != nil {
+		major := *device.Instance().CudaComputeCapability.Major
+		minor := *device.Instance().CudaComputeCapability.Minor
+		family := getArchFamily(major, minor)
+		labels["nvidia.com/gpu.family"] = family
+		labels["nvidia.com/gpu.compute.major"] = fmt.Sprintf("%d", major)
+		labels["nvidia.com/gpu.compute.minor"] = fmt.Sprintf("%d", minor)
+	}
+
+	return labels, nil
+}
+
+func getMachineType(path string) (string, error) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(data)), nil
+}
+
+func getArchFamily(computeMajor, computeMinor int) string {
+	switch computeMajor {
+	case 1:
+		return "tesla"
+	case 2:
+		return "fermi"
+	case 3:
+		return "kepler"
+	case 5:
+		return "maxwell"
+	case 6:
+		return "pascal"
+	case 7:
+		if computeMinor < 5 {
+			return "volta"
+		}
+		return "turing"
+	case 8:
+		return "ampere"
+	}
+	return "undefined"
 }
 
 func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
