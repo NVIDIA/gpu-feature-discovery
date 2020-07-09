@@ -29,7 +29,7 @@ from Kubernetes to label nodes.
 
 ## Beta Version
 
-This tool is in beta version, we may break the API. However we will setup a
+This tool is in beta until it reaches `v1.0.0`, we may break the API. However we will setup a
 deprecation policy.
 
 ## Prerequisites
