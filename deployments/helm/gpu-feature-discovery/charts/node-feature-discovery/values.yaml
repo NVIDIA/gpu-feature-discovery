@@ -1,0 +1,7 @@
+namespace: node-feature-discovery
+
+worker:
+  options: {}
+
+master:
+  extraLabelNs: []
