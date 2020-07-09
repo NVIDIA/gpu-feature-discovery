@@ -1,0 +1,16 @@
+migStrategy: none
+sleepInterval: 60s
+
+image:
+  pullPolicy: IfNotPresent
+
+namespace: node-feature-discovery
+
+nodeSelector:
+  feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
+
+resources: {}
+
+affinity: {}
+
+tolerations: {}
