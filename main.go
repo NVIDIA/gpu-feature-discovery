@@ -72,6 +72,12 @@ func run(nvml Nvml, conf Conf) error {
 		if err != nil {
 			log.Println("Shutdown of NVML returned:", nvml.Shutdown())
 		}
+		if !conf.Oneshot {
+			err = removeOutputFile(conf.OutputFilePath)
+			if err != nil {
+				log.Printf("Error removing output file: %v", err)
+			}
+		}
 	}()
 
 	count, err := nvml.GetDeviceCount()
@@ -271,6 +277,28 @@ func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
 	err = os.Chmod(path, perm)
 	if err != nil {
 		return fmt.Errorf("Error setting permissions on '%v': %v", path, err)
+	}
+
+	return nil
+}
+
+func removeOutputFile(path string) error {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("Failed to retrieve absolute path of output file: %v", err)
+	}
+
+	absDir := filepath.Dir(absPath)
+	tmpDir := filepath.Join(absDir, "gfd-tmp")
+
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		return fmt.Errorf("Failed to remove temporary output directory: %v", err)
+	}
+
+	err = os.Remove(absPath)
+	if err != nil {
+		return fmt.Errorf("Failed to remove output file: %v", err)
 	}
 
 	return nil
