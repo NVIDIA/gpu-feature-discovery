@@ -29,7 +29,10 @@ func NewTestNvmlMock() *NvmlMock {
 	return &NvmlMock{
 		devices: []NvmlMockDevice{
 			NvmlMockDevice{
-				instance: &device,
+				instance:   &device,
+				attributes: &nvml.DeviceAttributes{},
+				migEnabled: false,
+				migDevices: []NvmlMockDevice{},
 			},
 		},
 		driverVersion: "400.300",
