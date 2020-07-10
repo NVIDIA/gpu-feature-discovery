@@ -6,6 +6,13 @@ namespace:
 
 worker:
   options: {}
+  resources: {}
+  securityContext: {}
+  podSecurityContext: {}
+  nodeSelector: {}
+  annotations: {}
+  tolerations: {}
+  affinity: {}
 
 master:
   extraLabelNs: []
