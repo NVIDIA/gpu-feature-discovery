@@ -1,6 +1,20 @@
 migStrategy: none
 sleepInterval: 60s
 
+nfd:
+  deploy: true
+
+node-feature-discovery:
+  master:
+    extraLabelNs:
+      - nvidia.com
+  worker:
+    options:
+      sources:
+        pci:
+          deviceLabelFields:
+            - vendor
+
 image:
   pullPolicy: IfNotPresent
 
