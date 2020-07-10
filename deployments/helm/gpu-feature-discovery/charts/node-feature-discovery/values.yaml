@@ -1,5 +1,8 @@
 fullnameOverride: nfd
 
+image:
+  pullPolicy: IfNotPresent
+
 namespace:
   # Name of the namespace to put all components in
   name: node-feature-discovery

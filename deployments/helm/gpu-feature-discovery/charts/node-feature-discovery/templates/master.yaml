@@ -26,6 +26,7 @@ spec:
       containers:
         - name: master
           image: quay.io/kubernetes_incubator/node-feature-discovery:v0.6.0
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.master.securityContext | nindent 12 }}
           resources:
