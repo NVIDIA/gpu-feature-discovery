@@ -19,6 +19,25 @@ master:
   service:
     type: ClusterIP
     port: 8080
+  resources: {}
+  securityContext: {}
+  podSecurityContext: {}
+  nodeSelector: {}
+  annotations: {}
+  tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Equal"
+    value: ""
+    effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: "node-role.kubernetes.io/master"
+                operator: In
+                values: [""]
 
 serviceAccount:
   # Name of the service account to use (whether existing or to be created)
