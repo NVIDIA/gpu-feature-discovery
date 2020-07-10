@@ -1,4 +1,8 @@
-namespace: node-feature-discovery
+namespace:
+  # Name of the namespace to put all components in
+  name: node-feature-discovery
+  # Specifies whether this namespace should be created or not
+  create: true
 
 worker:
   options: {}

@@ -4,7 +4,7 @@ metadata:
   labels:
     app: nfd-master
   name: nfd-master
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.namespace.name }}
 spec:
   replicas: 1
   selector:

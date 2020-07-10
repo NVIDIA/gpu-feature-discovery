@@ -4,7 +4,7 @@ metadata:
   labels:
     app: nfd-worker
   name: nfd-worker
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.namespace.name }}
 spec:
   selector:
     matchLabels:

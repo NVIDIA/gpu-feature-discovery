@@ -9,4 +9,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: nfd-master
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.namespace.name }}
