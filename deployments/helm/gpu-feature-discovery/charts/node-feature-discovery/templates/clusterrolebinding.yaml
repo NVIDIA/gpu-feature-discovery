@@ -1,14 +1,16 @@
+{{- if .Values.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: nfd-master
+  name: {{ .Values.rbac.role }}
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: nfd-master
+  name: {{ .Values.rbac.role }}
 subjects:
 - kind: ServiceAccount
   name: {{ .Values.serviceAccount.name }}
   namespace: {{ .Values.namespace.name }}
+{{- end }}

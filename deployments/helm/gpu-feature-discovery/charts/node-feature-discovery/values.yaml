@@ -17,3 +17,9 @@ serviceAccount:
   create: true
   # Annotations to add to the service account when creating it
   annotations: {}
+
+rbac:
+  # Role to associate with the service account above (whether existing to to be created)
+  role: nfd-master
+  # Specifies whether this role should be created or not
+  create: true
