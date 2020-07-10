@@ -10,5 +10,5 @@ roleRef:
   name: nfd-master
 subjects:
 - kind: ServiceAccount
-  name: nfd-master
+  name: {{ .Values.serviceAccount.name }}
   namespace: {{ .Values.namespace.name }}

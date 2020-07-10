@@ -18,7 +18,7 @@ spec:
         {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/role: master
     spec:
-      serviceAccount: nfd-master
+      serviceAccount: {{ .Values.serviceAccount.name }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
