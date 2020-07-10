@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: nfd-worker
+  name:  {{ include "node-feature-discovery.fullname-worker" . }}
   namespace: {{ .Values.namespace.name }}
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
@@ -38,7 +38,7 @@ spec:
             - "nfd-worker"
           args:
             - "--sleep-interval=60s"
-            - "--server=nfd-master:{{ .Values.master.service.port }}"
+            - --server={{ include "node-feature-discovery.fullname-master" . }}:{{ .Values.master.service.port }}
             {{- with .Values.worker.options }}
             - --options={{- toJson . }}
             {{- end }}

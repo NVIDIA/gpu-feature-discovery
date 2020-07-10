@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nfd-master
+  name: {{ include "node-feature-discovery.fullname-master" . }}
   namespace: {{ .Values.namespace.name }}
   labels:
     {{- include "node-feature-discovery.labels" . | nindent 4 }}
@@ -20,11 +20,11 @@ spec:
       annotations:
         {{- toYaml .Values.master.annotations | nindent 8 }}
     spec:
-      serviceAccount: {{ .Values.serviceAccount.name }}
+      serviceAccountName: {{ include "node-feature-discovery.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.master.podSecurityContext | nindent 8 }}
       containers:
-        - name: nfd-master
+        - name: master
           image: quay.io/kubernetes_incubator/node-feature-discovery:v0.6.0
           securityContext:
             {{- toYaml .Values.master.securityContext | nindent 12 }}

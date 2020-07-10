@@ -1,3 +1,5 @@
+fullnameOverride: nfd
+
 namespace:
   # Name of the namespace to put all components in
   name: node-feature-discovery
@@ -41,7 +43,8 @@ master:
 
 serviceAccount:
   # Name of the service account to use (whether existing or to be created)
-  name: nfd-master
+  # [Default: $fullname-master if set to empty string]
+  name: ""
   # Specifies whether this service account should be created or not
   create: true
   # Annotations to add to the service account when creating it
@@ -49,6 +52,7 @@ serviceAccount:
 
 rbac:
   # Role to associate with the service account above (whether existing to to be created)
-  role: nfd-master
+  # [Default: $fullname-master if set to empty string]
+  role: ""
   # Specifies whether this role should be created or not
   create: true
