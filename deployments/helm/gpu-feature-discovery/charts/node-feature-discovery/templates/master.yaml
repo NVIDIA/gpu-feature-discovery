@@ -1,19 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: nfd-master
   name: nfd-master
   namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "node-feature-discovery.labels" . | nindent 4 }}
+    app.kubernetes.io/role: master
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nfd-master
+      {{- include "node-feature-discovery.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/role: master
   template:
     metadata:
       labels:
-        app: nfd-master
+        {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/role: master
     spec:
       serviceAccount: nfd-master
       affinity:

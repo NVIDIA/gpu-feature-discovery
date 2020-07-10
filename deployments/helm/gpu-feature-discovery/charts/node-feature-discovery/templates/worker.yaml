@@ -1,18 +1,21 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  labels:
-    app: nfd-worker
   name: nfd-worker
   namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "node-feature-discovery.labels" . | nindent 4 }}
+    app.kubernetes.io/role: worker
 spec:
   selector:
     matchLabels:
-      app: nfd-worker
+      {{- include "node-feature-discovery.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/role: worker
   template:
     metadata:
       labels:
-        app: nfd-worker
+        {{- include "node-feature-discovery.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/role: worker
     spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
