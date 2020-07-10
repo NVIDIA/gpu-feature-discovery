@@ -4,6 +4,7 @@ import docker
 import os
 import re
 import sys
+import shutil
 import tempfile
 import time
 
@@ -54,14 +55,16 @@ if __name__ == '__main__':
 
         print("Waiting for GFD output file")
 
-        while container.status == "running" and not os.path.exists(tmpdirname + "/gfd"):
+        while container.status != "exited" and not os.path.exists(tmpdirname + "/gfd"):
             time.sleep(1)
 
         print("Container logs:\n{}".format(container.logs().decode()))
 
+        shutil.copyfile(tmpdirname + "/gfd", tmpdirname + "/gfd-copy")
+
         container.stop()
 
-        with open(tmpdirname + "/gfd") as output_file:
+        with open(tmpdirname + "/gfd-copy") as output_file:
             content = output_file.readlines()
             content = [x.strip() for x in content]
             expected_labels = get_expected_labels_regexs()
