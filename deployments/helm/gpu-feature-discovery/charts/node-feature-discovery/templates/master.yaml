@@ -41,6 +41,9 @@ spec:
                 fieldPath: spec.nodeName
           image: quay.io/kubernetes_incubator/node-feature-discovery:v0.6.0
           name: nfd-master
+          ports:
+          - name: grpc
+            containerPort: 8080
           command:
             - "nfd-master"
           args:

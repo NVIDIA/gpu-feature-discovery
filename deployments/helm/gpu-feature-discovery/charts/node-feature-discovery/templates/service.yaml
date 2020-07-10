@@ -10,6 +10,8 @@ spec:
     {{- include "node-feature-discovery.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/role: master
   ports:
-  - protocol: TCP
-    port: 8080
-  type: ClusterIP
+  - name: grpc
+    targetPort: grpc
+    protocol: TCP
+    port: {{ .Values.master.service.port }}
+  type: {{ .Values.master.service.type }}

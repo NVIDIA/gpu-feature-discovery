@@ -30,7 +30,7 @@ spec:
             - "nfd-worker"
           args:
             - "--sleep-interval=60s"
-            - "--server=nfd-master:8080"
+            - "--server=nfd-master:{{ .Values.master.service.port }}"
             {{- with .Values.worker.options }}
             - --options={{- toJson . }}
             {{- end }}

@@ -9,6 +9,9 @@ worker:
 
 master:
   extraLabelNs: []
+  service:
+    type: ClusterIP
+    port: 8080
 
 serviceAccount:
   # Name of the service account to use (whether existing or to be created)
