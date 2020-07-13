@@ -49,9 +49,12 @@ spec:
         - image: {{ include "gpu-feature-discovery.fullimage" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           name: gpu-feature-discovery
-          args: ["--mig-strategy={{ .Values.migStrategy }}", "--sleep-interval={{ .Values.sleepInterval }}"]
-          {{- if ne .Values.migStrategy "none" }}
           env:
+            - name: GFD_SLEEP_INTERVAL
+              value: {{ .Values.sleepInterval }}
+            - name: GFD_MIG_STRATEGY
+              value: {{ .Values.migStrategy }}
+          {{- if ne .Values.migStrategy "none" }}
             - name: NVIDIA_MIG_MONITOR_DEVICES
               value: all
           {{- end }}
