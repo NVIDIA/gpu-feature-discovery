@@ -13,6 +13,7 @@ nvidia\.com\/gpu\.compute\.major=[0-9]+
 nvidia\.com\/gpu\.compute\.minor=[0-9]+
 nvidia\.com\/mig\.strategy=[a-z_-]+
 nvidia\.com\/mig-[0-9]+g\.[0-9]+gb\.count=[0-9]+
+nvidia\.com\/mig-[0-9]+g\.[0-9]+gb\.memory=[0-9]+
 nvidia\.com\/mig-[0-9]+g\.[0-9]+gb\.multiprocessors=[0-9]+
 nvidia\.com\/mig-[0-9]+g\.[0-9]+gb\.engines\.copy=[0-9]+
 nvidia\.com\/mig-[0-9]+g\.[0-9]+gb\.engines\.decoder=[0-9]+
