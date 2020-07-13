@@ -22,15 +22,17 @@
 
 ## Overview
 
-NVIDIA GPU Feature Discovery for Kubernetes is a software that allows you to
-automatically generate label depending on the GPU available on the node. It uses
-the [Node Feature Discovery](https://github.com/kubernetes-sigs/node-feature-discovery)
-from Kubernetes to label nodes.
+NVIDIA GPU Feature Discovery for Kubernetes is a software component that allows
+you to automatically generate labels for the set of GPUs available on a node.
+It leverages the [Node Feature
+Discovery](https://github.com/kubernetes-sigs/node-feature-discovery)
+to perform this labeling.
 
 ## Beta Version
 
-This tool is in beta until it reaches `v1.0.0`, we may break the API. However we will setup a
-deprecation policy.
+This tool should be considered beta until it reaches `v1.0.0`. As such, we may
+break the API before reaching `v1.0.0`, but we will setup a deprecation policy
+to ease the transition.
 
 ## Prerequisites
 
@@ -41,9 +43,110 @@ and it's [prerequisites](https://github.com/nvidia/nvidia-docker/wiki/Installati
 * docker configured with nvidia as the [default runtime](https://github.com/NVIDIA/nvidia-docker/wiki/Advanced-topics#default-runtime).
 * Kubernetes version >= 1.10
 * NVIDIA device plugin for Kubernetes (see how to [setup](https://github.com/NVIDIA/k8s-device-plugin))
-* NFD deployed on each node you want to label with the local source configured (see how to [setup](https://github.com/kubernetes-sigs/node-feature-discovery))
+* NFD deployed on each node you want to label with the local source configured
+  * When deploying GPU feature discovery with helm (as described below) we provide a way to automatically deploy NFD for you
+  * To deploy NFD yourself, please see https://github.com/kubernetes-sigs/node-feature-discovery
 
-## Command line interface
+## Quick Start
+
+The following assumes you have at least one node in your cluster with GPUs and
+the standard NVIDIA [drivers](https://www.nvidia.com/Download/index.aspx) have
+already been installed on it. 
+
+### Node Feature Discovery (NFD)
+
+The first step is to make sure that [Node Feature Discovery](https://github.com/kubernetes-sigs/node-feature-discovery)
+is running on every node you want to label. NVIDIA GPU Feature Discovery use
+the `local` source so be sure to mount volumes. See
+https://github.com/kubernetes-sigs/node-feature-discovery for more details.
+
+You also need to configure the `Node Feature Discovery` to only expose vendor
+IDs in the PCI source. To do so, please refer to the Node Feature Discovery
+documentation.
+
+The following command will deploy NFD with the minimum required set of
+parameters to run `gpu-feature-discovery`.
+
+```shell
+kubectl apply -f https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.2.0-rc.1/deployments/static/nfd.yaml
+```
+
+**Note:** This is a simple static daemonset meant to demonstrate the basic
+features required of `node-feature-discovery` in order to successfully run
+`gpu-feature-discovery`. Please see the instructions below for [Deployment via
+`helm`](#deployment-via-helm) when deploying in a production setting.
+
+### Preparing your GPU Nodes
+
+Be sure that [nvidia-docker2](https://github.com/NVIDIA/nvidia-docker) is
+installed on your GPU nodes and Docker default runtime is set to `nvidia`. See
+https://github.com/NVIDIA/nvidia-docker/wiki/Advanced-topics#default-runtime.
+
+### Deploy NVIDIA GPU Feature Discovery (GFD)
+
+The next step is to run NVIDIA GPU Feature Discovery on each node as a Deamonset
+or as a Job.
+
+#### Deamonset
+
+```shell
+kubectl apply -f https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.2.0-rc.1/deployments/static/gpu-feature-discovery-daemonset.yaml
+```
+
+**Note:** This is a simple static daemonset meant to demonstrate the basic
+features required of `gpu-feature-discovery`. Please see the instructions below
+for [Deployment via `helm`](#deployment-via-helm) when deploying in a
+production setting.
+
+#### Job
+
+You must change the `NODE_NAME` value in the template to match the name of the
+node you want to label:
+
+```shell
+$ export NODE_NAME=<your-node-name>
+$ curl https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.2.0-rc.1/deployments/static/gpu-feature-discovery-job.yaml.template \
+    | sed "s/NODE_NAME/${NODE_NAME}/" > gpu-feature-discovery-job.yaml
+$ kubectl apply -f gpu-feature-discovery-job.yaml
+```
+
+**Note:** This method should only be used for testing and not deployed in a
+productions setting.
+
+### Verifying Everything Works
+
+With both NFD and GFD deployed and running, you should now be able to see GPU
+related labels appearing on any nodes that have GPUs installed on them.
+
+```
+$ kubectl get nodes -o yaml
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Node
+  metadata:
+    ...
+
+    labels:
+      nvidia.com/cuda.driver.major: "455"
+      nvidia.com/cuda.driver.minor: "06"
+      nvidia.com/cuda.driver.rev: ""
+      nvidia.com/cuda.runtime.major: "11"
+      nvidia.com/cuda.runtime.minor: "1"
+      nvidia.com/gfd.timestamp: "1594644571"
+      nvidia.com/gpu.compute.major: "8"
+      nvidia.com/gpu.compute.minor: "0"
+      nvidia.com/gpu.count: "1"
+      nvidia.com/gpu.family: ampere
+      nvidia.com/gpu.machine: NVIDIA DGX-2H
+      nvidia.com/gpu.memory: "39538"
+      nvidia.com/gpu.product: A100-SXM4-40GB
+      ...
+...
+
+```
+
+## The GFD Command line interface
 
 Available options:
 ```
@@ -74,54 +177,7 @@ You can also use environment variables:
 
 Environment variables override the command line options if they conflict.
 
-## Quick Start
-
-### Node Feature Discovery
-
-The first step is to make sure the [Node Feature Discovery](https://github.com/kubernetes-sigs/node-feature-discovery)
-is running on every node you want to label. NVIDIA GPU Feature Discovery use
-the `local` source so be sure to mount volumes. See
-https://github.com/kubernetes-sigs/node-feature-discovery for more details.
-
-You also need to configure the `Node Feature Discovery` to only expose vendor
-IDs in the PCI source. To do so, please refer to the Node Feature Discovery
-documentation.
-
-### Preparing your GPU Nodes
-
-Be sure that [nvidia-docker2](https://github.com/NVIDIA/nvidia-docker) is
-installed on your GPU nodes and Docker default runtime is set to `nvidia`. See
-https://github.com/NVIDIA/nvidia-docker/wiki/Advanced-topics#default-runtime.
-
-### Deploy NVIDIA GPU Feature Discovery
-
-The next step is to run NVIDIA GPU Feature Discovery on each node as a Deamonset
-or as a Job.
-
-#### Deamonset
-
-```shell
-$ kubectl apply -f gpu-feature-discovery-daemonset.yaml
-```
-
-The GPU Feature Discovery should be running on each nodes and generating labels
-for the Node Feature Discovery.
-
-#### Job
-
-You must change the `NODE_NAME` value in the template to match the name of the
-node you want to label:
-
-```shell
-$ export NODE_NAME=<your-node-name>
-$ sed "s/NODE_NAME/${NODE_NAME}/" gpu-feature-discovery-job.yaml.template > gpu-feature-discovery-job.yaml
-$ kubectl apply -f gpu-feature-discovery-job.yaml
-```
-
-The GPU Feature Discovery should be running on the node and generating labels
-for the Node Feature Discovery.
-
-## Labels
+## Generated Labels
 
 This is the list of the labels generated by NVIDIA GPU Feature Discovery and
 their meaning:
@@ -142,7 +198,152 @@ their meaning:
 | nvidia.com/gpu.memory          | Integer    | Memory of the GPU in Mb                  | 2048           |
 | nvidia.com/gpu.product         | String     | Model of the GPU                         | GeForce-GT-710 |
 
-## Run locally
+Depending on the MIG strategy used, the following set of labels may also be
+available (or override the default values for some of the labels listed above):
+
+### MIG 'single' strategy
+
+With this strategy, the single `nvidia.com/gpu` label is overloaded to provide
+information about MIG devices on the node, rather than full GPUs. This assumes
+all GPUs on the node have been divided into identical partitions of the same
+size. The example below shows info for a system with 8 full GPUs, each of which
+is partitioned into 7 equal sized MIG devices (56 total).
+
+| Label Name                          | Value Type | Meaning                                  | Example                   |
+| ----------------------------------- | ---------- | ---------------------------------------- | ------------------------- |
+| nvidia.com/mig.strategy             | String     | MIG strategy in use                      | single                    |
+| nvidia.com/gpu.product (overridden) | String     | Model of the GPU (with MIG info added)   | A100-SXM4-40GB-MIG-1g.5gb |
+| nvidia.com/gpu.count   (overridden) | Integer    | Number of MIG devices                    | 56                        |
+| nvidia.com/gpu.memory  (overridden) | Integer    | Memory of each MIG device in Mb          | 5120                      |
+| nvidia.com/gpu.multiprocessors      | Integer    | Number of Multiprocessors for MIG device | 14                        |
+| nvidia.com/gpu.slices.gi            | Integer    | Number of GPU Instance slices            | 1                         |
+| nvidia.com/gpu.slices.ci            | Integer    | Number of Compute Instance slices        | 1                         |
+| nvidia.com/gpu.engines.copy         | Integer    | Number of DMA engines for MIG device     | 1                         |
+| nvidia.com/gpu.engines.decoder      | Integer    | Number of decoders for MIG device        | 1                         |
+| nvidia.com/gpu.engines.encoder      | Integer    | Number of encoders for MIG device        | 1                         |
+| nvidia.com/gpu.engines.jpeg         | Integer    | Number of JPEG engines for MIG device    | 0                         |
+| nvidia.com/gpu.engines.ofa          | Integer    | Number of OfA engines for MIG device     | 0                         |
+
+### MIG 'mixed' strategy
+
+With this strategy, a separate set of labels for each MIG device type is
+generated. The name of each MIG device type is defines as follows:
+```
+MIG_TYPE=mig-<slice_count>g.<memory_size>.gb
+e.g.  MIG_TYPE=mig-3g.20gb
+```
+
+| Label Name                           | Value Type | Meaning                                  | Example        |
+| ------------------------------------ | ---------- | ---------------------------------------- | -------------- |
+| nvidia.com/mig.strategy              | String     | MIG strategy in use                      | mixed          |
+| nvidia.com/MIG\_TYPE.count           | Integer    | Number of MIG devices of this type       | 2              |
+| nvidia.com/MIG\_TYPE.memory          | Integer    | Memory of MIG device type in Mb          | 10240          |
+| nvidia.com/MIG\_TYPE.multiprocessors | Integer    | Number of Multiprocessors for MIG device | 14             |
+| nvidia.com/MIG\_TYPE.slices.ci       | Integer    | Number of GPU Instance slices            | 1              |
+| nvidia.com/MIG\_TYPE.slices.gi       | Integer    | Number of Compute Instance slices        | 1              |
+| nvidia.com/MIG\_TYPE.engines.copy    | Integer    | Number of DMA engines for MIG device     | 1              |
+| nvidia.com/MIG\_TYPE.engines.decoder | Integer    | Number of decoders for MIG device        | 1              |
+| nvidia.com/MIG\_TYPE.engines.encoder | Integer    | Number of encoders for MIG device        | 1              |
+| nvidia.com/MIG\_TYPE.engines.jpeg    | Integer    | Number of JPEG engines for MIG device    | 0              |
+| nvidia.com/MIG\_TYPE.engines.ofa     | Integer    | Number of OfA engines for MIG device     | 0              |
+
+## Deployment via `helm`
+
+The preferred method to deploy `gpu-feature-discovery` is as a daemonset using `helm`.
+Instructions for installing `helm` can be found
+[here](https://helm.sh/docs/intro/install/).
+
+The `helm` chart for the latest release of GFD (`v0.2.0-rc.1`) includes a number
+of customizable values. The most commonly overridden ones are:
+
+```
+  sleepInterval:
+      time to sleep between labeling (default "60s")
+  migStrategy:
+      pass the desired strategy for labeling MIG devices on GPUs that support it
+      [none | single | mixed] (default "none)
+  nfd.deploy:
+      When set to true, deploy NFD as a subchart with all of the proper
+      parameters set for it (default "true")
+      
+```
+
+**Note:** The following document provides more information on the available MIG
+strategies and how they should be used [Supporting Multi-Instance GPUs (MIG) in
+Kubernetes](https://docs.google.com/document/d/1mdgMQ8g7WmaI_XVVRrCvHPFPOMCm5LQD5JefgAh6N8g).
+
+Please take a look in the following `values.yaml` files to see the full set of
+overridable parameters for both the top-level `gpu-feature-discovery` chart and
+the `node-feature-discovery` subchart.
+
+* https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.2.0-rc.1/deployments/helm/gpu-feature-discovery/values.yaml
+* https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.2.0-rc.1/deployments/helm/gpu-feature-discovery/charts/node-feature-discovery/values.yaml
+
+#### Installing via `helm install`from the `gpu-feature-discovery` `helm` repository
+
+The preferred method of deployment is with `helm install` via the
+`gpu-feature-discovery` `helm` repository.
+
+This repository can be installed as follows:
+```shell
+$ helm repo add nvgfd https://nvidia.github.io/gpu-feature-discovery
+$ helm repo update
+```
+
+Once this repo is updated, you can begin installing packages from it to depoloy
+the `gpu-feature-discovery` daemonset and (optionally) the
+`node-feature-discovery` daemonset. Below are some examples of deploying these
+components with the various flags from above.
+
+**Note:** Since this is a pre-release version, you will need to pass the
+`--devel` flag to `helm search repo` in order to see this release listed.
+
+Using the default values for all flags:
+```shell
+$ helm install \
+    --version=0.2.0-rc.1 \
+    --generate-name \
+    nvgfd/gpu-feature-discovery
+```
+
+Disabling auto-deployment of NFD and running with a MIG stratey of 'mixed' in
+the default namespace.
+```shell
+$ helm install \
+    --version=0.2.0-rc.1 \
+    --generate-name \
+    --set nfd.deploy=false \
+    --set migStrategy=mixed
+    --set namespace=default \
+    nvgfd/gpu-feature-discovery
+```
+
+#### Deploying via `helm install` with a direct URL to the `helm` package
+
+If you prefer not to install from the `gpu-feature-discovery` `helm` repo, you can
+run `helm install` directly against the tarball of the components `helm` package.
+The examples below install the same daemonsets as the method above, except that
+they use direct URLs to the `helm` package instead of the `helm` repo.
+
+Using the default values for the flags:
+```shell
+$ helm install \
+    --generate-name \
+    https://nvidia.github.com/gpu-feature-discovery/stable/gpu-feature-discovery-0.2.0-rc.1.tgz
+```
+
+Disabling auto-deployment of NFD and running with a MIG stratey of 'mixed' in
+the default namespace.
+```shell
+$ helm install \
+    --generate-name \
+    --set nfd.deploy=false \
+    --set migStrategy=mixed
+    --set namespace=default \
+    https://nvidia.github.com/gpu-feature-discovery/stable/gpu-feature-discovery-0.2.0-rc.1.tgz
+```
+
+## Building and running locally with Docker
 
 Download the source code:
 ```shell
@@ -167,7 +368,7 @@ you can also use the `--runtime=nvidia` option:
 docker run --runtime=nvidia nvidia/gpu-feature-discovery:${GFD_VERSION}
 ```
 
-## Building from source
+## Building and running locally on your native machine
 
 Download the source code:
 ```shell
@@ -190,4 +391,9 @@ You can also use the Dockerfile.devel:
 docker build . -f Dockerfile.devel -t gfd-devel
 docker run -it gfd-devel
 go build -ldflags "-X main.Version=devel"
+```
+
+Run it:
+```
+./gpu-feature-discovery --output=$(pwd)/gfd
 ```
