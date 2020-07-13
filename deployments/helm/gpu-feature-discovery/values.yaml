@@ -18,8 +18,13 @@ node-feature-discovery:
           deviceLabelFields:
             - vendor
 
+imagePullSecrets: []
+
 image:
+  repository: nvidia/gpu-feature-discovery
   pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
 
 namespace: node-feature-discovery
 

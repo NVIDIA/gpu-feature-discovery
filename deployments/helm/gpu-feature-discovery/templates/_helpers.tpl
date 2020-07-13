@@ -50,3 +50,11 @@ Selector labels
 app.kubernetes.io/name: {{ include "gpu-feature-discovery.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Full image name with tag
+*/}}
+{{- define "gpu-feature-discovery.fullimage" -}}
+{{- $tag := printf "v%s" .Chart.AppVersion }}
+{{- .Values.image.repository -}}:{{- .Values.image.tag | default $tag -}}
+{{- end }}

@@ -35,8 +35,12 @@ spec:
       # be rescheduled after a failure.
       # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
       priorityClassName: "system-node-critical"
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
-        - image: nvidia/gpu-feature-discovery:v{{ .Chart.AppVersion }}
+        - image: {{ include "gpu-feature-discovery.fullimage" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           name: gpu-feature-discovery
           args: ["--mig-strategy={{ .Values.migStrategy }}", "--sleep-interval={{ .Values.sleepInterval }}"]
