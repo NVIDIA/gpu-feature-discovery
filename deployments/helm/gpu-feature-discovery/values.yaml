@@ -28,6 +28,9 @@ image:
 
 namespace: node-feature-discovery
 
+podSecurityContext: {}
+securityContext: {}
+
 nodeSelector:
   feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
 

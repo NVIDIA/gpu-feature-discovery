@@ -43,6 +43,8 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - image: {{ include "gpu-feature-discovery.fullimage" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -52,8 +54,14 @@ spec:
           env:
             - name: NVIDIA_MIG_MONITOR_DEVICES
               value: all
+          {{- end }}
           securityContext:
-            privileged: true
+          {{- if and (ne .Values.migStrategy "none") (eq (len .Values.securityContext) 0) }}
+            capabilities:
+              add:
+                - SYS_ADMIN
+          {{- else }}
+            {{- toYaml .Values.securityContext | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: output-dir
