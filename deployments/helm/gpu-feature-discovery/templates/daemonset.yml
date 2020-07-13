@@ -15,7 +15,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: gpu-feature-discovery
+  name: {{ include "gpu-feature-discovery.fullname" . }}
   namespace: {{ .Values.namespace }}
   labels:
     {{- include "gpu-feature-discovery.labels" . | nindent 4 }}

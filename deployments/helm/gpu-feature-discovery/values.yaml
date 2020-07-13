@@ -1,6 +1,9 @@
 migStrategy: none
 sleepInterval: 60s
 
+nameOverride: ""
+fullnameOverride: ""
+
 nfd:
   deploy: true
 
