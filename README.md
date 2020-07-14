@@ -9,16 +9,22 @@
   * [Overview](#overview)
   * [Beta Version](#beta-version)
   * [Prerequisites](#prerequisites)
-  * [Command line interface](#command-line-interface)
   * [Quick Start](#quick-start)
-    + [Node Feature Discovery](#node-feature-discovery)
+    + [Node Feature Discovery (NFD)](#node-feature-discovery-nfd)
     + [Preparing your GPU Nodes](#preparing-your-gpu-nodes)
-    + [Deploy NVIDIA GPU Feature Discovery](#deploy-nvidia-gpu-feature-discovery)
+    + [Deploy NVIDIA GPU Feature Discovery (GFD)](#deploy-nvidia-gpu-feature-discovery-gfd)
       - [Deamonset](#deamonset)
       - [Job](#job)
-  * [Labels](#labels)
-  * [Run locally](#run-locally)
-  * [Building from source](#building-from-source)
+    + [Verifying Everything Works](#verifying-everything-works)
+  * [The GFD Command line interface](#the-gfd-command-line-interface)
+  * [Generated Labels](#generated-labels)
+    + [MIG 'single' strategy](#mig-single-strategy)
+    + [MIG 'mixed' strategy](#mig-mixed-strategy)
+  * [Deployment via `helm`](#deployment-via-helm)
+    + [Installing via `helm install`from the `gpu-feature-discovery` `helm` repository](#installing-via-helm-install-from-the-gpu-feature-discovery-helm-repository)
+    + [Deploying via `helm install` with a direct URL to the `helm` package](#deploying-via-helm-install-with-a-direct-url-to-the-helm-package)
+  * [Building and running locally with Docker](#building-and-running-locally-with-docker)
+  * [Building and running locally on your native machine](#building-and-running-locally-on-your-native-machine)
 
 ## Overview
 
@@ -279,7 +285,7 @@ the `node-feature-discovery` subchart.
 * https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.2.0-rc.1/deployments/helm/gpu-feature-discovery/values.yaml
 * https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.2.0-rc.1/deployments/helm/gpu-feature-discovery/charts/node-feature-discovery/values.yaml
 
-#### Installing via `helm install`from the `gpu-feature-discovery` `helm` repository
+#### Installing via `helm install` from the `gpu-feature-discovery` `helm` repository
 
 The preferred method of deployment is with `helm install` via the
 `gpu-feature-discovery` `helm` repository.
