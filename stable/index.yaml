@@ -1,3 +1,21 @@
 apiVersion: v1
-entries: {}
-generated: "2020-07-13T08:15:50.065502622-07:00"
+entries:
+  gpu-feature-discovery:
+  - apiVersion: v2
+    appVersion: 0.2.0-rc.1
+    created: "2020-07-14T04:52:21.181358466-07:00"
+    dependencies:
+    - condition: nfd.deploy
+      name: node-feature-discovery
+      repository: ""
+      version: 0.1.0
+    description: A Helm chart for gpu-feature-discovery on Kubernetes
+    digest: a73708a40df29795bca4cb3a70f3433cb6cceef1cf0d0664b59c1be84b0acf87
+    home: https://github.com/NVIDIA/gpu-feature-discovery
+    kubeVersion: '>= 1.10.0-0'
+    name: gpu-feature-discovery
+    type: application
+    urls:
+    - https://nvidia.github.io/gpu-feature-discovery/stable/gpu-feature-discovery-0.2.0-rc.1.tgz
+    version: 0.2.0-rc.1
+generated: "2020-07-14T04:52:21.179626688-07:00"
