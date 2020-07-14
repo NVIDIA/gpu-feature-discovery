@@ -88,3 +88,11 @@ Create the name of the service account to use
 {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Full image name with tag
+*/}}
+{{- define "node-feature-discovery.fullimage" -}}
+{{- $tag := printf "v%s" .Chart.AppVersion }}
+{{- .Values.image.repository -}}:{{- .Values.image.tag | default $tag -}}
+{{- end }}

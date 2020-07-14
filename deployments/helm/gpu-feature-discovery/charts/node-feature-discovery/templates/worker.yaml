@@ -20,11 +20,15 @@ spec:
         {{- toYaml .Values.worker.annotations | nindent 8 }}
     spec:
       dnsPolicy: ClusterFirstWithHostNet
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.worker.podSecurityContext | nindent 8 }}
       containers:
         - name: worker
-          image: quay.io/kubernetes_incubator/node-feature-discovery:v0.6.0
+          image: {{ include "gpu-feature-discovery.fullimage" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.worker.securityContext | nindent 12 }}

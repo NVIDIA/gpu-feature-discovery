@@ -1,7 +1,12 @@
+nameOverride: ""
 fullnameOverride: nfd
 
+imagePullSecrets: []
 image:
+  repository: quay.io/kubernetes_incubator/node-feature-discovery
   pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
 
 namespace:
   # Name of the namespace to put all components in

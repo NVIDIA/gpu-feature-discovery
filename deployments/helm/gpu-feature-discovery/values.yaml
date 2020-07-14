@@ -1,6 +1,27 @@
 migStrategy: none
 sleepInterval: 60s
 
+nameOverride: ""
+fullnameOverride: ""
+
+namespace: node-feature-discovery
+
+imagePullSecrets: []
+image:
+  repository: nvidia/gpu-feature-discovery
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+podSecurityContext: {}
+securityContext: {}
+
+resources: {}
+affinity: {}
+tolerations: {}
+nodeSelector:
+  feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
+
 nfd:
   deploy: true
 
@@ -15,16 +36,3 @@ node-feature-discovery:
           deviceLabelFields:
             - vendor
 
-image:
-  pullPolicy: IfNotPresent
-
-namespace: node-feature-discovery
-
-nodeSelector:
-  feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
-
-resources: {}
-
-affinity: {}
-
-tolerations: {}
