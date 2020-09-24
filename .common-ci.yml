@@ -1,0 +1,159 @@
+image: golang:1.11.2
+
+variables:
+  AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin --nvcr"
+  DOCKER_IMAGE_NAME: "gpu-feature-discovery"
+  DOCKER_REPO: "nvidia"
+  DOCKER_PROD_IMAGE: "${DOCKER_REPO}/${DOCKER_IMAGE_NAME}"
+  TF_VAR_FILE: "$CI_PROJECT_DIR/tests/terraform.tfvars"
+
+stages:
+  - versionning
+  - tests
+  - docker_build
+  - scan
+  - aws_kube_setup
+  - integration_tests
+  - e2e_tests
+  - aws_kube_clean
+  - deploy
+
+versionning:
+  stage: versionning
+  image:
+    name: alpine/git
+    entrypoint: ['/usr/bin/env']
+  script:
+    - echo export VERSION=$(git describe --tags --dirty --always) > version
+    - echo export LAST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1)) >> version
+  artifacts:
+    paths:
+      - version
+
+check_yamls:
+  stage: tests
+  script:
+    - source version
+    - cd tests && ./check-yamls.sh ${VERSION}
+  dependencies:
+    - versionning
+  only:
+    - tags
+
+lint:
+  stage: tests
+  before_script:
+    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
+    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
+  script:
+    - go get -u golang.org/x/lint/golint
+    - golint -set_exit_status github.com/NVIDIA/gpu-feature-discovery
+
+vet:
+  stage: tests
+  before_script:
+    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
+    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
+  script:
+    - go vet github.com/NVIDIA/gpu-feature-discovery
+
+unit_test:
+  stage: tests
+  before_script:
+    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
+    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
+  script:
+    - go test github.com/NVIDIA/gpu-feature-discovery
+
+fmt:
+  stage: tests
+  script:
+    - res=$(gofmt -l *.go)
+    - echo "$res"
+    - test -z "$res"
+
+ineffassign:
+  stage: tests
+  script:
+    - go get -u github.com/gordonklaus/ineffassign
+    - ineffassign *.go
+
+misspell:
+  stage: tests
+  script:
+    - go get -u github.com/client9/misspell/cmd/misspell
+    - misspell *.go
+
+docker_build:
+  stage: docker_build
+  services:
+    - docker:dind
+  image: docker:dind
+  script:
+    - source version
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - docker build --build-arg GFD_VERSION=${VERSION} . -t ${CI_REGISTRY_IMAGE}:${VERSION}
+    - docker push ${CI_REGISTRY_IMAGE}:${VERSION}
+  dependencies:
+    - versionning
+
+.scan:
+  stage: scan
+  services:
+    - docker:dind
+  image: docker:dind
+  before_script:
+    - source version
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - docker pull ${CI_REGISTRY_IMAGE}:${VERSION}
+  script:
+    - 'false'
+  dependencies:
+    - docker_build
+    - versionning
+
+integration_tests:
+  stage: integration_tests
+  image: alpine
+  script:
+    - source version
+    - source aws-kube-ci/hostname
+    - apk add --no-cache openssh-client
+    - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
+    - ssh -i aws-kube-ci/key ${instance_hostname} \
+      "cd ~/project/tests && ./ci-run-integration.sh ${CI_REGISTRY_IMAGE}:${VERSION}"
+  dependencies:
+    - aws_kube_setup
+    - versionning
+
+e2e_tests:
+  stage: e2e_tests
+  image: docker:dind
+  services:
+    - docker:dind
+  script:
+    - source version
+    - source aws-kube-ci/hostname
+    - apk add --no-cache openssh-client
+    - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
+    - ssh -i aws-kube-ci/key ${instance_hostname} \
+      "cd ~/project/tests && ./ci-run-e2e.sh ${CI_REGISTRY_IMAGE} ${VERSION} ${CI_COMMIT_TAG}"
+  dependencies:
+    - aws_kube_setup
+    - versionning
+
+deploy:
+  stage: deploy
+  image: docker:dind
+  services:
+    - docker:dind
+  script:
+    - docker login -u ${REGISTRY_USER} -p ${REGISTRY_TOKEN}
+    - source version
+    - docker pull ${CI_REGISTRY_IMAGE}:${VERSION}
+    - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${DOCKER_PROD_IMAGE}:${VERSION}
+    - docker push ${DOCKER_PROD_IMAGE}:${VERSION}
+  dependencies:
+    - versionning
+  only:
+    - tags
