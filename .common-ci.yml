@@ -1,4 +1,5 @@
-image: golang:1.11.2
+default:
+  image: golang:1.11.2
 
 variables:
   AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin --nvcr"
