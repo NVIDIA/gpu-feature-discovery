@@ -1,0 +1,41 @@
+default:
+  tags:
+    - type/docker
+    - docker/privileged
+    - cnt
+    - container-dev
+    - os/linux
+
+include:
+  - local: '.common-ci.yml'
+
+variables:
+  NGC_REPO: "${NGC_REGISTRY}/nvidia/"
+  NGC_PROD_IMAGE: "${DOCKER_REPO}/${DOCKER_IMAGE_NAME}"
+
+scan:
+  extends: .scan
+  script:
+    - apk add --no-cache bash findutils libmagic curl make git
+    - apk add --no-cache python3 python3-dev py3-pip py3-wheel
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab-master.nvidia.com/sectooling/scanning/contamer.git
+    - cd contamer
+    - pip3 install -r requirements.txt
+    - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${CI_PROJECT_NAME}:${VERSION}
+    - python3 contamer.py -ls --fail-on-non-os -- ${CI_PROJECT_NAME}:${VERSION}
+
+deploy:ngc:
+  stage: deploy
+  image: docker:dind
+  services:
+    - docker:dind
+  script:
+    - docker login -u ${NGC_REGISTRY_USER} -p ${NGC_REGISTRY_TOKEN}
+    - source version
+    - docker pull ${CI_REGISTRY_IMAGE}:${VERSION}
+    - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${NGC_PROD_IMAGE}:${VERSION}
+    - docker push ${NGC_PROD_IMAGE}:${VERSION}
+  dependencies:
+    - versionning
+  only:
+    - tags
