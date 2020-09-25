@@ -11,7 +11,7 @@ include:
 
 variables:
   NGC_REPO: "${NGC_REGISTRY}/nvidia/"
-  NGC_PROD_IMAGE: "${DOCKER_REPO}/${DOCKER_IMAGE_NAME}"
+  NGC_PROD_IMAGE: "${NGC_REPO}/${DOCKER_IMAGE_NAME}"
 
 scan:
   extends: .scan
