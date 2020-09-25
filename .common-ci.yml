@@ -25,6 +25,7 @@ versionning:
     name: alpine/git
     entrypoint: ['/usr/bin/env']
   script:
+    - "git diff-index --quiet HEAD -- || ( echo ERROR: Unstaged files or dirty index ; exit 1 )"
     - echo export VERSION=$(git describe --tags --dirty --always) > version
     - echo export LAST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1)) >> version
   artifacts:
