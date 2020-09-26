@@ -7,6 +7,7 @@ variables:
   DOCKER_REPO: "nvidia"
   DOCKER_PROD_IMAGE: "${DOCKER_REPO}/${DOCKER_IMAGE_NAME}"
   TF_VAR_FILE: "$CI_PROJECT_DIR/tests/terraform.tfvars"
+  GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
   - versionning
@@ -25,6 +26,7 @@ versionning:
     name: alpine/git
     entrypoint: ['/usr/bin/env']
   script:
+    - "git diff-index --quiet HEAD -- || ( echo ERROR: Unstaged files or dirty index ; exit 1 )"
     - echo export VERSION=$(git describe --tags --dirty --always) > version
     - echo export LAST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1)) >> version
   artifacts:
