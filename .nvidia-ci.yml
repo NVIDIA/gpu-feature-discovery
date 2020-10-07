@@ -24,16 +24,17 @@ scan:
     - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${CI_PROJECT_NAME}:${VERSION}
     - python3 contamer.py -ls --fail-on-non-os -- ${CI_PROJECT_NAME}:${VERSION}
 
-deploy:ngc:
+release:ngc:
   stage: deploy
   image: docker:dind
   services:
     - docker:dind
   script:
-    - docker login -u ${NGC_REGISTRY_USER} -p ${NGC_REGISTRY_TOKEN}
     - source version
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
     - docker pull ${CI_REGISTRY_IMAGE}:${VERSION}
     - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${NGC_PROD_IMAGE}:${VERSION}
+    - docker login -u ${NGC_REGISTRY_USER} -p ${NGC_REGISTRY_TOKEN}
     - docker push ${NGC_PROD_IMAGE}:${VERSION}
   dependencies:
     - versionning

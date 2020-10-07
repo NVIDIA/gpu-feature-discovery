@@ -115,16 +115,17 @@ docker_build:
     - docker_build
     - versionning
 
-deploy:
+release:dockerhub:
   stage: deploy
   image: docker:dind
   services:
     - docker:dind
   script:
-    - docker login -u ${REGISTRY_USER} -p ${REGISTRY_TOKEN}
     - source version
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
     - docker pull ${CI_REGISTRY_IMAGE}:${VERSION}
     - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${DOCKER_PROD_IMAGE}:${VERSION}
+    - docker login -u ${REGISTRY_USER} -p ${REGISTRY_TOKEN}
     - docker push ${DOCKER_PROD_IMAGE}:${VERSION}
   dependencies:
     - versionning
