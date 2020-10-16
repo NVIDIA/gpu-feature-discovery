@@ -312,7 +312,7 @@ $ helm install \
     nvgfd/gpu-feature-discovery
 ```
 
-Disabling auto-deployment of NFD and running with a MIG stratey of 'mixed' in
+Disabling auto-deployment of NFD and running with a MIG strategy of 'mixed' in
 the default namespace.
 ```shell
 $ helm install \
