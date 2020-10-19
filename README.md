@@ -13,7 +13,7 @@
     + [Node Feature Discovery (NFD)](#node-feature-discovery-nfd)
     + [Preparing your GPU Nodes](#preparing-your-gpu-nodes)
     + [Deploy NVIDIA GPU Feature Discovery (GFD)](#deploy-nvidia-gpu-feature-discovery-gfd)
-      - [Deamonset](#deamonset)
+      - [Daemonset](#daemonset)
       - [Job](#job)
     + [Verifying Everything Works](#verifying-everything-works)
   * [The GFD Command line interface](#the-gfd-command-line-interface)
@@ -90,10 +90,10 @@ https://github.com/NVIDIA/nvidia-docker/wiki/Advanced-topics#default-runtime.
 
 ### Deploy NVIDIA GPU Feature Discovery (GFD)
 
-The next step is to run NVIDIA GPU Feature Discovery on each node as a Deamonset
+The next step is to run NVIDIA GPU Feature Discovery on each node as a Daemonset
 or as a Job.
 
-#### Deamonset
+#### Daemonset
 
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.2.0/deployments/static/gpu-feature-discovery-daemonset.yaml
@@ -312,7 +312,7 @@ $ helm install \
     nvgfd/gpu-feature-discovery
 ```
 
-Disabling auto-deployment of NFD and running with a MIG stratey of 'mixed' in
+Disabling auto-deployment of NFD and running with a MIG strategy of 'mixed' in
 the default namespace.
 ```shell
 $ helm install \
@@ -338,7 +338,7 @@ $ helm install \
     https://nvidia.github.com/gpu-feature-discovery/stable/gpu-feature-discovery-0.2.0.tgz
 ```
 
-Disabling auto-deployment of NFD and running with a MIG stratey of 'mixed' in
+Disabling auto-deployment of NFD and running with a MIG strategy of 'mixed' in
 the default namespace.
 ```shell
 $ helm install \
