@@ -11,8 +11,17 @@ RUN go install -ldflags "-X main.Version=${GFD_VERSION}" github.com/NVIDIA/gpu-f
 
 RUN go test .
 
-FROM nvidia/cuda:10.0-base
+FROM nvidia/cuda:11.0-base-ubi8
 
 COPY --from=build /go/bin/gpu-feature-discovery /usr/bin/gpu-feature-discovery
+
+LABEL io.k8s.display-name="NVIDIA GPU Feature Discovery Plugin"
+LABEL name="NVIDIA GPU Feature Discovery Plugin"
+LABEL vendor="NVIDIA"
+LABEL version="${GFD_VERSION}"
+LABEL release="N/A"
+LABEL summary="GPU plugin to the node feature discovery for Kubernetes"
+LABEL description="GPU plugin to the node feature discovery for Kubernetes"
+COPY ./LICENSE /licenses/LICENSE
 
 ENTRYPOINT ["/usr/bin/gpu-feature-discovery"]
