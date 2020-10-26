@@ -18,6 +18,11 @@ RUN go test .
 
 FROM nvidia/cuda:11.0-base-ubi8
 
+# disable all constraints on the configurations required by NVIDIA container toolkit
+ENV NVIDIA_DISABLE_REQUIRE="true"
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=utility
+
 COPY --from=build /go/bin/gpu-feature-discovery /usr/bin/gpu-feature-discovery
 
 ARG GFD_VERSION=unset
