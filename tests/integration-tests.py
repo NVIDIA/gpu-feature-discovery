@@ -57,6 +57,7 @@ if __name__ == '__main__':
 
         while container.status != "exited" and not os.path.exists(tmpdirname + "/gfd"):
             time.sleep(1)
+            container.reload()
 
         print("Container logs:\n{}".format(container.logs().decode()))
 
