@@ -40,7 +40,7 @@ func main() {
 
 	log.Printf("Running %s in version %s", Bin, Version)
 
-	nvmlLib := NvmlLib{}
+	nvml := NvmlLib{}
 
 	conf := Conf{}
 	conf.getConfFromArgv(os.Args)
@@ -51,43 +51,22 @@ func main() {
 	log.Print("OutputFilePath: ", conf.OutputFilePath)
 
 	log.Print("Start running")
-	err := run(nvmlLib, conf)
+	err := run(nvml, conf)
 	if err != nil {
 		log.Printf("Unexpected error: %v", err)
 	}
 	log.Print("Exiting")
 }
 
-func run(nvml Nvml, conf Conf) error {
-	if err := nvml.Init(); err != nil {
-		log.Printf("Failed to initialize NVML: %s.", err)
-		log.Printf("If this is a GPU node, did you set the docker default runtime to `nvidia`?")
-		log.Printf("You can check the prerequisites at: https://github.com/NVIDIA/gpu-feature-discovery#prerequisites")
-		log.Printf("You can learn how to set the runtime at: https://github.com/NVIDIA/gpu-feature-discovery#quick-start")
-		return err
-	}
-
+func run(nvml Nvml, conf Conf) (rerr error) {
 	defer func() {
-		err := nvml.Shutdown()
-		if err != nil {
-			log.Println("Shutdown of NVML returned:", nvml.Shutdown())
-		}
 		if !conf.Oneshot {
-			err = removeOutputFile(conf.OutputFilePath)
+			err := removeOutputFile(conf.OutputFilePath)
 			if err != nil {
-				log.Printf("Error removing output file: %v", err)
+				rerr = fmt.Errorf("Error removing output file: %v", err)
 			}
 		}
 	}()
-
-	count, err := nvml.GetDeviceCount()
-	if err != nil {
-		return fmt.Errorf("Error getting device count: %v", err)
-	}
-
-	if count < 1 {
-		return fmt.Errorf("Error: no device found on the node")
-	}
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
@@ -104,26 +83,14 @@ func run(nvml Nvml, conf Conf) error {
 
 L:
 	for {
-		commonLabels, err := generateCommonLabels(nvml)
+		nvmlLabels, err := getNVMLLabels(nvml, conf.MigStrategy)
 		if err != nil {
-			return fmt.Errorf("Error generating common labels: %v", err)
-		}
-
-		migStrategy, err := NewMigStrategy(conf.MigStrategy, nvml)
-		if err != nil {
-			return fmt.Errorf("Error creating MIG strategy: %v", err)
-		}
-
-		migStrategyLabels, err := migStrategy.GenerateLabels()
-		if err != nil {
-			return fmt.Errorf("Error generating labels from MIG strategy: %v", err)
+			return fmt.Errorf("Error getting labels from NVML: %v", err)
 		}
 
 		output := new(bytes.Buffer)
-		for k, v := range commonLabels {
-			fmt.Fprintf(output, "%s=%s\n", k, v)
-		}
-		for k, v := range migStrategyLabels {
+		fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
+		for k, v := range nvmlLabels {
 			fmt.Fprintf(output, "%s=%s\n", k, v)
 		}
 
@@ -148,6 +115,53 @@ L:
 	}
 
 	return nil
+}
+
+func getNVMLLabels(nvml Nvml, MigStrategy string) (allLabels map[string]string, rerr error) {
+	if err := nvml.Init(); err != nil {
+		return nil, fmt.Errorf("Failed to initialize NVML: %s", err)
+	}
+
+	defer func() {
+		err := nvml.Shutdown()
+		if err != nil {
+			rerr = fmt.Errorf("Shutdown of NVML returned: %v", err)
+		}
+	}()
+
+	count, err := nvml.GetDeviceCount()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting device count: %v", err)
+	}
+
+	if count < 1 {
+		return nil, fmt.Errorf("No device found on the node")
+	}
+
+	commonLabels, err := generateCommonLabels(nvml)
+	if err != nil {
+		return nil, fmt.Errorf("Error generating common labels: %v", err)
+	}
+
+	migStrategy, err := NewMigStrategy(MigStrategy, nvml)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating MIG strategy: %v", err)
+	}
+
+	migStrategyLabels, err := migStrategy.GenerateLabels()
+	if err != nil {
+		return nil, fmt.Errorf("Error generating labels from MIG strategy: %v", err)
+	}
+
+	allLabels = make(map[string]string)
+	for k, v := range commonLabels {
+		allLabels[k] = v
+	}
+	for k, v := range migStrategyLabels {
+		allLabels[k] = v
+	}
+
+	return allLabels, nil
 }
 
 func generateCommonLabels(nvml Nvml) (map[string]string, error) {
@@ -184,7 +198,6 @@ func generateCommonLabels(nvml Nvml) (map[string]string, error) {
 	}
 
 	labels := make(map[string]string)
-	labels["nvidia.com/gfd.timestamp"] = fmt.Sprintf("%d", time.Now().Unix())
 	labels["nvidia.com/cuda.driver.major"] = driverMajor
 	labels["nvidia.com/cuda.driver.minor"] = driverMinor
 	labels["nvidia.com/cuda.driver.rev"] = driverRev
