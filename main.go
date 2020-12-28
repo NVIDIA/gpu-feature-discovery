@@ -120,6 +120,7 @@ L:
 		}
 
 		output := new(bytes.Buffer)
+		fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
 		for k, v := range commonLabels {
 			fmt.Fprintf(output, "%s=%s\n", k, v)
 		}
@@ -184,7 +185,6 @@ func generateCommonLabels(nvml Nvml) (map[string]string, error) {
 	}
 
 	labels := make(map[string]string)
-	labels["nvidia.com/gfd.timestamp"] = fmt.Sprintf("%d", time.Now().Unix())
 	labels["nvidia.com/cuda.driver.major"] = driverMajor
 	labels["nvidia.com/cuda.driver.minor"] = driverMinor
 	labels["nvidia.com/cuda.driver.rev"] = driverRev
