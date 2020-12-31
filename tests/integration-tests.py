@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
         print("Running GFD")
 
-        container = client.containers.run(image, detach=True, mounts=[mount,])
+        container = client.containers.run(image, detach=True, privileged=True, mounts=[mount,])
 
         print("Waiting for GFD output file")
 
