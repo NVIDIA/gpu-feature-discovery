@@ -124,7 +124,8 @@ func (d *PCIDevice) GetVendorCapabilities() error {
 		if id == PciCapabilityIDVendor {
 			// add capability to the vendor cap list
 			log.Printf("found vendor specific capability for %s", d.Address)
-			d.VendorCapability = d.Config[pos+PciCapabilityListID : length]
+			d.VendorCapability = d.Config[pos+PciCapabilityListID : pos+PciCapabilityListID+length]
+			log.Println(hex.Dump(d.VendorCapability))
 		}
 		visited[pos]++
 		pos = next
