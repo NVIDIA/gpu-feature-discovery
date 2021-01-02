@@ -110,7 +110,9 @@ L:
 
 		log.Print("Writing labels to output file")
 		err = writeFileAtomically(conf.OutputFilePath, output.Bytes(), 0644)
-
+		if err != nil {
+			return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
+		}
 		if conf.Oneshot {
 			break
 		}
