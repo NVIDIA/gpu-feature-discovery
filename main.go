@@ -85,35 +85,34 @@ func run(nvml Nvml, conf Conf) (rerr error) {
 
 L:
 	for {
-		nvmlLabels, err := getNVMLLabels(nvml, conf.MigStrategy)
-		if err != nil {
-			log.Printf("Error getting labels from NVML: %v, continuing...", err)
-		}
-
 		vGPULabels, err := getvGPULabels()
 		if err != nil {
-			log.Printf("Error getting vGPU labels: %v, continuing...", err)
+			log.Printf("Warning: No labels generated for vGPUs: %v", err)
 		}
 
-		if len(nvmlLabels) != 0 || len(vGPULabels) != 0 {
-			output := new(bytes.Buffer)
-			fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
-			for k, v := range nvmlLabels {
-				fmt.Fprintf(output, "%s=%s\n", k, v)
-			}
-			for k, v := range vGPULabels {
-				fmt.Fprintf(output, "%s=%s\n", k, v)
-			}
+		nvmlLabels, err := getNVMLLabels(nvml, conf.MigStrategy)
+		if err != nil {
+			log.Printf("Warning: No labels generated from NVML: %v", err)
+		}
 
-			log.Print("Writing labels to output file")
-			err = writeFileAtomically(conf.OutputFilePath, output.Bytes(), 0644)
-			if err != nil {
-				return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
-			}
+		if len(nvmlLabels) == 0 && len(vGPULabels) == 0 {
+			return fmt.Errorf("No labels generated from any source")
+		}
 
-			if conf.Oneshot {
-				break
-			}
+		output := new(bytes.Buffer)
+		fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
+		for k, v := range vGPULabels {
+			fmt.Fprintf(output, "%s=%s\n", k, v)
+		}
+		for k, v := range nvmlLabels {
+			fmt.Fprintf(output, "%s=%s\n", k, v)
+		}
+
+		log.Print("Writing labels to output file")
+		err = writeFileAtomically(conf.OutputFilePath, output.Bytes(), 0644)
+
+		if conf.Oneshot {
+			break
 		}
 
 		log.Print("Sleeping for ", conf.SleepInterval)
@@ -139,12 +138,12 @@ func getvGPULabels() (map[string]string, error) {
 		labels["nvidia.com/vgpu.present"] = "true"
 	}
 	for _, device := range devices {
-		driverVersion, driverBranch, err := vgpu.GetHostDriverVersionAndBranch(&device)
+		driverInfo, err := vgpu.GetHostDriverInfo(&device)
 		if err != nil {
 			return nil, err
 		}
-		labels["nvidia.com/vgpu.host-driver-version"] = driverVersion
-		labels["nvidia.com/vgpu.host-driver-branch"] = driverBranch
+		labels["nvidia.com/vgpu.host-driver-version"] = driverInfo.Version
+		labels["nvidia.com/vgpu.host-driver-branch"] = driverInfo.Branch
 	}
 	return labels, nil
 }

@@ -65,8 +65,6 @@ func GetPCIDevices() ([]PCIDevice, error) {
 
 // GetDevicesByVendorID returns PCI devices by vendor-id
 func GetDevicesByVendorID(vendorID string) ([]PCIDevice, error) {
-	log.Printf(">>>>> GetDevicesByVendorID vendor id %s", vendorID)
-	defer log.Printf("<<<<< GetDevicesByVendorID")
 	var vendorPCIDevices []PCIDevice
 	pciDevices, err := GetPCIDevices()
 	if err != nil {
@@ -105,6 +103,10 @@ func (d *PCIDevice) GetVendorCapabilities() error {
 		id := uint8(0)
 		next := uint8(0)
 		length := uint8(0)
+
+		if uint8(len(d.Config)) < pos {
+			log.Fatalf("Entire PCI configuration is not read for device %s. Please run GFD with privileged mode to read complete PCI configuration data", d.Address)
+		}
 
 		id = d.GetByte(pos+PciCapabilityListID, d.Config)
 		next = d.GetByte(pos+PciCapabilityListNext, d.Config)

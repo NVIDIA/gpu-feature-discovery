@@ -19,6 +19,12 @@ const (
 	HostDriverBranchLength = 10
 )
 
+// HostDriverInfo represents vGPU driver info running on underlying hypervisor host.
+type HostDriverInfo struct {
+	Version string
+	Branch  string
+}
+
 // IsVGPUDevicePresent returns true if a guest is attached with a vGPU device
 func IsVGPUDevicePresent() (bool, error) {
 	devices, err := GetAllVGPUDevices()
@@ -49,8 +55,6 @@ func IsVGPUDevice(d *pciutil.PCIDevice) bool {
 
 // GetAllVGPUDevices returns all vGPU devices attached to the guest
 func GetAllVGPUDevices() ([]pciutil.PCIDevice, error) {
-	log.Printf(">>>>> GetAllVGPUDevices")
-	defer log.Printf("<<<<< GetAllVGPUDevices")
 	var vGPUDevices []pciutil.PCIDevice
 	devices, err := pciutil.GetDevicesByVendorID(NvidiaVendorID)
 	if err != nil {
@@ -75,10 +79,10 @@ func GetAllVGPUDevices() ([]pciutil.PCIDevice, error) {
 	return vGPUDevices, nil
 }
 
-// GetHostDriverVersionAndBranch returns driver version and branch of vGPU manager running on the underlying hypervisor host
-func GetHostDriverVersionAndBranch(d *pciutil.PCIDevice) (string, string, error) {
+// GetHostDriverInfo returns information about vGPU manager running on the underlying hypervisor host
+func GetHostDriverInfo(d *pciutil.PCIDevice) (*HostDriverInfo, error) {
 	if len(d.VendorCapability) == 0 {
-		return "", "", fmt.Errorf("Vendor capability record is not populated for device %s", d.Address)
+		return nil, fmt.Errorf("Vendor capability record is not populated for device %s", d.Address)
 	}
 	var hostDriverVersion string
 	var hostDriverBranch string
@@ -111,8 +115,8 @@ func GetHostDriverVersionAndBranch(d *pciutil.PCIDevice) (string, string, error)
 	}
 
 	if !foundDriverVersionRecord {
-		return "", "", fmt.Errorf("Cannot find driver version record in vendor specific capability for device %s", d.Address)
+		return nil, fmt.Errorf("Cannot find driver version record in vendor specific capability for device %s", d.Address)
 	}
 	log.Printf("found host driver version %s and branch %s for device %s", hostDriverVersion, hostDriverBranch, d.Address)
-	return hostDriverVersion, hostDriverBranch, nil
+	return &HostDriverInfo{Version: hostDriverVersion, Branch: hostDriverBranch}, nil
 }

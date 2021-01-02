@@ -38,8 +38,9 @@ func TestGetHostDriverVersionAndBranch(t *testing.T) {
 	require.NotEmpty(t, device.VendorCapability, "Vendor capability record")
 	require.Equal(t, device.VendorCapability[0], uint8(9), "Vendor capability id")
 
-	driver, branch, err := GetHostDriverVersionAndBranch(&device)
-	require.NoError(t, err, "Get host driver version and branchs")
-	require.Equal(t, "460.16", driver, "Host driver version")
-	require.Equal(t, "r460_00", branch, "Host driver branch")
+	driverInfo, err := GetHostDriverInfo(&device)
+	require.NoError(t, err, "Get host driver version and branch")
+	require.NotNil(t, driverInfo, "Host driver info")
+	require.Equal(t, "460.16", driverInfo.Driver, "Host driver version")
+	require.Equal(t, "r460_00", driverInfo.Branch, "Host driver branch")
 }
