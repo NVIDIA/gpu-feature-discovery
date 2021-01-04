@@ -94,7 +94,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	// Enumerate the MIG devices on this node
 	migs, err := getAllMigDevices(s.nvml)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to retreive list of MIG devices: %v", err)
+		return nil, fmt.Errorf("Unable to retrieve list of MIG devices: %v", err)
 	}
 
 	// Verify that all MIG devices on this node are the same type
@@ -156,7 +156,7 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 	// Enumerate the MIG devices on this node
 	migs, err := getAllMigDevices(s.nvml)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to retreive list of MIG devices: %v", err)
+		return nil, fmt.Errorf("Unable to retrieve list of MIG devices: %v", err)
 	}
 
 	// Add new MIG related labels on each individual MIG type
