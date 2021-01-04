@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NVIDIA/gpu-feature-discovery/pkg/vgpu"
 	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 	"github.com/stretchr/testify/require"
 )
@@ -39,6 +40,11 @@ func NewTestNvmlMock() *NvmlMock {
 		cudaMajor:     1,
 		cudaMinor:     1,
 	}
+}
+
+func NewTestVGPUMock(addVGPUMockDevice bool) vgpu.NvidiaMockVGPU {
+	mockVGPU := vgpu.NewNvidiaMockVGPU(addVGPUMockDevice)
+	return mockVGPU
 }
 
 func TestGetConfFromArgv(t *testing.T) {
@@ -134,6 +140,7 @@ func TestGetConfFromEnv(t *testing.T) {
 
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
+	vgpuMock := NewTestVGPUMock(true)
 	conf := Conf{true, "none", "./gfd-test-oneshot", time.Second}
 
 	MachineTypePath = "/tmp/machine-type"
@@ -146,7 +153,7 @@ func TestRunOneshot(t *testing.T) {
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
 
-	err = run(nvmlMock, conf)
+	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
 	outFile, err := os.Open(conf.OutputFilePath)
@@ -168,6 +175,7 @@ func TestRunOneshot(t *testing.T) {
 
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
+	vgpuMock := NewTestVGPUMock(true)
 	conf := Conf{false, "none", "./gfd-test-loop", 500 * time.Millisecond}
 
 	MachineTypePath = "/tmp/machine-type"
@@ -182,7 +190,7 @@ func TestRunSleep(t *testing.T) {
 
 	var runError error
 	go func() {
-		runError = run(nvmlMock, conf)
+		runError = run(nvmlMock, vgpuMock, conf)
 	}()
 
 	// Try to get first timestamp

@@ -19,6 +19,22 @@ const (
 	HostDriverBranchLength = 10
 )
 
+// VirtualGPU represents vGPU interface
+type VirtualGPU interface {
+	IsVGPUDevicePresent() (bool, error)
+	GetAllVGPUDevices() ([]*pciutil.NvidiaPCIDevice, error)
+}
+
+// NvidiaVGPU represents implementation of Nvidia vGPU interfaces
+type NvidiaVGPU struct {
+	pci pciutil.NvidiaPCI
+}
+
+// NewNvidiaVGPU returns an instance of  VGPU interface for Nvidia devices
+func NewNvidiaVGPU() NvidiaVGPU {
+	return NvidiaVGPU{pci: pciutil.NvidiaPCI{}}
+}
+
 // HostDriverInfo represents vGPU driver info running on underlying hypervisor host.
 type HostDriverInfo struct {
 	Version string
@@ -26,8 +42,8 @@ type HostDriverInfo struct {
 }
 
 // IsVGPUDevicePresent returns true if a guest is attached with a vGPU device
-func IsVGPUDevicePresent() (bool, error) {
-	devices, err := GetAllVGPUDevices()
+func (v NvidiaVGPU) IsVGPUDevicePresent() (bool, error) {
+	devices, err := v.GetAllVGPUDevices()
 	if err != nil {
 		return false, err
 	}
@@ -38,8 +54,34 @@ func IsVGPUDevicePresent() (bool, error) {
 	return false, nil
 }
 
+// GetAllVGPUDevices returns all vGPU devices attached to the guest
+func (v NvidiaVGPU) GetAllVGPUDevices() ([]*pciutil.NvidiaPCIDevice, error) {
+	var vGPUDevices []*pciutil.NvidiaPCIDevice
+	err := v.pci.GetPCIDevices()
+	if err != nil {
+		return nil, fmt.Errorf("Unable to find PCI devices by nvidia vendor id 0x10de : %v", err)
+	}
+
+	for _, device := range v.pci.Devices {
+		// fetch config
+		err := device.ReadConfig()
+		if err != nil {
+			return nil, fmt.Errorf("Unable to read PCI configuration for %s: %v", device.Address, err)
+		}
+		// fetch vendor capabilities
+		err = device.GetVendorCapabilities()
+		if err != nil {
+			return nil, fmt.Errorf("Unable to read vendor capabilities for %s: %v", device.Address, err)
+		}
+		if vgpu := IsVGPUDevice(device); vgpu {
+			vGPUDevices = append(vGPUDevices, device)
+		}
+	}
+	return vGPUDevices, nil
+}
+
 // IsVGPUDevice returns true if the device is of type vGPU
-func IsVGPUDevice(d *pciutil.PCIDevice) bool {
+func IsVGPUDevice(d *pciutil.NvidiaPCIDevice) bool {
 	if len(d.VendorCapability) < 5 {
 		return false
 	}
@@ -53,34 +95,8 @@ func IsVGPUDevice(d *pciutil.PCIDevice) bool {
 	return false
 }
 
-// GetAllVGPUDevices returns all vGPU devices attached to the guest
-func GetAllVGPUDevices() ([]pciutil.PCIDevice, error) {
-	var vGPUDevices []pciutil.PCIDevice
-	devices, err := pciutil.GetDevicesByVendorID(NvidiaVendorID)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to find PCI devices by nvidia vendor id 0x10de : %v", err)
-	}
-
-	for _, device := range devices {
-		// fetch config
-		err := device.ReadConfig()
-		if err != nil {
-			return nil, fmt.Errorf("Unable to read PCI configuration for %s: %v", device.Address, err)
-		}
-		// fetch vendor capabilities
-		err = device.GetVendorCapabilities()
-		if err != nil {
-			return nil, fmt.Errorf("Unable to read vendor capabilities for %s: %v", device.Address, err)
-		}
-		if vgpu := IsVGPUDevice(&device); vgpu {
-			vGPUDevices = append(vGPUDevices, device)
-		}
-	}
-	return vGPUDevices, nil
-}
-
 // GetHostDriverInfo returns information about vGPU manager running on the underlying hypervisor host
-func GetHostDriverInfo(d *pciutil.PCIDevice) (*HostDriverInfo, error) {
+func GetHostDriverInfo(d *pciutil.NvidiaPCIDevice) (*HostDriverInfo, error) {
 	if len(d.VendorCapability) == 0 {
 		return nil, fmt.Errorf("Vendor capability record is not populated for device %s", d.Address)
 	}
