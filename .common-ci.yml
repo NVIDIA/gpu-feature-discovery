@@ -77,18 +77,12 @@ fmt:
 
 ineffassign:
   stage: tests
-  before_script:
-    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
-    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
   script:
     - go get -u github.com/gordonklaus/ineffassign
     - ineffassign *.go
 
 misspell:
   stage: tests
-  before_script:
-    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
-    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
   script:
     - go get -u github.com/client9/misspell/cmd/misspell
     - misspell *.go
