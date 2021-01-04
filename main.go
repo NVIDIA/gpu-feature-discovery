@@ -114,6 +114,7 @@ L:
 		if err != nil {
 			return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
 		}
+
 		if conf.Oneshot {
 			break
 		}

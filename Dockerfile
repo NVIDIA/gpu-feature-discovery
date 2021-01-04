@@ -1,7 +1,7 @@
 # global arguments for all build stages
 ARG GFD_VERSION
 
-FROM golang:1.11.2 as build
+FROM golang:1.15.6 as build
 
 ADD . /go/src/github.com/NVIDIA/gpu-feature-discovery
 
