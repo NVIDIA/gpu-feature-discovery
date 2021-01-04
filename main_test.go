@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/gpu-feature-discovery/pkg/vgpu"
 	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 	"github.com/stretchr/testify/require"
 )
@@ -42,8 +41,8 @@ func NewTestNvmlMock() *NvmlMock {
 	}
 }
 
-func NewTestVGPUMock(addVGPUMockDevice bool) vgpu.NvidiaMockVGPU {
-	mockVGPU := vgpu.NewNvidiaMockVGPU(addVGPUMockDevice)
+func NewTestVGPUMock(addVGPUMockDevice bool) NvidiaMockVGPU {
+	mockVGPU := NewNvidiaMockVGPU(addVGPUMockDevice)
 	return mockVGPU
 }
 

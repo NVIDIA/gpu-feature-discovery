@@ -1,15 +1,14 @@
-package vgpu
+package main
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/NVIDIA/gpu-feature-discovery/pkg/pciutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestIsVGPUDevice(t *testing.T) {
-	mockPCI := pciutil.NewMockPCI(true)
+	mockPCI := NewMockPCI(true)
 	mockPCI.GetPCIDevices()
 
 	for _, device := range mockPCI.Devices {
@@ -31,7 +30,7 @@ func TestIsVGPUDevice(t *testing.T) {
 }
 
 func TestGetHostDriverVersionAndBranch(t *testing.T) {
-	mockPCI := pciutil.NewMockPCI(true)
+	mockPCI := NewMockPCI(true)
 	mockPCI.GetPCIDevices()
 
 	for _, device := range mockPCI.Devices {

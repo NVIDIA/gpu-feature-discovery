@@ -1,26 +1,24 @@
-package vgpu
+package main
 
 import (
 	"fmt"
 	"log"
-
-	"github.com/NVIDIA/gpu-feature-discovery/pkg/pciutil"
 )
 
 // NvidiaMockVGPU represents implementation of Nvidia vGPU interfaces
 type NvidiaMockVGPU struct {
-	pci     pciutil.MockPCI
+	pci     MockPCI
 	addVGPU bool // indicates to add vgpu mock device to devices list
 }
 
 // NewNvidiaMockVGPU returns an instance of  VGPU interface for Nvidia devices
 func NewNvidiaMockVGPU(addVirtualDevice bool) NvidiaMockVGPU {
-	return NvidiaMockVGPU{pci: pciutil.MockPCI{AddVGPU: addVirtualDevice}}
+	return NvidiaMockVGPU{pci: MockPCI{AddVGPU: addVirtualDevice}}
 }
 
 // GetAllVGPUDevices returns all vGPU devices attached to the guest
-func (v NvidiaMockVGPU) GetAllVGPUDevices() ([]*pciutil.NvidiaPCIDevice, error) {
-	var vGPUDevices []*pciutil.NvidiaPCIDevice
+func (v NvidiaMockVGPU) GetAllVGPUDevices() ([]*NvidiaPCIDevice, error) {
+	var vGPUDevices []*NvidiaPCIDevice
 	err := v.pci.GetPCIDevices()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to find PCI devices by nvidia vendor id 0x10de : %v", err)

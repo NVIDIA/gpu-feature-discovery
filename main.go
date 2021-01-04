@@ -13,8 +13,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/NVIDIA/gpu-feature-discovery/pkg/vgpu"
 )
 
 const (
@@ -43,7 +41,7 @@ func main() {
 	log.Printf("Running %s in version %s", Bin, Version)
 
 	nvml := NvmlLib{}
-	vgpul := vgpu.NewNvidiaVGPU()
+	vgpul := NewNvidiaVGPU()
 
 	conf := Conf{}
 	conf.getConfFromArgv(os.Args)
@@ -61,7 +59,7 @@ func main() {
 	log.Print("Exiting")
 }
 
-func run(nvml Nvml, vgpul vgpu.VirtualGPU, conf Conf) (rerr error) {
+func run(nvml Nvml, vgpul VirtualGPU, conf Conf) (rerr error) {
 	defer func() {
 		if !conf.Oneshot {
 			err := removeOutputFile(conf.OutputFilePath)
@@ -132,7 +130,7 @@ L:
 	return nil
 }
 
-func getvGPULabels(virtualGPU vgpu.VirtualGPU) (map[string]string, error) {
+func getvGPULabels(virtualGPU VirtualGPU) (map[string]string, error) {
 	devices, err := virtualGPU.GetAllVGPUDevices()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to get vGPU devices: %v", err)
@@ -142,7 +140,7 @@ func getvGPULabels(virtualGPU vgpu.VirtualGPU) (map[string]string, error) {
 		labels["nvidia.com/vgpu.present"] = "true"
 	}
 	for _, device := range devices {
-		driverInfo, err := vgpu.GetHostDriverInfo(device)
+		driverInfo, err := GetHostDriverInfo(device)
 		if err != nil {
 			return nil, err
 		}

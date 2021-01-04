@@ -1,4 +1,4 @@
-package pciutil
+package main
 
 import (
 	"fmt"

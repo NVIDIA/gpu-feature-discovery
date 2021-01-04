@@ -1,16 +1,12 @@
-package vgpu
+package main
 
 import (
 	"fmt"
 	"log"
 	"strings"
-
-	"github.com/NVIDIA/gpu-feature-discovery/pkg/pciutil"
 )
 
 const (
-	// NvidiaVendorID indicates vendor id for Nvidia PCI devices
-	NvidiaVendorID = "0x10de"
 	// VGPUCapabilityRecordStart indicates offset of beginning vGPU capability record
 	VGPUCapabilityRecordStart = 5
 	// HostDriverVersionLength indicates max length of driver version
@@ -22,17 +18,17 @@ const (
 // VirtualGPU represents vGPU interface
 type VirtualGPU interface {
 	IsVGPUDevicePresent() (bool, error)
-	GetAllVGPUDevices() ([]*pciutil.NvidiaPCIDevice, error)
+	GetAllVGPUDevices() ([]*NvidiaPCIDevice, error)
 }
 
 // NvidiaVGPU represents implementation of Nvidia vGPU interfaces
 type NvidiaVGPU struct {
-	pci pciutil.NvidiaPCI
+	pci NvidiaPCI
 }
 
 // NewNvidiaVGPU returns an instance of  VGPU interface for Nvidia devices
 func NewNvidiaVGPU() NvidiaVGPU {
-	return NvidiaVGPU{pci: pciutil.NvidiaPCI{}}
+	return NvidiaVGPU{pci: NvidiaPCI{}}
 }
 
 // HostDriverInfo represents vGPU driver info running on underlying hypervisor host.
@@ -55,8 +51,8 @@ func (v NvidiaVGPU) IsVGPUDevicePresent() (bool, error) {
 }
 
 // GetAllVGPUDevices returns all vGPU devices attached to the guest
-func (v NvidiaVGPU) GetAllVGPUDevices() ([]*pciutil.NvidiaPCIDevice, error) {
-	var vGPUDevices []*pciutil.NvidiaPCIDevice
+func (v NvidiaVGPU) GetAllVGPUDevices() ([]*NvidiaPCIDevice, error) {
+	var vGPUDevices []*NvidiaPCIDevice
 	err := v.pci.GetPCIDevices()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to find PCI devices by nvidia vendor id 0x10de : %v", err)
@@ -81,7 +77,7 @@ func (v NvidiaVGPU) GetAllVGPUDevices() ([]*pciutil.NvidiaPCIDevice, error) {
 }
 
 // IsVGPUDevice returns true if the device is of type vGPU
-func IsVGPUDevice(d *pciutil.NvidiaPCIDevice) bool {
+func IsVGPUDevice(d *NvidiaPCIDevice) bool {
 	if len(d.VendorCapability) < 5 {
 		return false
 	}
@@ -96,7 +92,7 @@ func IsVGPUDevice(d *pciutil.NvidiaPCIDevice) bool {
 }
 
 // GetHostDriverInfo returns information about vGPU manager running on the underlying hypervisor host
-func GetHostDriverInfo(d *pciutil.NvidiaPCIDevice) (*HostDriverInfo, error) {
+func GetHostDriverInfo(d *NvidiaPCIDevice) (*HostDriverInfo, error) {
 	if len(d.VendorCapability) == 0 {
 		return nil, fmt.Errorf("Vendor capability record is not populated for device %s", d.Address)
 	}
