@@ -170,6 +170,9 @@ func TestRunOneshot(t *testing.T) {
 
 	err = checkResult(result, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
+
+	err = checkResult(result, "tests/expected-output-vgpu.txt")
+	require.NoError(t, err, "Checking result for vgpu labels")
 }
 
 func TestRunSleep(t *testing.T) {
@@ -237,6 +240,15 @@ func TestRunSleep(t *testing.T) {
 	currentTimestamp := labels["nvidia.com/gfd.timestamp"]
 
 	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
+
+	// check for vgpu labels
+	err = checkResult(output, "tests/expected-output-vgpu.txt")
+	require.NoError(t, err, "Checking result for vgpu labels")
+
+	require.Contains(t, labels, "nvidia.com/vgpu.present", "Missing vgpu present label")
+	require.Contains(t, labels, "nvidia.com/vgpu.host-driver-version", "Missing vGPU host driver version label")
+	require.Contains(t, labels, "nvidia.com/vgpu.host-driver-branch", "Missing vGPU host driver branch label")
+
 	require.NoError(t, runError, "Error from run")
 }
 
@@ -268,6 +280,17 @@ func checkResult(result []byte, expectedOutputPath string) error {
 
 LOOP:
 	for _, line := range strings.Split(strings.TrimRight(string(result), "\n"), "\n") {
+		if expectedOutputPath == "tests/expected-output-vgpu.txt" {
+			if !strings.Contains(line, "vgpu") {
+				// ignore other labels when vgpu file is specified
+				continue
+			}
+		} else {
+			if strings.Contains(line, "vgpu") {
+				// ignore vgpu labels when non vgpu file is specified
+				continue
+			}
+		}
 		for _, regex := range expectedRegexps {
 			if regex.MatchString(line) {
 				continue LOOP
