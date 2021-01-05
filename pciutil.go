@@ -97,7 +97,6 @@ func (d *NvidiaPCIDevice) ReadConfig() error {
 		return fmt.Errorf("Unable to read PCI configuration space: %v", err)
 	}
 	d.Config = config
-	log.Printf("PCI config for %s: \n%s\n", d.Address, hex.Dump(d.Config))
 	return nil
 }
 
@@ -110,7 +109,7 @@ func (d *NvidiaPCIDevice) GetVendorCapabilities() error {
 	}
 
 	// check if entire configuration data is read from sysfs
-	if len(d.Config) != 256 {
+	if len(d.Config) < 256 {
 		return fmt.Errorf("Entire PCI configuration is not read for device %s. Please run GFD with privileged mode to read complete PCI configuration data", d.Address)
 	}
 
@@ -124,7 +123,6 @@ func (d *NvidiaPCIDevice) GetVendorCapabilities() error {
 		id = d.GetByte(pos+PciCapabilityListID, d.Config)
 		next = d.GetByte(pos+PciCapabilityListNext, d.Config)
 		length = d.GetByte(pos+PciCapabilityLength, d.Config)
-		log.Printf("id: 0x%x, next: 0x%x, length: 0x%x", id, next, length)
 
 		if visited[pos] != 0 {
 			// chain looped
