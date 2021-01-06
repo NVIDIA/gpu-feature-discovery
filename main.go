@@ -30,7 +30,6 @@ var (
 )
 
 func main() {
-
 	log.SetPrefix(Bin + ": ")
 
 	if Version == "" {
@@ -41,6 +40,7 @@ func main() {
 	log.Printf("Running %s in version %s", Bin, Version)
 
 	nvml := NvmlLib{}
+	vgpul := NewVGPULib(NewNvidiaPCILib())
 
 	conf := Conf{}
 	conf.getConfFromArgv(os.Args)
@@ -51,14 +51,14 @@ func main() {
 	log.Print("OutputFilePath: ", conf.OutputFilePath)
 
 	log.Print("Start running")
-	err := run(nvml, conf)
+	err := run(nvml, vgpul, conf)
 	if err != nil {
 		log.Printf("Unexpected error: %v", err)
 	}
 	log.Print("Exiting")
 }
 
-func run(nvml Nvml, conf Conf) (rerr error) {
+func run(nvml Nvml, vgpu VGPU, conf Conf) (rerr error) {
 	defer func() {
 		if !conf.Oneshot {
 			err := removeOutputFile(conf.OutputFilePath)
@@ -83,13 +83,25 @@ func run(nvml Nvml, conf Conf) (rerr error) {
 
 L:
 	for {
+		vGPULabels, err := getvGPULabels(vgpu)
+		if err != nil {
+			log.Printf("Warning: No labels generated for vGPUs: %v", err)
+		}
+
 		nvmlLabels, err := getNVMLLabels(nvml, conf.MigStrategy)
 		if err != nil {
-			return fmt.Errorf("Error getting labels from NVML: %v", err)
+			log.Printf("Warning: No labels generated from NVML: %v", err)
+		}
+
+		if len(nvmlLabels) == 0 && len(vGPULabels) == 0 {
+			return fmt.Errorf("No labels generated from any source")
 		}
 
 		output := new(bytes.Buffer)
 		fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
+		for k, v := range vGPULabels {
+			fmt.Fprintf(output, "%s=%s\n", k, v)
+		}
 		for k, v := range nvmlLabels {
 			fmt.Fprintf(output, "%s=%s\n", k, v)
 		}
@@ -115,6 +127,26 @@ L:
 	}
 
 	return nil
+}
+
+func getvGPULabels(vgpu VGPU) (map[string]string, error) {
+	devices, err := vgpu.Devices()
+	if err != nil {
+		return nil, fmt.Errorf("Unable to get vGPU devices: %v", err)
+	}
+	labels := make(map[string]string)
+	if len(devices) > 0 {
+		labels["nvidia.com/vgpu.present"] = "true"
+	}
+	for _, device := range devices {
+		info, err := device.GetInfo()
+		if err != nil {
+			return nil, err
+		}
+		labels["nvidia.com/vgpu.host-driver-version"] = info.HostDriverVersion
+		labels["nvidia.com/vgpu.host-driver-branch"] = info.HostDriverBranch
+	}
+	return labels, nil
 }
 
 func getNVMLLabels(nvml Nvml, MigStrategy string) (allLabels map[string]string, rerr error) {

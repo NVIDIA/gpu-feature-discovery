@@ -26,6 +26,8 @@ spec:
               mountPath: "/etc/kubernetes/node-feature-discovery/features.d"
             - name: dmi-product-name
               mountPath: "/sys/class/dmi/id/product_name"
+          securityContext:
+            privileged: true
       nodeSelector:
         feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
       volumes:

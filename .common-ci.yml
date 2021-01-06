@@ -1,5 +1,5 @@
 default:
-  image: golang:1.11.2
+  image: golang:1.15.6
 
 variables:
   AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin --nvcr"
@@ -77,9 +77,12 @@ fmt:
 
 ineffassign:
   stage: tests
+  before_script:
+    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
+    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
   script:
     - go get -u github.com/gordonklaus/ineffassign
-    - ineffassign *.go
+    - ineffassign github.com/NVIDIA/gpu-feature-discovery
 
 misspell:
   stage: tests

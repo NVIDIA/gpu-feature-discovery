@@ -41,6 +41,10 @@ func NewTestNvmlMock() *NvmlMock {
 	}
 }
 
+func NewTestVGPUMock() VGPU {
+	return NewMockVGPU()
+}
+
 func TestGetConfFromArgv(t *testing.T) {
 
 	defaultDuration := time.Second * 60
@@ -134,6 +138,7 @@ func TestGetConfFromEnv(t *testing.T) {
 
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
+	vgpuMock := NewTestVGPUMock()
 	conf := Conf{true, "none", "./gfd-test-oneshot", time.Second}
 
 	MachineTypePath = "/tmp/machine-type"
@@ -146,7 +151,7 @@ func TestRunOneshot(t *testing.T) {
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
 
-	err = run(nvmlMock, conf)
+	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
 	outFile, err := os.Open(conf.OutputFilePath)
@@ -164,10 +169,14 @@ func TestRunOneshot(t *testing.T) {
 
 	err = checkResult(result, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
+
+	err = checkResult(result, "tests/expected-output-vgpu.txt")
+	require.NoError(t, err, "Checking result for vgpu labels")
 }
 
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
+	vgpuMock := NewTestVGPUMock()
 	conf := Conf{false, "none", "./gfd-test-loop", 500 * time.Millisecond}
 
 	MachineTypePath = "/tmp/machine-type"
@@ -182,7 +191,7 @@ func TestRunSleep(t *testing.T) {
 
 	var runError error
 	go func() {
-		runError = run(nvmlMock, conf)
+		runError = run(nvmlMock, vgpuMock, conf)
 	}()
 
 	// Try to get first timestamp
@@ -230,6 +239,15 @@ func TestRunSleep(t *testing.T) {
 	currentTimestamp := labels["nvidia.com/gfd.timestamp"]
 
 	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
+
+	// check for vgpu labels
+	err = checkResult(output, "tests/expected-output-vgpu.txt")
+	require.NoError(t, err, "Checking result for vgpu labels")
+
+	require.Contains(t, labels, "nvidia.com/vgpu.present", "Missing vgpu present label")
+	require.Contains(t, labels, "nvidia.com/vgpu.host-driver-version", "Missing vGPU host driver version label")
+	require.Contains(t, labels, "nvidia.com/vgpu.host-driver-branch", "Missing vGPU host driver branch label")
+
 	require.NoError(t, runError, "Error from run")
 }
 
@@ -261,6 +279,17 @@ func checkResult(result []byte, expectedOutputPath string) error {
 
 LOOP:
 	for _, line := range strings.Split(strings.TrimRight(string(result), "\n"), "\n") {
+		if expectedOutputPath == "tests/expected-output-vgpu.txt" {
+			if !strings.Contains(line, "vgpu") {
+				// ignore other labels when vgpu file is specified
+				continue
+			}
+		} else {
+			if strings.Contains(line, "vgpu") {
+				// ignore vgpu labels when non vgpu file is specified
+				continue
+			}
+		}
 		for _, regex := range expectedRegexps {
 			if regex.MatchString(line) {
 				continue LOOP

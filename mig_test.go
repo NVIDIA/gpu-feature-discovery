@@ -14,6 +14,8 @@ import (
 
 func TestMigStrategySingle(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
+	// create VGPU mock library with empty vgpu devices
+	vgpuMock := NewTestVGPUMock()
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
 		NvmlMockDevice{
@@ -48,7 +50,7 @@ func TestMigStrategySingle(t *testing.T) {
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
 
-	err = run(nvmlMock, conf)
+	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
 	outFile, err := os.Open(conf.OutputFilePath)
@@ -78,6 +80,9 @@ func TestMigStrategySingle(t *testing.T) {
 
 func TestMigStrategyMixed(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
+	// create VGPU mock library with empty vgpu devices
+	vgpuMock := NewTestVGPUMock()
+
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
 		NvmlMockDevice{
@@ -106,7 +111,7 @@ func TestMigStrategyMixed(t *testing.T) {
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
 
-	err = run(nvmlMock, conf)
+	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
 	outFile, err := os.Open(conf.OutputFilePath)

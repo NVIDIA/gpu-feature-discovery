@@ -25,6 +25,8 @@ spec:
               mountPath: "/etc/kubernetes/node-feature-discovery/features.d"
             - name: dmi-product-name
               mountPath: "/sys/class/dmi/id/product_name"
+          securityContext:
+            privileged: true
       volumes:
         - name: output-dir
           hostPath:

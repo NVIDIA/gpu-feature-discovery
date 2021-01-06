@@ -14,7 +14,8 @@ image:
   tag: ""
 
 podSecurityContext: {}
-securityContext: {}
+securityContext:
+  privileged: true
 
 resources: {}
 affinity: {}
