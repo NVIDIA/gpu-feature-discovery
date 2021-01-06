@@ -58,12 +58,12 @@ func main() {
 	log.Print("Exiting")
 }
 
-func run(nvml Nvml, vgpu VGPU, conf Conf) (rerr error) {
+func run(nvml Nvml, vgpu VGPU, conf Conf) error {
 	defer func() {
 		if !conf.Oneshot {
 			err := removeOutputFile(conf.OutputFilePath)
 			if err != nil {
-				rerr = fmt.Errorf("Error removing output file: %v", err)
+				log.Printf("Warning: Error removing output file: %v", err)
 			}
 		}
 	}()
@@ -149,7 +149,7 @@ func getvGPULabels(vgpu VGPU) (map[string]string, error) {
 	return labels, nil
 }
 
-func getNVMLLabels(nvml Nvml, MigStrategy string) (allLabels map[string]string, rerr error) {
+func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
 	if err := nvml.Init(); err != nil {
 		return nil, fmt.Errorf("Failed to initialize NVML: %s", err)
 	}
@@ -157,7 +157,7 @@ func getNVMLLabels(nvml Nvml, MigStrategy string) (allLabels map[string]string, 
 	defer func() {
 		err := nvml.Shutdown()
 		if err != nil {
-			rerr = fmt.Errorf("Shutdown of NVML returned: %v", err)
+			fmt.Printf("Warning: Shutdown of NVML returned: %v", err)
 		}
 	}()
 
@@ -185,7 +185,7 @@ func getNVMLLabels(nvml Nvml, MigStrategy string) (allLabels map[string]string, 
 		return nil, fmt.Errorf("Error generating labels from MIG strategy: %v", err)
 	}
 
-	allLabels = make(map[string]string)
+	allLabels := make(map[string]string)
 	for k, v := range commonLabels {
 		allLabels[k] = v
 	}
