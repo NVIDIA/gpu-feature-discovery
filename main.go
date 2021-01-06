@@ -30,7 +30,6 @@ var (
 )
 
 func main() {
-
 	log.SetPrefix(Bin + ": ")
 
 	if Version == "" {
@@ -41,7 +40,7 @@ func main() {
 	log.Printf("Running %s in version %s", Bin, Version)
 
 	nvml := NvmlLib{}
-	vgpul := NewNvidiaVGPU()
+	vgpul := NewVGPULib(NewNvidiaPCILib())
 
 	conf := Conf{}
 	conf.getConfFromArgv(os.Args)
@@ -59,7 +58,7 @@ func main() {
 	log.Print("Exiting")
 }
 
-func run(nvml Nvml, vgpul VirtualGPU, conf Conf) (rerr error) {
+func run(nvml Nvml, vgpu VGPU, conf Conf) (rerr error) {
 	defer func() {
 		if !conf.Oneshot {
 			err := removeOutputFile(conf.OutputFilePath)
@@ -84,7 +83,7 @@ func run(nvml Nvml, vgpul VirtualGPU, conf Conf) (rerr error) {
 
 L:
 	for {
-		vGPULabels, err := getvGPULabels(vgpul)
+		vGPULabels, err := getvGPULabels(vgpu)
 		if err != nil {
 			log.Printf("Warning: No labels generated for vGPUs: %v", err)
 		}
@@ -130,8 +129,8 @@ L:
 	return nil
 }
 
-func getvGPULabels(virtualGPU VirtualGPU) (map[string]string, error) {
-	devices, err := virtualGPU.GetAllVGPUDevices()
+func getvGPULabels(vgpu VGPU) (map[string]string, error) {
+	devices, err := vgpu.Devices()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to get vGPU devices: %v", err)
 	}
@@ -140,12 +139,12 @@ func getvGPULabels(virtualGPU VirtualGPU) (map[string]string, error) {
 		labels["nvidia.com/vgpu.present"] = "true"
 	}
 	for _, device := range devices {
-		driverInfo, err := GetHostDriverInfo(device)
+		info, err := device.GetInfo()
 		if err != nil {
 			return nil, err
 		}
-		labels["nvidia.com/vgpu.host-driver-version"] = driverInfo.Version
-		labels["nvidia.com/vgpu.host-driver-branch"] = driverInfo.Branch
+		labels["nvidia.com/vgpu.host-driver-version"] = info.HostDriverVersion
+		labels["nvidia.com/vgpu.host-driver-branch"] = info.HostDriverBranch
 	}
 	return labels, nil
 }

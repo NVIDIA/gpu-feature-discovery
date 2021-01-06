@@ -15,7 +15,7 @@ import (
 func TestMigStrategySingle(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	// create VGPU mock library with empty vgpu devices
-	vgpuMock := NewTestVGPUMock(false)
+	vgpuMock := NewTestVGPUMock()
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
 		NvmlMockDevice{
@@ -81,7 +81,7 @@ func TestMigStrategySingle(t *testing.T) {
 func TestMigStrategyMixed(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	// create VGPU mock library with empty vgpu devices
-	vgpuMock := NewTestVGPUMock(false)
+	vgpuMock := NewTestVGPUMock()
 
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{

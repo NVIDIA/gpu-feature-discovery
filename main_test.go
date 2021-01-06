@@ -41,9 +41,8 @@ func NewTestNvmlMock() *NvmlMock {
 	}
 }
 
-func NewTestVGPUMock(addVGPUMockDevice bool) NvidiaMockVGPU {
-	mockVGPU := NewNvidiaMockVGPU(addVGPUMockDevice)
-	return mockVGPU
+func NewTestVGPUMock() VGPU {
+	return NewMockVGPU()
 }
 
 func TestGetConfFromArgv(t *testing.T) {
@@ -139,7 +138,7 @@ func TestGetConfFromEnv(t *testing.T) {
 
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
-	vgpuMock := NewTestVGPUMock(true)
+	vgpuMock := NewTestVGPUMock()
 	conf := Conf{true, "none", "./gfd-test-oneshot", time.Second}
 
 	MachineTypePath = "/tmp/machine-type"
@@ -177,7 +176,7 @@ func TestRunOneshot(t *testing.T) {
 
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
-	vgpuMock := NewTestVGPUMock(true)
+	vgpuMock := NewTestVGPUMock()
 	conf := Conf{false, "none", "./gfd-test-loop", 500 * time.Millisecond}
 
 	MachineTypePath = "/tmp/machine-type"

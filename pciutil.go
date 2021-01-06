@@ -1,49 +1,29 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path"
 	"strings"
 )
 
-// PCI represents interactions with PCI
-type PCI interface {
-	GetPCIDevices() error
+// NvidiaPCI interface allows us to get a list of all NVIDIA PCI devices
+type NvidiaPCI interface {
+	Devices() ([]*PCIDevice, error)
 }
 
-// PCIDevice represents interactions with PCI.device
-type PCIDevice interface {
-	ReadConfig() error
-	GetVendorCapabilities() error
-	GetByte(pos uint8, config []byte) uint8
-	GetConfigWord(pos uint8, config []byte) uint16
-	GetConfigLong(pos uint8, config []byte) uint32
-}
-
-// NvidiaPCI represents PCI interface implementation for Nvidia PCI devices
-type NvidiaPCI struct {
-	Devices []*NvidiaPCIDevice
-}
-
-// NvidiaPCIDevice represents Nvidia PCI device
-type NvidiaPCIDevice struct {
-	Address          string
-	Class            string
-	Vendor           string
-	Device           string
-	FullPath         string
-	Config           []byte
-	VendorCapability []byte
+// PCIDevice represents a single PCI device
+type PCIDevice struct {
+	Path    string
+	Address string
+	Class   string
+	Vendor  string
+	Config  []byte
 }
 
 const (
-	// SysBusPCIDevices represents base path for all pci devices under sysfs
-	SysBusPCIDevices = "/sys/bus/pci/devices"
-	// NvidiaVendorID represents PCI vendor id for Nvidia
-	NvidiaVendorID = "0x10de"
+	// PciDevicesRoot represents base path for all pci devices under sysfs
+	PciDevicesRoot = "/sys/bus/pci/devices"
 	// PciStatusByte indicates status byte
 	PciStatusByte = 0x06
 	// PciStatusCapabilityList indicates if capability list is supported
@@ -56,111 +36,116 @@ const (
 	PciCapabilityListNext = 1
 	// PciCapabilityLength indicates offset for capability length
 	PciCapabilityLength = 2
-	// PciCapabilityIDVendor indicates PCI vendor capability id
-	PciCapabilityIDVendor = 0x09
+	// PciCapabilityVendorSpecificID indicates PCI vendor specific capability id
+	PciCapabilityVendorSpecificID = 0x09
+	// PciNvidiaVendorID represents PCI vendor id for Nvidia
+	PciNvidiaVendorID = "0x10de"
 )
 
-// GetPCIDevices returns all PCI devices on the system
-func (p *NvidiaPCI) GetPCIDevices() error {
-	devices, err := ioutil.ReadDir(SysBusPCIDevices)
+// NvidiaPCILib implements the NvidiaPCI interface
+type NvidiaPCILib struct{}
+
+// NewNvidiaPCILib returns an instance of NvidiaPCILib implementing the NvidiaPCI interface
+func NewNvidiaPCILib() NvidiaPCI {
+	return &NvidiaPCILib{}
+}
+
+// Devices returns all PCI devices on the system
+func (p *NvidiaPCILib) Devices() ([]*PCIDevice, error) {
+	deviceDirs, err := ioutil.ReadDir(PciDevicesRoot)
 	if err != nil {
-		return fmt.Errorf("Unable to read PCI bus devices: %v", err)
+		return nil, fmt.Errorf("Unable to read PCI bus devices: %v", err)
 	}
-	for _, device := range devices {
-		// read basic information for each device
-		vendor, err := ioutil.ReadFile(path.Join(SysBusPCIDevices, device.Name(), "vendor"))
+
+	var devices []*PCIDevice
+	for _, deviceDir := range deviceDirs {
+		devicePath := path.Join(PciDevicesRoot, deviceDir.Name())
+		address := deviceDir.Name()
+
+		vendor, err := ioutil.ReadFile(path.Join(devicePath, "vendor"))
 		if err != nil {
-			return fmt.Errorf("Unable to read PCI device vendor id for %s: %v", device.Name(), err)
+			return nil, fmt.Errorf("Unable to read PCI device vendor id for %s: %v", address, err)
 		}
-		// ignore PCI devices other than Nvidia
-		if strings.TrimSpace(string(vendor)) != NvidiaVendorID {
+
+		if strings.TrimSpace(string(vendor)) != PciNvidiaVendorID {
 			continue
 		}
 
-		class, err := ioutil.ReadFile(path.Join(SysBusPCIDevices, device.Name(), "class"))
+		class, err := ioutil.ReadFile(path.Join(devicePath, "class"))
 		if err != nil {
-			return fmt.Errorf("Unable to read PCI device class for %s: %v", device.Name(), err)
+			return nil, fmt.Errorf("Unable to read PCI device class for %s: %v", address, err)
 		}
-		p.Devices = append(p.Devices, &NvidiaPCIDevice{Address: device.Name(), Vendor: strings.TrimSpace(string(vendor)), Class: string(class)[0:4], FullPath: path.Join(SysBusPCIDevices, device.Name())})
+
+		config, err := ioutil.ReadFile(path.Join(devicePath, "config"))
+		if err != nil {
+			return nil, fmt.Errorf("Unable to read PCI configuration space for %s: %v", address, err)
+		}
+
+		device := &PCIDevice{
+			Path:    devicePath,
+			Address: address,
+			Vendor:  strings.TrimSpace(string(vendor)),
+			Class:   string(class)[0:4],
+			Config:  config,
+		}
+
+		devices = append(devices, device)
 	}
-	return nil
+
+	return devices, nil
 }
 
-// ReadConfig reads PCI configuration space of device
-func (d *NvidiaPCIDevice) ReadConfig() error {
-	if len(d.Config) != 0 {
-		// config is already loaded
-		return nil
-	}
-	config, err := ioutil.ReadFile(path.Join(d.FullPath, "config"))
-	if err != nil {
-		return fmt.Errorf("Unable to read PCI configuration space: %v", err)
-	}
-	d.Config = config
-	return nil
-}
-
-// GetVendorCapabilities returns vendor specific capabilities from configuration space
-func (d *NvidiaPCIDevice) GetVendorCapabilities() error {
-	if d.Config[PciStatusByte]&PciStatusCapabilityList == 0 {
-		// capability list is not supported
-		log.Printf("Capability records are not supported for device %s", d.Address)
-		return nil
-	}
-
-	// check if entire configuration data is read from sysfs
+// GetVendorSpecificCapability returns the vendor specific capability from configuration space
+func (d *PCIDevice) GetVendorSpecificCapability() ([]byte, error) {
 	if len(d.Config) < 256 {
-		return fmt.Errorf("Entire PCI configuration is not read for device %s. Please run GFD with privileged mode to read complete PCI configuration data", d.Address)
+		return nil, fmt.Errorf("Entire PCI configuration is not read for device %s. Please run GFD with privileged mode to read complete PCI configuration data", d.Address)
+	}
+
+	if d.Config[PciStatusByte]&PciStatusCapabilityList == 0 {
+		return nil, nil
 	}
 
 	var visited [256]byte
-	pos := d.GetByte(PciCapabilityList, d.Config)
+	pos := int(GetByte(d.Config, PciCapabilityList))
 	for pos != 0 {
-		id := uint8(0)
-		next := uint8(0)
-		length := uint8(0)
-
-		id = d.GetByte(pos+PciCapabilityListID, d.Config)
-		next = d.GetByte(pos+PciCapabilityListNext, d.Config)
-		length = d.GetByte(pos+PciCapabilityLength, d.Config)
+		id := int(GetByte(d.Config, pos+PciCapabilityListID))
+		next := int(GetByte(d.Config, pos+PciCapabilityListNext))
+		length := int(GetByte(d.Config, pos+PciCapabilityLength))
 
 		if visited[pos] != 0 {
 			// chain looped
-			log.Println("chain looped, exiting")
 			break
 		}
 		if id == 0xff {
 			// chain broken
-			log.Println("chain broken, exiting")
 			break
 		}
-		if id == PciCapabilityIDVendor {
-			// add capability to the vendor cap list
-			log.Printf("found vendor specific capability for %s", d.Address)
-			d.VendorCapability = d.Config[pos+PciCapabilityListID : pos+PciCapabilityListID+length]
-			log.Println(hex.Dump(d.VendorCapability))
-			log.Println(len(d.VendorCapability))
+		if id == PciCapabilityVendorSpecificID {
+			capability := d.Config[pos+PciCapabilityListID : pos+PciCapabilityListID+length]
+			return capability, nil
 		}
+
 		visited[pos]++
 		pos = next
 	}
-	return nil
+
+	return nil, nil
 }
 
-// GetByte returns a single byte of config data at specified position
-func (d *NvidiaPCIDevice) GetByte(pos uint8, config []byte) uint8 {
-	return uint8(config[pos])
+// GetByte returns a single byte of data at specified position
+func GetByte(buffer []byte, pos int) uint8 {
+	return uint8(buffer[pos])
 }
 
-// GetConfigWord returns 2 bytes of config data from specified position
-func (d *NvidiaPCIDevice) GetConfigWord(pos uint8, config []byte) uint16 {
-	return uint16(config[pos]) | (uint16(config[pos+1]) << 8)
+// GetWord returns 2 bytes of data from specified position
+func GetWord(buffer []byte, pos int) uint16 {
+	return uint16(buffer[pos]) | (uint16(buffer[pos+1]) << 8)
 }
 
-// GetConfigLong returns 4 bytes of config data from specified position
-func (d *NvidiaPCIDevice) GetConfigLong(pos uint8, config []byte) uint32 {
-	return uint32(config[pos]) |
-		uint32(config[pos+1])<<8 |
-		uint32(config[pos+2])<<16 |
-		uint32(config[pos+3])<<24
+// GetLong returns 4 bytes of data from specified position
+func GetLong(buffer []byte, pos int) uint32 {
+	return uint32(buffer[pos]) |
+		uint32(buffer[pos+1])<<8 |
+		uint32(buffer[pos+2])<<16 |
+		uint32(buffer[pos+3])<<24
 }
