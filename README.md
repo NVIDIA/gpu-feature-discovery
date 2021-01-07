@@ -158,7 +158,7 @@ Available options:
 ```
 gpu-feature-discovery:
 Usage:
-  gpu-feature-discovery [--mig-strategy=<strategy>] [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
+  gpu-feature-discovery [--fail-on-init-error=<bool>] [--mig-strategy=<strategy>] [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
   gpu-feature-discovery -h | --help
   gpu-feature-discovery --version
 
@@ -166,6 +166,7 @@ Options:
   -h --help                       Show this help message and exit
   --version                       Display version and exit
   --oneshot                       Label once and exit
+  --fail-on-init-error=<bool>     Fail if there is an error during initialization of any label sources [Default: true]
   --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
   --mig-strategy=<strategy>       Strategy to use for MIG-related labels [Default: none]
   -o <file> --output-file=<file>  Path to output file
@@ -174,12 +175,13 @@ Options:
 
 You can also use environment variables:
 
-| Env Variable       | Option           | Example |
-| ------------------ | ---------------- | ------- |
-| GFD_MIG_STRATEGY   | --mig-strategy   | none    |
-| GFD_ONESHOT        | --oneshot        | TRUE    |
-| GFD_OUTPUT_FILE    | --output-file    | output  |
-| GFD_SLEEP_INTERVAL | --sleep-interval | 10s     |
+| Env Variable           | Option               | Example |
+| ---------------------- | -------------------- | ------- |
+| GFD_FAIL_ON_INIT_ERROR | --fail-on-init-error | true    |
+| GFD_MIG_STRATEGY       | --mig-strategy       | none    |
+| GFD_ONESHOT            | --oneshot            | TRUE    |
+| GFD_OUTPUT_FILE        | --output-file        | output  |
+| GFD_SLEEP_INTERVAL     | --sleep-interval     | 10s     |
 
 Environment variables override the command line options if they conflict.
 
@@ -263,6 +265,8 @@ The `helm` chart for the latest release of GFD (`v0.2.2`) includes a number
 of customizable values. The most commonly overridden ones are:
 
 ```
+  failOnInitError:
+      Fail if there is an error during initialization of any label sources (default: true)
   sleepInterval:
       time to sleep between labeling (default "60s")
   migStrategy:

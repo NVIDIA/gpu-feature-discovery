@@ -139,7 +139,7 @@ func TestGetConfFromEnv(t *testing.T) {
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{true, "none", "./gfd-test-oneshot", time.Second}
+	conf := Conf{true, true, "none", "./gfd-test-oneshot", time.Second}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -177,7 +177,7 @@ func TestRunOneshot(t *testing.T) {
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{false, "none", "./gfd-test-loop", 500 * time.Millisecond}
+	conf := Conf{false, true, "none", "./gfd-test-loop", 500 * time.Millisecond}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")

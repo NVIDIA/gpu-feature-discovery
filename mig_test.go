@@ -38,7 +38,7 @@ func TestMigStrategySingle(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, "single", "./gfd-test-mig-single", time.Second}
+	conf := Conf{true, true, "single", "./gfd-test-mig-single", time.Second}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -99,7 +99,7 @@ func TestMigStrategyMixed(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, "mixed", "./gfd-test-mig-mixed", time.Second}
+	conf := Conf{true, true, "mixed", "./gfd-test-mig-mixed", time.Second}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")

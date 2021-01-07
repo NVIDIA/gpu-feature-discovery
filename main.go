@@ -47,7 +47,9 @@ func main() {
 	conf.getConfFromEnv()
 	log.Print("Loaded configuration:")
 	log.Print("Oneshot: ", conf.Oneshot)
+	log.Print("FailOnInitError: ", conf.FailOnInitError)
 	log.Print("SleepInterval: ", conf.SleepInterval)
+	log.Print("MigStrategy: ", conf.MigStrategy)
 	log.Print("OutputFilePath: ", conf.OutputFilePath)
 
 	log.Print("Start running")
@@ -85,7 +87,11 @@ L:
 	for {
 		nvmlLabels, err := getNVMLLabels(nvml, conf.MigStrategy)
 		if err != nil {
-			return fmt.Errorf("Error generating NVML labels: %v", err)
+			_, isInitError := err.(NvmlInitError)
+			if !isInitError || (isInitError && conf.FailOnInitError) {
+				return fmt.Errorf("Error generating NVML labels: %v", err)
+			}
+			log.Printf("Warning: Error generating NVML labels: %v", err)
 		}
 
 		vGPULabels, err := getvGPULabels(vgpu)
@@ -151,7 +157,7 @@ func getvGPULabels(vgpu VGPU) (map[string]string, error) {
 
 func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
 	if err := nvml.Init(); err != nil {
-		return nil, fmt.Errorf("Failed to initialize NVML: %s", err)
+		return nil, NvmlInitError{fmt.Errorf("Failed to initialize NVML: %v", err)}
 	}
 
 	defer func() {
