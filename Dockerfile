@@ -10,8 +10,6 @@ WORKDIR /go/src/github.com/NVIDIA/gpu-feature-discovery
 ARG GFD_VERSION=unset
 RUN echo "GFD_VERSION: ${GFD_VERSION}"
 
-RUN go get -u github.com/golang/dep/cmd/dep
-RUN dep ensure
 RUN go install -ldflags "-X main.Version=${GFD_VERSION}" github.com/NVIDIA/gpu-feature-discovery
 
 RUN go test .
