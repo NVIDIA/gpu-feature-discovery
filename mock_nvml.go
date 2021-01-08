@@ -13,6 +13,7 @@ type NvmlMock struct {
 	driverVersion string
 	cudaMajor     uint
 	cudaMinor     uint
+	errorOnInit   bool
 }
 
 // NvmlMockDevice : Implementation of NvmlDevice using mocked calls
@@ -25,6 +26,9 @@ type NvmlMockDevice struct {
 
 // Init : Init the mock
 func (nvmlMock NvmlMock) Init() error {
+	if nvmlMock.errorOnInit {
+		return fmt.Errorf("NvmlMock error on init")
+	}
 	return nil
 }
 

@@ -1,3 +1,4 @@
+failOnInitError: true
 migStrategy: none
 sleepInterval: 60s
 

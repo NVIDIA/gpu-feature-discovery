@@ -22,6 +22,9 @@ type NvmlDevice interface {
 	GetAttributes() (nvml.DeviceAttributes, error)
 }
 
+// NvmlInitError : Used to signal an error during initialization vs. other errors
+type NvmlInitError struct{ error }
+
 // NvmlLib : Implementation of Nvml using the NVML lib
 type NvmlLib struct{}
 

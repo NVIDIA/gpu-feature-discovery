@@ -47,7 +47,9 @@ func main() {
 	conf.getConfFromEnv()
 	log.Print("Loaded configuration:")
 	log.Print("Oneshot: ", conf.Oneshot)
+	log.Print("FailOnInitError: ", conf.FailOnInitError)
 	log.Print("SleepInterval: ", conf.SleepInterval)
+	log.Print("MigStrategy: ", conf.MigStrategy)
 	log.Print("OutputFilePath: ", conf.OutputFilePath)
 
 	log.Print("Start running")
@@ -58,12 +60,12 @@ func main() {
 	log.Print("Exiting")
 }
 
-func run(nvml Nvml, vgpu VGPU, conf Conf) (rerr error) {
+func run(nvml Nvml, vgpu VGPU, conf Conf) error {
 	defer func() {
 		if !conf.Oneshot {
 			err := removeOutputFile(conf.OutputFilePath)
 			if err != nil {
-				rerr = fmt.Errorf("Error removing output file: %v", err)
+				log.Printf("Warning: Error removing output file: %v", err)
 			}
 		}
 	}()
@@ -83,18 +85,22 @@ func run(nvml Nvml, vgpu VGPU, conf Conf) (rerr error) {
 
 L:
 	for {
-		vGPULabels, err := getvGPULabels(vgpu)
-		if err != nil {
-			log.Printf("Warning: No labels generated for vGPUs: %v", err)
-		}
-
 		nvmlLabels, err := getNVMLLabels(nvml, conf.MigStrategy)
 		if err != nil {
-			log.Printf("Warning: No labels generated from NVML: %v", err)
+			_, isInitError := err.(NvmlInitError)
+			if !isInitError || (isInitError && conf.FailOnInitError) {
+				return fmt.Errorf("Error generating NVML labels: %v", err)
+			}
+			log.Printf("Warning: Error generating NVML labels: %v", err)
+		}
+
+		vGPULabels, err := getvGPULabels(vgpu)
+		if err != nil {
+			return fmt.Errorf("Error generating vGPU labels: %v", err)
 		}
 
 		if len(nvmlLabels) == 0 && len(vGPULabels) == 0 {
-			return fmt.Errorf("No labels generated from any source")
+			log.Printf("Warning: no labels generated from any source")
 		}
 
 		output := new(bytes.Buffer)
@@ -141,7 +147,7 @@ func getvGPULabels(vgpu VGPU) (map[string]string, error) {
 	for _, device := range devices {
 		info, err := device.GetInfo()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Error getting vGPU device info: %v", err)
 		}
 		labels["nvidia.com/vgpu.host-driver-version"] = info.HostDriverVersion
 		labels["nvidia.com/vgpu.host-driver-branch"] = info.HostDriverBranch
@@ -149,15 +155,15 @@ func getvGPULabels(vgpu VGPU) (map[string]string, error) {
 	return labels, nil
 }
 
-func getNVMLLabels(nvml Nvml, MigStrategy string) (allLabels map[string]string, rerr error) {
+func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
 	if err := nvml.Init(); err != nil {
-		return nil, fmt.Errorf("Failed to initialize NVML: %s", err)
+		return nil, NvmlInitError{fmt.Errorf("Failed to initialize NVML: %v", err)}
 	}
 
 	defer func() {
 		err := nvml.Shutdown()
 		if err != nil {
-			rerr = fmt.Errorf("Shutdown of NVML returned: %v", err)
+			fmt.Printf("Warning: Shutdown of NVML returned: %v", err)
 		}
 	}()
 
@@ -166,8 +172,8 @@ func getNVMLLabels(nvml Nvml, MigStrategy string) (allLabels map[string]string, 
 		return nil, fmt.Errorf("Error getting device count: %v", err)
 	}
 
-	if count < 1 {
-		return nil, fmt.Errorf("No device found on the node")
+	if count == 0 {
+		return nil, nil
 	}
 
 	commonLabels, err := generateCommonLabels(nvml)
@@ -185,7 +191,7 @@ func getNVMLLabels(nvml Nvml, MigStrategy string) (allLabels map[string]string, 
 		return nil, fmt.Errorf("Error generating labels from MIG strategy: %v", err)
 	}
 
-	allLabels = make(map[string]string)
+	allLabels := make(map[string]string)
 	for k, v := range commonLabels {
 		allLabels[k] = v
 	}
