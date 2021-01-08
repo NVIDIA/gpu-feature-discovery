@@ -251,6 +251,86 @@ func TestRunSleep(t *testing.T) {
 	require.NoError(t, runError, "Error from run")
 }
 
+func TestFailOnNVMLInitError(t *testing.T) {
+	nvmlMock := NewTestNvmlMock()
+	vgpuMock := NewTestVGPUMock()
+	conf := Conf{true, true, "none", "./gfd-test-loop", 500 * time.Millisecond}
+
+	MachineTypePath = "/tmp/machine-type"
+	machineType := []byte("product-name\n")
+	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
+	require.NoError(t, err, "Write machine type mock file")
+
+	defer func() {
+		err = os.Remove(MachineTypePath)
+		require.NoError(t, err, "Removing machine type mock file")
+	}()
+
+	defer func() {
+		// Remove the output file created by any "success" cases below
+		err = os.Remove(conf.OutputFilePath)
+		require.NoError(t, err, "Removing output file")
+	}()
+
+	// Test for case (errorOnInit = true, failOnInitError = true, no other errors)
+	nvmlMock.errorOnInit = true
+	conf.FailOnInitError = true
+	conf.MigStrategy = "none"
+	err = run(nvmlMock, vgpuMock, conf)
+	require.Error(t, err, "Expected error from NVML Init")
+
+	// Test for case (errorOnInit = true, failOnInitError = true, some other error)
+	nvmlMock.errorOnInit = true
+	conf.FailOnInitError = true
+	conf.MigStrategy = "bogus"
+	err = run(nvmlMock, vgpuMock, conf)
+	require.Error(t, err, "Expected error from NVML Init")
+
+	// Test for case (errorOnInit = true, failOnInitError = false, no other errors)
+	nvmlMock.errorOnInit = true
+	conf.FailOnInitError = false
+	conf.MigStrategy = "none"
+	fmt.Printf("start previous one\n")
+	err = run(nvmlMock, vgpuMock, conf)
+	require.NoError(t, err, "Expected to skip error from NVML Init")
+
+	// Test for case (errorOnInit = true, failOnInitError = false, some other error)
+	nvmlMock.errorOnInit = true
+	conf.FailOnInitError = false
+	conf.MigStrategy = "bogus"
+	fmt.Printf("start this one\n")
+	err = run(nvmlMock, vgpuMock, conf)
+	require.NoError(t, err, "Expected to skip error from NVML Init")
+
+	// Test for case (errorOnInit = false, failOnInitError = true, no other errors)
+	nvmlMock.errorOnInit = false
+	conf.FailOnInitError = true
+	conf.MigStrategy = "none"
+	err = run(nvmlMock, vgpuMock, conf)
+	require.NoError(t, err, "Expected no errors")
+
+	// Test for case (errorOnInit = false, failOnInitError = true, some other error)
+	nvmlMock.errorOnInit = false
+	conf.FailOnInitError = true
+	conf.MigStrategy = "bogus"
+	err = run(nvmlMock, vgpuMock, conf)
+	require.Error(t, err, "Expected error since MIGStrategy is 'bogus'")
+
+	// Test for case (errorOnInit = false, failOnInitError = false, no other errors)
+	nvmlMock.errorOnInit = false
+	conf.FailOnInitError = false
+	conf.MigStrategy = "none"
+	err = run(nvmlMock, vgpuMock, conf)
+	require.NoError(t, err, "Expected no errors")
+
+	// Test for case (errorOnInit = false, failOnInitError = false, some other error)
+	nvmlMock.errorOnInit = false
+	conf.FailOnInitError = false
+	conf.MigStrategy = "bogus"
+	err = run(nvmlMock, vgpuMock, conf)
+	require.Error(t, err, "Expected error since MIGStrategy is 'bogus'")
+}
+
 func buildLabelMapFromOutput(output []byte) (map[string]string, error) {
 	labels := make(map[string]string)
 
