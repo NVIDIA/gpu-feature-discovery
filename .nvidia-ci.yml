@@ -10,7 +10,7 @@ include:
   - local: '.common-ci.yml'
 
 variables:
-  NGC_REPO: "${NGC_REGISTRY}/nvidia/"
+  NGC_REPO: "${NGC_REGISTRY}/nvidia"
   NGC_PROD_IMAGE: "${NGC_REPO}/${DOCKER_IMAGE_NAME}"
 
 scan:
