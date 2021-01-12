@@ -33,7 +33,7 @@ release:ngc:
     - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
     - docker pull ${CI_REGISTRY_IMAGE}:${VERSION}
     - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${NGC_PROD_IMAGE}:${VERSION}
-    - docker login -u ${NGC_REGISTRY_USER} -p ${NGC_REGISTRY_TOKEN}
+    - docker login -u ${NGC_REGISTRY_USER} -p ${NGC_REGISTRY_TOKEN} ${NGC_REGISTRY}
     - docker push ${NGC_PROD_IMAGE}:${VERSION}
   dependencies:
     - versionning
