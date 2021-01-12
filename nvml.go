@@ -2,7 +2,9 @@
 
 package main
 
-import "github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
+import (
+	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
+)
 
 // Nvml : Type to represent interactions with NVML
 type Nvml interface {
