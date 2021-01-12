@@ -9,10 +9,6 @@ default:
 include:
   - local: '.common-ci.yml'
 
-variables:
-  NGC_REPO: "${NGC_REGISTRY}/nvidia"
-  NGC_PROD_IMAGE: "${NGC_REPO}/${DOCKER_IMAGE_NAME}"
-
 scan:
   extends: .scan
   script:
@@ -29,6 +25,9 @@ release:ngc:
   image: docker:dind
   services:
     - docker:dind
+  before_script:
+    - export NGC_REPO="${NGC_REGISTRY}/nvidia"
+    - export NGC_PROD_IMAGE="${NGC_REPO}/${DOCKER_IMAGE_NAME}"
   script:
     - source version
     - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
