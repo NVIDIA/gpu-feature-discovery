@@ -230,7 +230,7 @@ func getMigDeviceName(mig NvmlDevice) (string, error) {
 	}
 
 	g := attr.GpuInstanceSliceCount
-	gb := ((attr.MemorySizeMB + 1000 - 1) / 1000)
+	gb := ((attr.MemorySizeMB + 1024 - 1) / 1024)
 	r := fmt.Sprintf("%dg.%dgb", g, gb)
 
 	return r, nil

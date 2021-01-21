@@ -114,7 +114,7 @@ func TestSingleStrategyReturnsLabelsMigEnabledMatchedSlices(t *testing.T) {
 			},
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
-				MemorySizeMB:          20000,
+				MemorySizeMB:          20096,
 			},
 		},
 	}
@@ -126,7 +126,7 @@ func TestSingleStrategyReturnsLabelsMigEnabledMatchedSlices(t *testing.T) {
 			},
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
-				MemorySizeMB:          20000,
+				MemorySizeMB:          20096,
 			},
 		},
 	}
@@ -141,5 +141,5 @@ func TestSingleStrategyReturnsLabelsMigEnabledMatchedSlices(t *testing.T) {
 
 	require.Equal(t, labels["nvidia.com/gpu.count"], "2", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.product"], "MOCKMODEL-MIG-3g.20gb", "Incorrect label")
-	require.Equal(t, labels["nvidia.com/gpu.memory"], "20000", "Incorrect label")
+	require.Equal(t, labels["nvidia.com/gpu.memory"], "20096", "Incorrect label")
 }
