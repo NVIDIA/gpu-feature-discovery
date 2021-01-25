@@ -221,8 +221,9 @@ func TestRunWithoutTimestamp(t *testing.T) {
 	result, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(result, "tests/expected-output-without-timestamp.txt")
+	err = checkResult(result, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
+	require.NotContains(t, string(result), "nvidia.com/gfd.timestamp=", "Checking that timestamp is not present")
 
 	err = checkResult(result, "tests/expected-output-vgpu.txt")
 	require.NoError(t, err, "Checking result for vgpu labels")
