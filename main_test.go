@@ -190,6 +190,44 @@ func TestRunOneshot(t *testing.T) {
 	require.NoError(t, err, "Checking result for vgpu labels")
 }
 
+func TestRunWithoutTimestamp(t *testing.T) {
+	nvmlMock := NewTestNvmlMock()
+	vgpuMock := NewTestVGPUMock()
+	conf := Conf{true, true, "none", "./gfd-test-without-timestamp", time.Second, false}
+
+	MachineTypePath = "/tmp/machine-type"
+	machineType := []byte("product-name\n")
+	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
+	require.NoError(t, err, "Write machine type mock file")
+
+	defer func() {
+		err = os.Remove(MachineTypePath)
+		require.NoError(t, err, "Removing machine type mock file")
+	}()
+
+	err = run(nvmlMock, vgpuMock, conf)
+	require.NoError(t, err, "Error from run function")
+
+	outFile, err := os.Open(conf.OutputFilePath)
+	require.NoError(t, err, "Opening output file")
+
+	defer func() {
+		err = outFile.Close()
+		require.NoError(t, err, "Closing output file")
+		err = os.Remove(conf.OutputFilePath)
+		require.NoError(t, err, "Removing output file")
+	}()
+
+	result, err := ioutil.ReadAll(outFile)
+	require.NoError(t, err, "Reading output file")
+
+	err = checkResult(result, "tests/expected-output-without-timestamp.txt")
+	require.NoError(t, err, "Checking result")
+
+	err = checkResult(result, "tests/expected-output-vgpu.txt")
+	require.NoError(t, err, "Checking result for vgpu labels")
+}
+
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
