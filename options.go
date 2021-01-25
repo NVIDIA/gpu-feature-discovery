@@ -19,12 +19,13 @@ type Conf struct {
 	MigStrategy     string
 	OutputFilePath  string
 	SleepInterval   time.Duration
+	Timestamp       bool
 }
 
 func (conf *Conf) getConfFromArgv(argv []string) {
 	usage := fmt.Sprintf(`%[1]s:
 Usage:
-  %[1]s [--fail-on-init-error=<bool>] [--mig-strategy=<strategy>] [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
+  %[1]s [--fail-on-init-error=<bool>] [--mig-strategy=<strategy>] [--oneshot | --sleep-interval=<seconds>] [--timestamp] [--output-file=<file> | -o <file>]
   %[1]s -h | --help
   %[1]s --version
 
@@ -32,6 +33,7 @@ Options:
   -h --help                       Show this help message and exit
   --version                       Display version and exit
   --oneshot                       Label once and exit
+  --timestamp                     Add timestamp to the labels
   --fail-on-init-error=<bool>     Fail if there is an error during initialization of any label sources [Default: true]
   --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
   --mig-strategy=<strategy>       Strategy to use for MIG-related labels [Default: none]
@@ -77,6 +79,11 @@ Arguments:
 		log.Fatal("Invalid value for --sleep-interval option: ", err)
 	}
 
+	conf.Timestamp, err = opts.Bool("--timestamp")
+	if err != nil {
+		log.Fatal("Error while parsing command line options: ", err)
+	}
+
 	return
 }
 
@@ -84,6 +91,10 @@ func (conf *Conf) getConfFromEnv() {
 	val, ok := os.LookupEnv("GFD_ONESHOT")
 	if ok && strings.EqualFold(val, "true") {
 		conf.Oneshot = true
+	}
+	val, ok = os.LookupEnv("GFD_TIMESTAMP")
+	if ok && strings.EqualFold(val, "true") {
+		conf.Timestamp = true
 	}
 	val, ok = os.LookupEnv("GFD_FAIL_ON_INIT_ERROR")
 	if ok && strings.EqualFold(val, "false") {

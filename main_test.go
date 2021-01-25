@@ -56,6 +56,14 @@ func TestGetConfFromArgv(t *testing.T) {
 	require.False(t, confNoOptions.Oneshot, "Oneshot option with empty argv")
 	require.Equal(t, confNoOptions.SleepInterval, defaultDuration,
 		"SleepInterval option with empty argv")
+	require.False(t, confNoOptions.Timestamp, "Timestamp option with empty argv")
+
+	confTimestamp := Conf{}
+	confTimestampArgv := []string{Bin, "--timestamp"}
+	confTimestamp.getConfFromArgv(confTimestampArgv)
+
+	require.Equal(t, confTimestamp.Timestamp, true,
+		"Timestamp option with '--timestamp' argv")
 
 	confOneShot := Conf{}
 	confOneShotArgv := []string{Bin, "--oneshot"}
@@ -99,6 +107,14 @@ func TestGetConfFromEnv(t *testing.T) {
 	require.False(t, confNoEnv.Oneshot, "Oneshot option with empty env")
 	require.Equal(t, confNoEnv.SleepInterval, defaultDuration,
 		"SleepInterval option with empty env")
+	require.False(t, confNoEnv.Timestamp, "Timestamp option with empty env")
+
+	confTimestampEnv := Conf{}
+	os.Clearenv()
+	os.Setenv("GFD_TIMESTAMP", "TrUe")
+	confTimestampEnv.getConfFromEnv()
+
+	require.True(t, confTimestampEnv.Timestamp, "Timestamp option with timestamp env")
 
 	confOneShotEnv := Conf{}
 	os.Clearenv()
@@ -139,7 +155,7 @@ func TestGetConfFromEnv(t *testing.T) {
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{true, true, "none", "./gfd-test-oneshot", time.Second}
+	conf := Conf{true, true, "none", "./gfd-test-oneshot", time.Second, true}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -177,7 +193,7 @@ func TestRunOneshot(t *testing.T) {
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{false, true, "none", "./gfd-test-loop", 500 * time.Millisecond}
+	conf := Conf{false, true, "none", "./gfd-test-loop", 500 * time.Millisecond, true}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -254,7 +270,7 @@ func TestRunSleep(t *testing.T) {
 func TestFailOnNVMLInitError(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{true, true, "none", "./gfd-test-loop", 500 * time.Millisecond}
+	conf := Conf{true, true, "none", "./gfd-test-loop", 500 * time.Millisecond, true}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")

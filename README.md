@@ -139,7 +139,6 @@ items:
       nvidia.com/cuda.driver.rev: ""
       nvidia.com/cuda.runtime.major: "11"
       nvidia.com/cuda.runtime.minor: "1"
-      nvidia.com/gfd.timestamp: "1594644571"
       nvidia.com/gpu.compute.major: "8"
       nvidia.com/gpu.compute.minor: "0"
       nvidia.com/gpu.count: "1"
@@ -158,7 +157,7 @@ Available options:
 ```
 gpu-feature-discovery:
 Usage:
-  gpu-feature-discovery [--fail-on-init-error=<bool>] [--mig-strategy=<strategy>] [--oneshot | --sleep-interval=<seconds>] [--output-file=<file> | -o <file>]
+  gpu-feature-discovery [--fail-on-init-error=<bool>] [--mig-strategy=<strategy>] [--oneshot | --sleep-interval=<seconds>] [--timestamp] [--output-file=<file> | -o <file>]
   gpu-feature-discovery -h | --help
   gpu-feature-discovery --version
 
@@ -166,11 +165,16 @@ Options:
   -h --help                       Show this help message and exit
   --version                       Display version and exit
   --oneshot                       Label once and exit
+  --timestamp                     Add timestamp to the labels
   --fail-on-init-error=<bool>     Fail if there is an error during initialization of any label sources [Default: true]
   --sleep-interval=<seconds>      Time to sleep between labeling [Default: 60s]
   --mig-strategy=<strategy>       Strategy to use for MIG-related labels [Default: none]
   -o <file> --output-file=<file>  Path to output file
                                   [Default: /etc/kubernetes/node-feature-discovery/features.d/gfd]
+
+Arguments:
+  <strategy>: none | single | mixed
+
 ```
 
 You can also use environment variables:
@@ -180,6 +184,7 @@ You can also use environment variables:
 | GFD_FAIL_ON_INIT_ERROR | --fail-on-init-error | true    |
 | GFD_MIG_STRATEGY       | --mig-strategy       | none    |
 | GFD_ONESHOT            | --oneshot            | TRUE    |
+| GFD_TIMESTAMP          | --timestamp          | TRUE    |
 | GFD_OUTPUT_FILE        | --output-file        | output  |
 | GFD_SLEEP_INTERVAL     | --sleep-interval     | 10s     |
 
