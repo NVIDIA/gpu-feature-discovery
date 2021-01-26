@@ -308,7 +308,7 @@ func TestRunSleep(t *testing.T) {
 func TestFailOnNVMLInitError(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{true, true, "none", "./gfd-test-loop", 500 * time.Millisecond, true}
+	conf := Conf{true, true, "none", "./gfd-test-loop", 500 * time.Millisecond, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
