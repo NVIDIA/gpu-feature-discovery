@@ -1,3 +1,4 @@
+nvidia\.com\/gfd\.timestamp=[0-9]{10}
 nvidia\.com\/cuda\.driver\.major=[0-9]+
 nvidia\.com\/cuda\.driver\.minor=[0-9]+
 nvidia\.com\/cuda\.driver\.rev=[0-9]*

@@ -155,7 +155,7 @@ func TestGetConfFromEnv(t *testing.T) {
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{true, true, "none", "./gfd-test-oneshot", time.Second, true}
+	conf := Conf{true, true, "none", "./gfd-test-oneshot", time.Second, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -190,10 +190,10 @@ func TestRunOneshot(t *testing.T) {
 	require.NoError(t, err, "Checking result for vgpu labels")
 }
 
-func TestRunWithoutTimestamp(t *testing.T) {
+func TestRunWithTimestamp(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{true, true, "none", "./gfd-test-without-timestamp", time.Second, false}
+	conf := Conf{true, true, "none", "./gfd-test-with-timestamp", time.Second, true}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -221,9 +221,8 @@ func TestRunWithoutTimestamp(t *testing.T) {
 	result, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(result, "tests/expected-output.txt")
+	err = checkResult(result, "tests/expected-output-with-timestamp.txt")
 	require.NoError(t, err, "Checking result")
-	require.NotContains(t, string(result), "nvidia.com/gfd.timestamp=", "Checking that timestamp is not present")
 
 	err = checkResult(result, "tests/expected-output-vgpu.txt")
 	require.NoError(t, err, "Checking result for vgpu labels")
@@ -259,7 +258,7 @@ func TestRunSleep(t *testing.T) {
 	err = outFile.Close()
 	require.NoError(t, err, "Close output file while searching for first timestamp")
 
-	err = checkResult(output, "tests/expected-output.txt")
+	err = checkResult(output, "tests/expected-output-with-timestamp.txt")
 	require.NoError(t, err, "Checking result")
 
 	err = os.Remove(conf.OutputFilePath)
@@ -281,7 +280,7 @@ func TestRunSleep(t *testing.T) {
 	err = outFile.Close()
 	require.NoError(t, err, "Close output file while searching for second timestamp")
 
-	err = checkResult(output, "tests/expected-output.txt")
+	err = checkResult(output, "tests/expected-output-with-timestamp.txt")
 	require.NoError(t, err, "Checking result")
 
 	err = os.Remove(conf.OutputFilePath)
