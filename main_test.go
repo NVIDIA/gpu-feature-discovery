@@ -232,7 +232,7 @@ func TestRunWithNoTimestamp(t *testing.T) {
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{false, true, "none", "./gfd-test-loop", 500 * time.Millisecond, false}
+	conf := Conf{false, true, "none", "./gfd-test-loop", time.Second, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -242,6 +242,8 @@ func TestRunSleep(t *testing.T) {
 	defer func() {
 		err = os.Remove(MachineTypePath)
 		require.NoError(t, err, "Removing machine type mock file")
+		err = os.Remove(conf.OutputFilePath)
+		require.NoError(t, err, "Removing output file")
 	}()
 
 	var runError error
@@ -249,59 +251,54 @@ func TestRunSleep(t *testing.T) {
 		runError = run(nvmlMock, vgpuMock, conf)
 	}()
 
-	// Try to get first timestamp
-	outFile, err := waitForFile(conf.OutputFilePath, 5, time.Second)
-	require.NoError(t, err, "Open output file while searching for first timestamp")
+	outFileModificationTime := make([]int64, 2)
+	timestampLabels := make([]string, 2)
+	// Read two iterations of the output file
+	for i := 0; i < 2; i++ {
+		outFile, err := waitForFile(conf.OutputFilePath, 5, time.Second)
+		require.NoErrorf(t, err, "Open output file: %d", i)
 
-	output, err := ioutil.ReadAll(outFile)
-	require.NoError(t, err, "Read output file while searching for first timestamp")
+		var outFileStat os.FileInfo
+		var ts int64
 
-	err = outFile.Close()
-	require.NoError(t, err, "Close output file while searching for first timestamp")
+		for attempt := 0; i > 0 && attempt < 3; attempt++ {
+			// We ensure that the output file has been modified. Note, we expect the contents to remain the
+			// same so we check the modification timestamp of the file.
+			outFileStat, err = os.Stat(conf.OutputFilePath)
+			require.NoError(t, err, "Getting output file info")
 
-	err = checkResult(output, "tests/expected-output.txt")
-	require.NoError(t, err, "Checking result")
+			ts = outFileStat.ModTime().Unix()
+			if ts > outFileModificationTime[0] {
+				break
+			}
+			// We wait for conf.SleepInterval, as the labels should be updated at least once in that period
+			time.Sleep(conf.SleepInterval)
+		}
+		outFileModificationTime[i] = ts
 
-	err = os.Remove(conf.OutputFilePath)
-	require.NoError(t, err, "Remove output file while searching for first timestamp")
+		output, err := ioutil.ReadAll(outFile)
+		require.NoErrorf(t, err, "Read output file: %d", i)
 
-	labels, err := buildLabelMapFromOutput(output)
-	require.NoError(t, err, "Building map of labels from output file")
-	require.Contains(t, labels, "nvidia.com/gfd.timestamp", "Missing timestamp")
+		err = outFile.Close()
+		require.NoErrorf(t, err, "Close output file: %d", i)
 
-	firstTimestamp := labels["nvidia.com/gfd.timestamp"]
+		err = checkResult(output, "tests/expected-output.txt")
+		require.NoErrorf(t, err, "Checking result: %d", i)
+		err = checkResult(output, "tests/expected-output-vgpu.txt")
+		require.NoErrorf(t, err, "Checking result for vgpu labels: %d", i)
 
-	// Wait for second timestamp
-	outFile, err = waitForFile(conf.OutputFilePath, 5, time.Second)
-	require.NoError(t, err, "Open output file while searching for second timestamp")
+		labels, err := buildLabelMapFromOutput(output)
+		require.NoErrorf(t, err, "Building map of labels from output file: %d", i)
 
-	output, err = ioutil.ReadAll(outFile)
-	require.NoError(t, err, "Read output file while searching for second timestamp")
+		require.Containsf(t, labels, "nvidia.com/gfd.timestamp", "Missing timestamp: %d", i)
+		timestampLabels[i] = labels["nvidia.com/gfd.timestamp"]
 
-	err = outFile.Close()
-	require.NoError(t, err, "Close output file while searching for second timestamp")
-
-	err = checkResult(output, "tests/expected-output.txt")
-	require.NoError(t, err, "Checking result")
-
-	err = os.Remove(conf.OutputFilePath)
-	require.NoError(t, err, "Remove output file while searching for second timestamp")
-
-	labels, err = buildLabelMapFromOutput(output)
-	require.NoError(t, err, "Building map of labels from output file")
-	require.Contains(t, labels, "nvidia.com/gfd.timestamp", "Missing timestamp")
-
-	currentTimestamp := labels["nvidia.com/gfd.timestamp"]
-
-	require.NotEqual(t, firstTimestamp, currentTimestamp, "Timestamp didn't change")
-
-	// check for vgpu labels
-	err = checkResult(output, "tests/expected-output-vgpu.txt")
-	require.NoError(t, err, "Checking result for vgpu labels")
-
-	require.Contains(t, labels, "nvidia.com/vgpu.present", "Missing vgpu present label")
-	require.Contains(t, labels, "nvidia.com/vgpu.host-driver-version", "Missing vGPU host driver version label")
-	require.Contains(t, labels, "nvidia.com/vgpu.host-driver-branch", "Missing vGPU host driver branch label")
+		require.Containsf(t, labels, "nvidia.com/vgpu.present", "Missing vgpu present label: %d", i)
+		require.Containsf(t, labels, "nvidia.com/vgpu.host-driver-version", "Missing vGPU host driver version label: %d", i)
+		require.Containsf(t, labels, "nvidia.com/vgpu.host-driver-branch", "Missing vGPU host driver branch label: %d", i)
+	}
+	require.Greater(t, outFileModificationTime[1], outFileModificationTime[0], "Output file not modified")
+	require.Equal(t, timestampLabels[1], timestampLabels[0], "Timestamp label changed")
 
 	require.NoError(t, runError, "Error from run")
 }
@@ -345,7 +342,6 @@ func TestFailOnNVMLInitError(t *testing.T) {
 	nvmlMock.errorOnInit = true
 	conf.FailOnInitError = false
 	conf.MigStrategy = "none"
-	fmt.Printf("start previous one\n")
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected to skip error from NVML Init")
 
@@ -353,7 +349,6 @@ func TestFailOnNVMLInitError(t *testing.T) {
 	nvmlMock.errorOnInit = true
 	conf.FailOnInitError = false
 	conf.MigStrategy = "bogus"
-	fmt.Printf("start this one\n")
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected to skip error from NVML Init")
 
@@ -395,7 +390,13 @@ func buildLabelMapFromOutput(output []byte) (map[string]string, error) {
 		if len(split) != 2 {
 			return nil, fmt.Errorf("Unexpected format in line: '%v'", line)
 		}
-		labels[split[0]] = split[1]
+		key := split[0]
+		value := split[1]
+
+		if v, ok := labels[key]; ok {
+			return nil, fmt.Errorf("Duplicate label '%v': %v (overwrites %v)", key, v, value)
+		}
+		labels[key] = value
 	}
 
 	return labels, nil
