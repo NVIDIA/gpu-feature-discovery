@@ -50,7 +50,7 @@ func main() {
 	log.Print("FailOnInitError: ", conf.FailOnInitError)
 	log.Print("SleepInterval: ", conf.SleepInterval)
 	log.Print("MigStrategy: ", conf.MigStrategy)
-	log.Print("Timestamp: ", conf.Timestamp)
+	log.Print("No Timestamp: ", conf.NoTimestamp)
 	log.Print("OutputFilePath: ", conf.OutputFilePath)
 
 	log.Print("Start running")
@@ -105,7 +105,7 @@ L:
 		}
 
 		output := new(bytes.Buffer)
-		if conf.Timestamp {
+		if !conf.NoTimestamp {
 			fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", time.Now().Unix())
 		}
 		for k, v := range vGPULabels {

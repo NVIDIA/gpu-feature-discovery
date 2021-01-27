@@ -56,14 +56,14 @@ func TestGetConfFromArgv(t *testing.T) {
 	require.False(t, confNoOptions.Oneshot, "Oneshot option with empty argv")
 	require.Equal(t, confNoOptions.SleepInterval, defaultDuration,
 		"SleepInterval option with empty argv")
-	require.False(t, confNoOptions.Timestamp, "Timestamp option with empty argv")
+	require.False(t, confNoOptions.NoTimestamp, "No Timestamp option with empty argv")
 
 	confTimestamp := Conf{}
-	confTimestampArgv := []string{Bin, "--timestamp"}
+	confTimestampArgv := []string{Bin, "--no-timestamp"}
 	confTimestamp.getConfFromArgv(confTimestampArgv)
 
-	require.Equal(t, confTimestamp.Timestamp, true,
-		"Timestamp option with '--timestamp' argv")
+	require.Equal(t, confTimestamp.NoTimestamp, true,
+		"No Timestamp option with '--no-timestamp' argv")
 
 	confOneShot := Conf{}
 	confOneShotArgv := []string{Bin, "--oneshot"}
@@ -107,14 +107,14 @@ func TestGetConfFromEnv(t *testing.T) {
 	require.False(t, confNoEnv.Oneshot, "Oneshot option with empty env")
 	require.Equal(t, confNoEnv.SleepInterval, defaultDuration,
 		"SleepInterval option with empty env")
-	require.False(t, confNoEnv.Timestamp, "Timestamp option with empty env")
+	require.False(t, confNoEnv.NoTimestamp, "No Timestamp option with empty env")
 
 	confTimestampEnv := Conf{}
 	os.Clearenv()
-	os.Setenv("GFD_TIMESTAMP", "TrUe")
+	os.Setenv("GFD_NO_TIMESTAMP", "TrUe")
 	confTimestampEnv.getConfFromEnv()
 
-	require.True(t, confTimestampEnv.Timestamp, "Timestamp option with timestamp env")
+	require.True(t, confTimestampEnv.NoTimestamp, "No Timestamp option with timestamp env")
 
 	confOneShotEnv := Conf{}
 	os.Clearenv()
@@ -190,10 +190,10 @@ func TestRunOneshot(t *testing.T) {
 	require.NoError(t, err, "Checking result for vgpu labels")
 }
 
-func TestRunWithTimestamp(t *testing.T) {
+func TestRunWithNoTimestamp(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{true, true, "none", "./gfd-test-with-timestamp", time.Second, true}
+	conf := Conf{true, true, "none", "./gfd-test-with-no-timestamp", time.Second, true}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -221,8 +221,9 @@ func TestRunWithTimestamp(t *testing.T) {
 	result, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(result, "tests/expected-output-with-timestamp.txt")
+	err = checkResult(result, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
+	require.NotContains(t, string(result), "nvidia.com/gfd.timestamp=", "Checking absent timestamp")
 
 	err = checkResult(result, "tests/expected-output-vgpu.txt")
 	require.NoError(t, err, "Checking result for vgpu labels")
@@ -231,7 +232,7 @@ func TestRunWithTimestamp(t *testing.T) {
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{false, true, "none", "./gfd-test-loop", 500 * time.Millisecond, true}
+	conf := Conf{false, true, "none", "./gfd-test-loop", 500 * time.Millisecond, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -258,7 +259,7 @@ func TestRunSleep(t *testing.T) {
 	err = outFile.Close()
 	require.NoError(t, err, "Close output file while searching for first timestamp")
 
-	err = checkResult(output, "tests/expected-output-with-timestamp.txt")
+	err = checkResult(output, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
 
 	err = os.Remove(conf.OutputFilePath)
@@ -280,7 +281,7 @@ func TestRunSleep(t *testing.T) {
 	err = outFile.Close()
 	require.NoError(t, err, "Close output file while searching for second timestamp")
 
-	err = checkResult(output, "tests/expected-output-with-timestamp.txt")
+	err = checkResult(output, "tests/expected-output.txt")
 	require.NoError(t, err, "Checking result")
 
 	err = os.Remove(conf.OutputFilePath)
