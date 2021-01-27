@@ -39,7 +39,7 @@ func TestMigStrategyNone(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, true, "none", "./gfd-test-mig-none", time.Second}
+	conf := Conf{true, true, "none", "./gfd-test-mig-none", time.Second, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -83,7 +83,7 @@ func TestMigStrategySingleForNoMigDevices(t *testing.T) {
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
 
-	conf := Conf{true, true, "single", "./gfd-test-mig-single-no-mig", time.Second}
+	conf := Conf{true, true, "single", "./gfd-test-mig-single-no-mig", time.Second, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -148,7 +148,7 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, true, "single", "./gfd-test-mig-single-no-mig", time.Second}
+	conf := Conf{true, true, "single", "./gfd-test-mig-single-no-mig", time.Second, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -213,7 +213,7 @@ func TestMigStrategySingle(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, true, "single", "./gfd-test-mig-single", time.Second}
+	conf := Conf{true, true, "single", "./gfd-test-mig-single", time.Second, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -274,7 +274,7 @@ func TestMigStrategyMixed(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, true, "mixed", "./gfd-test-mig-mixed", time.Second}
+	conf := Conf{true, true, "mixed", "./gfd-test-mig-mixed", time.Second, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")

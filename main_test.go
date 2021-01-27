@@ -56,6 +56,14 @@ func TestGetConfFromArgv(t *testing.T) {
 	require.False(t, confNoOptions.Oneshot, "Oneshot option with empty argv")
 	require.Equal(t, confNoOptions.SleepInterval, defaultDuration,
 		"SleepInterval option with empty argv")
+	require.False(t, confNoOptions.NoTimestamp, "No Timestamp option with empty argv")
+
+	confTimestamp := Conf{}
+	confTimestampArgv := []string{Bin, "--no-timestamp"}
+	confTimestamp.getConfFromArgv(confTimestampArgv)
+
+	require.Equal(t, confTimestamp.NoTimestamp, true,
+		"No Timestamp option with '--no-timestamp' argv")
 
 	confOneShot := Conf{}
 	confOneShotArgv := []string{Bin, "--oneshot"}
@@ -99,6 +107,14 @@ func TestGetConfFromEnv(t *testing.T) {
 	require.False(t, confNoEnv.Oneshot, "Oneshot option with empty env")
 	require.Equal(t, confNoEnv.SleepInterval, defaultDuration,
 		"SleepInterval option with empty env")
+	require.False(t, confNoEnv.NoTimestamp, "No Timestamp option with empty env")
+
+	confTimestampEnv := Conf{}
+	os.Clearenv()
+	os.Setenv("GFD_NO_TIMESTAMP", "TrUe")
+	confTimestampEnv.getConfFromEnv()
+
+	require.True(t, confTimestampEnv.NoTimestamp, "No Timestamp option with timestamp env")
 
 	confOneShotEnv := Conf{}
 	os.Clearenv()
@@ -139,7 +155,7 @@ func TestGetConfFromEnv(t *testing.T) {
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{true, true, "none", "./gfd-test-oneshot", time.Second}
+	conf := Conf{true, true, "none", "./gfd-test-oneshot", time.Second, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -174,10 +190,49 @@ func TestRunOneshot(t *testing.T) {
 	require.NoError(t, err, "Checking result for vgpu labels")
 }
 
+func TestRunWithNoTimestamp(t *testing.T) {
+	nvmlMock := NewTestNvmlMock()
+	vgpuMock := NewTestVGPUMock()
+	conf := Conf{true, true, "none", "./gfd-test-with-no-timestamp", time.Second, true}
+
+	MachineTypePath = "/tmp/machine-type"
+	machineType := []byte("product-name\n")
+	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
+	require.NoError(t, err, "Write machine type mock file")
+
+	defer func() {
+		err = os.Remove(MachineTypePath)
+		require.NoError(t, err, "Removing machine type mock file")
+	}()
+
+	err = run(nvmlMock, vgpuMock, conf)
+	require.NoError(t, err, "Error from run function")
+
+	outFile, err := os.Open(conf.OutputFilePath)
+	require.NoError(t, err, "Opening output file")
+
+	defer func() {
+		err = outFile.Close()
+		require.NoError(t, err, "Closing output file")
+		err = os.Remove(conf.OutputFilePath)
+		require.NoError(t, err, "Removing output file")
+	}()
+
+	result, err := ioutil.ReadAll(outFile)
+	require.NoError(t, err, "Reading output file")
+
+	err = checkResult(result, "tests/expected-output.txt")
+	require.NoError(t, err, "Checking result")
+	require.NotContains(t, string(result), "nvidia.com/gfd.timestamp=", "Checking absent timestamp")
+
+	err = checkResult(result, "tests/expected-output-vgpu.txt")
+	require.NoError(t, err, "Checking result for vgpu labels")
+}
+
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{false, true, "none", "./gfd-test-loop", 500 * time.Millisecond}
+	conf := Conf{false, true, "none", "./gfd-test-loop", 500 * time.Millisecond, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -254,7 +309,7 @@ func TestRunSleep(t *testing.T) {
 func TestFailOnNVMLInitError(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := Conf{true, true, "none", "./gfd-test-loop", 500 * time.Millisecond}
+	conf := Conf{true, true, "none", "./gfd-test-loop", 500 * time.Millisecond, false}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
