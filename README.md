@@ -141,6 +141,7 @@ items:
       nvidia.com/cuda.runtime.minor: "1"
       nvidia.com/gpu.compute.major: "8"
       nvidia.com/gpu.compute.minor: "0"
+      nvidia.com/gfd.timestamp: "1594644571"
       nvidia.com/gpu.count: "1"
       nvidia.com/gpu.family: ampere
       nvidia.com/gpu.machine: NVIDIA DGX-2H
