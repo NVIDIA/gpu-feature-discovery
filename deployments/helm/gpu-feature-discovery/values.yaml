@@ -1,5 +1,6 @@
 failOnInitError: true
 migStrategy: none
+noTimestamp: false
 sleepInterval: 60s
 
 nameOverride: ""
