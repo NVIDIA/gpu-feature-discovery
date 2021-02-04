@@ -74,7 +74,7 @@ The following command will deploy NFD with the minimum required set of
 parameters to run `gpu-feature-discovery`.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.3.0/deployments/static/nfd.yaml
+kubectl apply -f https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.4.0/deployments/static/nfd.yaml
 ```
 
 **Note:** This is a simple static daemonset meant to demonstrate the basic
@@ -96,7 +96,7 @@ or as a Job.
 #### Daemonset
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.3.0/deployments/static/gpu-feature-discovery-daemonset.yaml
+kubectl apply -f https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.4.0/deployments/static/gpu-feature-discovery-daemonset.yaml
 ```
 
 **Note:** This is a simple static daemonset meant to demonstrate the basic
@@ -111,7 +111,7 @@ node you want to label:
 
 ```shell
 $ export NODE_NAME=<your-node-name>
-$ curl https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.3.0/deployments/static/gpu-feature-discovery-job.yaml.template \
+$ curl https://raw.githubusercontent.com/NVIDIA/gpu-feature-discovery/v0.4.0/deployments/static/gpu-feature-discovery-job.yaml.template \
     | sed "s/NODE_NAME/${NODE_NAME}/" > gpu-feature-discovery-job.yaml
 $ kubectl apply -f gpu-feature-discovery-job.yaml
 ```
@@ -267,7 +267,7 @@ The preferred method to deploy `gpu-feature-discovery` is as a daemonset using `
 Instructions for installing `helm` can be found
 [here](https://helm.sh/docs/intro/install/).
 
-The `helm` chart for the latest release of GFD (`v0.3.0`) includes a number
+The `helm` chart for the latest release of GFD (`v0.4.0`) includes a number
 of customizable values. The most commonly overridden ones are:
 
 ```
@@ -292,8 +292,8 @@ Please take a look in the following `values.yaml` files to see the full set of
 overridable parameters for both the top-level `gpu-feature-discovery` chart and
 the `node-feature-discovery` subchart.
 
-* https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.3.0/deployments/helm/gpu-feature-discovery/values.yaml
-* https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.3.0/deployments/helm/gpu-feature-discovery/charts/node-feature-discovery/values.yaml
+* https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.4.0/deployments/helm/gpu-feature-discovery/values.yaml
+* https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.4.0/deployments/helm/gpu-feature-discovery/charts/node-feature-discovery/values.yaml
 
 #### Installing via `helm install` from the `gpu-feature-discovery` `helm` repository
 
@@ -317,7 +317,7 @@ components with the various flags from above.
 Using the default values for all flags:
 ```shell
 $ helm install \
-    --version=0.3.0 \
+    --version=0.4.0 \
     --generate-name \
     nvgfd/gpu-feature-discovery
 ```
@@ -326,7 +326,7 @@ Disabling auto-deployment of NFD and running with a MIG strategy of 'mixed' in
 the default namespace.
 ```shell
 $ helm install \
-    --version=0.3.0 \
+    --version=0.4.0 \
     --generate-name \
     --set nfd.deploy=false \
     --set migStrategy=mixed
@@ -345,7 +345,7 @@ Using the default values for the flags:
 ```shell
 $ helm install \
     --generate-name \
-    https://nvidia.github.com/gpu-feature-discovery/stable/gpu-feature-discovery-0.3.0.tgz
+    https://nvidia.github.com/gpu-feature-discovery/stable/gpu-feature-discovery-0.4.0.tgz
 ```
 
 Disabling auto-deployment of NFD and running with a MIG strategy of 'mixed' in
@@ -356,7 +356,7 @@ $ helm install \
     --set nfd.deploy=false \
     --set migStrategy=mixed
     --set namespace=default \
-    https://nvidia.github.com/gpu-feature-discovery/stable/gpu-feature-discovery-0.3.0.tgz
+    https://nvidia.github.com/gpu-feature-discovery/stable/gpu-feature-discovery-0.4.0.tgz
 ```
 
 ## Building and running locally with Docker
