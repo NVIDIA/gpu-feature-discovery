@@ -84,7 +84,11 @@ func run(nvml Nvml, vgpu VGPU, conf Conf) error {
 		}
 	}()
 
-	gfdTimestamp := time.Now().Unix()
+	gfdLabels := make(map[string]string)
+	if !conf.NoTimestamp {
+		gfdLabels["nvidia.com/gfd.timestamp"] = fmt.Sprintf("%d", time.Now().Unix())
+	}
+
 L:
 	for {
 		nvmlLabels, err := getNVMLLabels(nvml, conf.MigStrategy)
@@ -105,19 +109,13 @@ L:
 			log.Printf("Warning: no labels generated from any source")
 		}
 
-		output := new(bytes.Buffer)
-		if !conf.NoTimestamp {
-			fmt.Fprintf(output, "nvidia.com/gfd.timestamp=%d\n", gfdTimestamp)
+		allLabels := []map[string]string{
+			gfdLabels,
+			vGPULabels,
+			nvmlLabels,
 		}
-		for k, v := range vGPULabels {
-			fmt.Fprintf(output, "%s=%s\n", k, v)
-		}
-		for k, v := range nvmlLabels {
-			fmt.Fprintf(output, "%s=%s\n", k, v)
-		}
-
 		log.Print("Writing labels to output file")
-		err = writeFileAtomically(conf.OutputFilePath, output.Bytes(), 0644)
+		err = writeLabelsToFile(conf.OutputFilePath, allLabels...)
 		if err != nil {
 			return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
 		}
@@ -287,6 +285,21 @@ func getArchFamily(computeMajor, computeMinor int) string {
 		return "ampere"
 	}
 	return "undefined"
+}
+
+// writeLabelsToFile writes a set of labels to the specified path. The file is written atomocally
+func writeLabelsToFile(path string, labelSets ...map[string]string) error {
+	output := new(bytes.Buffer)
+	for _, labels := range labelSets {
+		for k, v := range labels {
+			fmt.Fprintf(output, "%s=%s\n", k, v)
+		}
+	}
+	err := writeFileAtomically(path, output.Bytes(), 0644)
+	if err != nil {
+		return fmt.Errorf("Error atomically writing file '%s': %v", path, err)
+	}
+	return nil
 }
 
 func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
