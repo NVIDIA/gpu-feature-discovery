@@ -110,7 +110,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 		return nil, fmt.Errorf("For mig.strategy=single all devices on the node must all be configured with the same migEnabled value")
 	}
 	if err := devices.AssertAllMigEnabledDevicesAreValid(); err != nil {
-		return nil, fmt.Errorf("At least one device with migEnabled=true was not configured corectly: %v", err)
+		return nil, fmt.Errorf("At least one device with migEnabled=true was not configured correctly: %v", err)
 	}
 
 	// Verify that all MIG devices on this node are the same type
