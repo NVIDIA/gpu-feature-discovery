@@ -16,7 +16,7 @@ spec:
     spec:
       nodeName: NODE_NAME
       containers:
-        - image: nvidia/gpu-feature-discovery:v0.4.0
+        - image: nvcr.io/nvidia/gpu-feature-discovery:v0.4.0
           name: gpu-feature-discovery
           args:
             - "--oneshot"

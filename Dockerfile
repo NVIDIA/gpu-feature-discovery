@@ -14,7 +14,7 @@ RUN go install -ldflags "-X main.Version=${GFD_VERSION}" github.com/NVIDIA/gpu-f
 
 RUN go test .
 
-FROM nvidia/cuda:11.0-base-ubi8
+FROM nvcr.io/nvidia/cuda:11.0-base-ubi8
 
 # disable all constraints on the configurations required by NVIDIA container toolkit
 ENV NVIDIA_DISABLE_REQUIRE="true"

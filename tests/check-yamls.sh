@@ -10,7 +10,7 @@ YAML_FILES="../gpu-feature-discovery-daemonset.yaml ../gpu-feature-discovery-job
 ret=0
 
 for file in ${YAML_FILES}; do
-  if ! grep -w "nvidia/gpu-feature-discovery:${VERSION}" "${file}"; then
+  if ! grep -w "nvcr.io/nvidia/gpu-feature-discovery:${VERSION}" "${file}"; then
     echo "GFD image version in YAML ${file} does not match current tag."
     echo "You may have forgotten to update it"
     ret=1

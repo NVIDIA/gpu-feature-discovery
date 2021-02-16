@@ -17,9 +17,9 @@ sudo pip3 install -r e2e-requirements.txt
 
 # If it's a tag
 if [ -n "$CI_COMMIT_TAG" ]; then
-	sed -i "s|nvidia/gpu-feature-discovery:|${IMAGE_NAME}:|" ${GFD_YAML_FILE}
+	sed -i "s|nvcr.io/nvidia/gpu-feature-discovery:|${IMAGE_NAME}:|" ${GFD_YAML_FILE}
 else
-	sed -i -E "s|nvidia/gpu-feature-discovery:.*|${IMAGE_NAME}:${VERSION}|" ${GFD_YAML_FILE}
+	sed -i -E "s|nvcr.io/nvidia/gpu-feature-discovery:.*|${IMAGE_NAME}:${VERSION}|" ${GFD_YAML_FILE}
 fi
 
 ./e2e-tests.py ${GFD_YAML_FILE} ${NFD_YAML_FILE}
