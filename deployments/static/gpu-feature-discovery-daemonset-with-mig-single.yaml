@@ -4,7 +4,7 @@ metadata:
   name: gpu-feature-discovery
   labels:
     app.kubernetes.io/name: gpu-feature-discovery
-    app.kubernetes.io/version: 0.4.0
+    app.kubernetes.io/version: 0.4.1
     app.kubernetes.io/part-of: nvidia-gpu
 spec:
   selector:
@@ -15,11 +15,11 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: gpu-feature-discovery
-        app.kubernetes.io/version: 0.4.0
+        app.kubernetes.io/version: 0.4.1
         app.kubernetes.io/part-of: nvidia-gpu
     spec:
       containers:
-        - image: nvcr.io/nvidia/gpu-feature-discovery:v0.4.0
+        - image: nvcr.io/nvidia/gpu-feature-discovery:v0.4.1
           name: gpu-feature-discovery
           args: ["--mig-strategy=single"]
           volumeMounts:
