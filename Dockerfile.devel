@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.0-base
+FROM nvcr.io/nvidia/cuda:11.0-base
 
 # disable all constraints on the configurations required by NVIDIA container toolkit
 ENV NVIDIA_DISABLE_REQUIRE="true"

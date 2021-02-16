@@ -369,19 +369,19 @@ git clone https://github.com/NVIDIA/gpu-feature-discovery
 Build the docker image:
 ```
 export GFD_VERSION=$(git describe --tags --dirty --always)
-docker build . --build-arg GFD_VERSION=$GFD_VERSION -t nvidia/gpu-feature-discovery:${GFD_VERSION}
+docker build . --build-arg GFD_VERSION=$GFD_VERSION -t nvcr.io/nvidia/gpu-feature-discovery:${GFD_VERSION}
 ```
 
 Run it:
 ```
 mkdir -p output-dir
-docker run -v ${PWD}/output-dir:/etc/kubernetes/node-feature-discovery/features.d nvidia/gpu-feature-discovery:${GFD_VERSION}
+docker run -v ${PWD}/output-dir:/etc/kubernetes/node-feature-discovery/features.d nvcr.io/nvidia/gpu-feature-discovery:${GFD_VERSION}
 ```
 
 You should have set the default runtime of Docker to `nvidia` on your host or
 you can also use the `--runtime=nvidia` option:
 ```
-docker run --runtime=nvidia nvidia/gpu-feature-discovery:${GFD_VERSION}
+docker run --runtime=nvidia nvcr.io/nvidia/gpu-feature-discovery:${GFD_VERSION}
 ```
 
 ## Building and running locally on your native machine
