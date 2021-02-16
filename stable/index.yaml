@@ -2,8 +2,25 @@ apiVersion: v1
 entries:
   gpu-feature-discovery:
   - apiVersion: v2
+    appVersion: 0.4.1
+    created: "2021-02-16T16:20:29.026493444Z"
+    dependencies:
+    - condition: nfd.deploy
+      name: node-feature-discovery
+      repository: ""
+      version: 0.1.0
+    description: A Helm chart for gpu-feature-discovery on Kubernetes
+    digest: 6fa7eac6012a38f29636e74e3d8c7e66f0fc70184afa4c937e481a451fb6c8a1
+    home: https://github.com/NVIDIA/gpu-feature-discovery
+    kubeVersion: '>= 1.10.0-0'
+    name: gpu-feature-discovery
+    type: application
+    urls:
+    - https://nvidia.github.io/gpu-feature-discovery/stable/gpu-feature-discovery-0.4.1.tgz
+    version: 0.4.1
+  - apiVersion: v2
     appVersion: 0.4.0
-    created: "2021-02-04T14:45:53.92710539Z"
+    created: "2021-02-16T16:20:29.025357796Z"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -20,7 +37,7 @@ entries:
     version: 0.4.0
   - apiVersion: v2
     appVersion: 0.3.0
-    created: "2021-02-04T14:45:53.926258517Z"
+    created: "2021-02-16T16:20:29.024286419Z"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -37,7 +54,7 @@ entries:
     version: 0.3.0
   - apiVersion: v2
     appVersion: 0.2.2
-    created: "2021-02-04T14:45:53.925330821Z"
+    created: "2021-02-16T16:20:29.02321876Z"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -54,7 +71,7 @@ entries:
     version: 0.2.2
   - apiVersion: v2
     appVersion: 0.2.1
-    created: "2021-02-04T14:45:53.92452653Z"
+    created: "2021-02-16T16:20:29.022374858Z"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -71,7 +88,7 @@ entries:
     version: 0.2.1
   - apiVersion: v2
     appVersion: 0.2.0
-    created: "2021-02-04T14:45:53.923655272Z"
+    created: "2021-02-16T16:20:29.0213717Z"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -88,7 +105,7 @@ entries:
     version: 0.2.0
   - apiVersion: v2
     appVersion: 0.2.0-rc.1
-    created: "2021-02-04T14:45:53.922799791Z"
+    created: "2021-02-16T16:20:29.020336266Z"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -103,4 +120,4 @@ entries:
     urls:
     - https://nvidia.github.io/gpu-feature-discovery/stable/gpu-feature-discovery-0.2.0-rc.1.tgz
     version: 0.2.0-rc.1
-generated: "2021-02-04T14:45:53.921681028Z"
+generated: "2021-02-16T16:20:29.017799737Z"
