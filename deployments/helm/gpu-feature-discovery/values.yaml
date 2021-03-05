@@ -8,6 +8,8 @@ fullnameOverride: ""
 
 namespace: node-feature-discovery
 
+priorityClassName: "system-node-critical"
+
 imagePullSecrets: []
 image:
   repository: nvcr.io/nvidia/gpu-feature-discovery
@@ -38,4 +40,3 @@ node-feature-discovery:
         pci:
           deviceLabelFields:
             - vendor
-
