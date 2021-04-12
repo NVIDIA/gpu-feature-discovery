@@ -17,6 +17,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -70,7 +71,12 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 		return labels, nil
 	}
 
-	device, err := s.nvml.NewDevice(0)
+	sampleDeviceIdx, err := getFirstValidDeviceIndex(s.nvml)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting device: %v", err)
+	}
+
+	device, err := s.nvml.NewDevice(sampleDeviceIdx)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting device: %v", err)
 	}
@@ -85,6 +91,30 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 	}
 
 	return labels, nil
+}
+
+func getFirstValidDeviceIndex(nvml Nvml) (uint, error) {
+	deviceCount, err := nvml.GetDeviceCount()
+	if err != nil {
+		return 0, fmt.Errorf("Error getting device count: %v", err)
+	}
+
+	for deviceIdx := uint(0); deviceIdx < deviceCount; deviceIdx++ {
+		device, err := nvml.NewDevice(deviceIdx)
+		if err != nil {
+			log.Printf("Error getting device at index %d: %v", deviceIdx, err)
+			continue
+		}
+
+		instance := device.Instance()
+		if instance.Model == nil {
+			log.Printf("Model nil for device at index %d", deviceIdx)
+			continue
+		}
+
+		return deviceIdx, nil
+	}
+	return 0, errors.New("Failed to get Model for all devices")
 }
 
 func confirmAllTheSameModel(nvml Nvml) error {
