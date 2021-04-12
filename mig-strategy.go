@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -67,6 +68,13 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 
 	labels := make(map[string]string)
 	labels["nvidia.com/gpu.count"] = fmt.Sprintf("%d", count)
+
+	err = confirmAllTheSameModel(s.nvml)
+	if err != nil {
+		log.Printf("%v", err)
+		return labels, nil
+	}
+
 	if device.Instance().Model != nil {
 		model := strings.Replace(*device.Instance().Model, " ", "-", -1)
 		labels["nvidia.com/gpu.product"] = model
@@ -77,6 +85,32 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 	}
 
 	return labels, nil
+}
+
+func confirmAllTheSameModel(nvml Nvml) error {
+	deviceCount, err := nvml.GetDeviceCount()
+	if err != nil {
+		return fmt.Errorf("Error getting device count: %v", err)
+	}
+
+	lastModel := ""
+	for deviceIdx := uint(0); deviceIdx < deviceCount; deviceIdx++ {
+		device, err := nvml.NewDevice(deviceIdx)
+		if err != nil {
+			log.Printf("Error getting device at index %d: %v", deviceIdx, err)
+			continue
+		}
+
+		instance := device.Instance()
+		if instance.Model != nil {
+			model := *instance.Model
+			if lastModel != "" && lastModel != model {
+				return fmt.Errorf("Device models not all the same: (%s != %s)", lastModel, model)
+			}
+			lastModel = model
+		}
+	}
+	return nil
 }
 
 // migStrategySingle

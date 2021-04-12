@@ -9,6 +9,77 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNoneStrategyReturnsLabelsForSingleDevice(t *testing.T) {
+	nvmlMock := NewTestNvmlMock()
+
+	none, _ := NewMigStrategy(MigStrategyNone, nvmlMock)
+	labels, err := none.GenerateLabels()
+
+	require.NoError(t, err)
+	require.Equal(t, "MOCKMODEL", labels["nvidia.com/gpu.product"], "Incorrect label nvidia.com/gpu.product")
+	require.Equal(t, "128", labels["nvidia.com/gpu.memory"], "Incorrect label nvidia.com/gpu.memory")
+	require.Equal(t, "1", labels["nvidia.com/gpu.count"], "Incorrect label nvidia.com/gpu.count")
+	require.Len(t, labels, 3)
+}
+
+func TestNoneStrategyReturnsLabelsForTwoIdenticalDevices(t *testing.T) {
+	nvmlMock := NewTestNvmlMock()
+	nvmlMock.devices = append(nvmlMock.devices, nvmlMock.devices[0])
+
+	model0 := "MOCKMODEL128"
+	mem0 := uint64(128)
+	model1 := "MOCKMODEL128"
+	mem1 := uint64(128)
+
+	nvmlMock.devices = []NvmlMockDevice{
+		NvmlMockDevice{
+			instance:   &nvml.Device{Model: &model0, Memory: &mem0},
+			attributes: &nvml.DeviceAttributes{},
+		},
+		NvmlMockDevice{
+			instance:   &nvml.Device{Model: &model1, Memory: &mem1},
+			attributes: &nvml.DeviceAttributes{},
+		},
+	}
+
+	none, _ := NewMigStrategy(MigStrategyNone, nvmlMock)
+	labels, err := none.GenerateLabels()
+
+	require.NoError(t, err)
+	require.Equal(t, "MOCKMODEL128", labels["nvidia.com/gpu.product"], "Incorrect label nvidia.com/gpu.product")
+	require.Equal(t, "128", labels["nvidia.com/gpu.memory"], "Incorrect label nvidia.com/gpu.memory")
+	require.Equal(t, "2", labels["nvidia.com/gpu.count"], "Incorrect label nvidia.com/gpu.count")
+	require.Len(t, labels, 3)
+}
+
+func TestNoneStrategyReturnsOnlyCountLabelForTwoNonIdenticalDevices(t *testing.T) {
+	nvmlMock := NewTestNvmlMock()
+	nvmlMock.devices = append(nvmlMock.devices, nvmlMock.devices[0])
+
+	model0 := "MOCKMODEL128"
+	mem0 := uint64(128)
+	model1 := "MOCKMODEL256"
+	mem1 := uint64(256)
+
+	nvmlMock.devices = []NvmlMockDevice{
+		NvmlMockDevice{
+			instance:   &nvml.Device{Model: &model0, Memory: &mem0},
+			attributes: &nvml.DeviceAttributes{},
+		},
+		NvmlMockDevice{
+			instance:   &nvml.Device{Model: &model1, Memory: &mem1},
+			attributes: &nvml.DeviceAttributes{},
+		},
+	}
+
+	none, _ := NewMigStrategy(MigStrategyNone, nvmlMock)
+	labels, err := none.GenerateLabels()
+
+	require.NoError(t, err)
+	require.Equal(t, "2", labels["nvidia.com/gpu.count"], "Incorrect label nvidia.com/gpu.count")
+	require.Len(t, labels, 1)
+}
+
 func TestSingleStrategyReturnsNoneForSingleDeviceMigDisabled(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 
