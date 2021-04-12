@@ -61,11 +61,6 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 		return nil, fmt.Errorf("Error getting device count: %v", err)
 	}
 
-	device, err := s.nvml.NewDevice(0)
-	if err != nil {
-		return nil, fmt.Errorf("Error getting device: %v", err)
-	}
-
 	labels := make(map[string]string)
 	labels["nvidia.com/gpu.count"] = fmt.Sprintf("%d", count)
 
@@ -73,6 +68,11 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 	if err != nil {
 		log.Printf("%v", err)
 		return labels, nil
+	}
+
+	device, err := s.nvml.NewDevice(0)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting device: %v", err)
 	}
 
 	if device.Instance().Model != nil {
