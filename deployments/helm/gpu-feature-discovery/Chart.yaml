@@ -9,5 +9,5 @@ home: https://github.com/NVIDIA/gpu-feature-discovery
 
 dependencies:
   - name: node-feature-discovery
-    version: 0.1.0
+    version: 0.1.2
     condition: nfd.deploy
