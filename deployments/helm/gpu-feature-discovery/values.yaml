@@ -22,14 +22,23 @@ securityContext:
 resources: {}
 affinity: {}
 tolerations: {}
-nodeSelector:
-  feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
 
+# if nfd.deploy=true (or if node-feature-discovery is deployed another way) use this nodeSelector
+# to deploy the daemonset only on nodes with the right pci vendor id
+# you can do so by uncommenting the line below and remove the `{}`.
+nodeSelector: {}
+#  feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
+
+# Enable to true if you wish to deploy the node-feature-discovery tool to label nodes with gpu feature label(s).
+# The daemonset will attach to those nodes if the nodeSelector field is given that (those) feature label(s).
 nfd:
-  deploy: true
+  deploy: false
 
 node-feature-discovery:
   master:
+    # Required to have labels written to nodes, otherwise you will not see the labels
+    # if you have already installed nfd, make sure to add these labels to that deployment
+    # so that nvidia labels can be applied.
     extraLabelNs:
       - nvidia.com
   worker:
