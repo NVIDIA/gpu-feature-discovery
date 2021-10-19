@@ -10,15 +10,35 @@ include:
   - local: '.common-ci.yml'
 
 scan:
-  extends: .scan
+  stage: scan
+  services:
+    - docker:dind
+  image: "${PULSE_IMAGE}"
+  variables:
+    IMAGE_ARCHIVE: "gpu-feature-discovery.tar"
+  before_script:
+    - source version
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - docker pull "${CI_REGISTRY_IMAGE}:${VERSION}"
+    - docker save "${CI_REGISTRY_IMAGE}:${VERSION}" -o "${IMAGE_ARCHIVE}"
+    - AuthHeader=$(echo -n $SSA_CLIENT_ID:$SSA_CLIENT_SECRET | base64 -w0)
+    - >
+      export SSA_TOKEN=$(curl --request POST --header "Authorization: Basic $AuthHeader" --header "Content-Type: application/x-www-form-urlencoded" ${SSA_ISSUER_URL} | jq ".access_token" |  tr -d '"')
+    - if [ -z "$SSA_TOKEN" ]; then exit 1; else echo "SSA_TOKEN set!"; fi
   script:
-    - apk add --no-cache bash findutils libmagic curl make git
-    - apk add --no-cache python3 python3-dev py3-pip py3-wheel
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab-master.nvidia.com/sectooling/scanning/contamer.git
-    - cd contamer
-    - pip3 install -r requirements.txt
-    - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${CI_PROJECT_NAME}:${VERSION}
-    - python3 contamer.py -ls --fail-on-non-os ${CONTAMER_SUPPRESS_VULNS:+--suppress-vulns ${CONTAMER_SUPPRESS_VULNS}} -- ${CI_PROJECT_NAME}:${VERSION}
+    - pulse-cli -n $NSPECT_ID --pss $PSS_URL --ssa $SSA_TOKEN scan -i $IMAGE_ARCHIVE -p $CONTAINER_POLICY -o
+  dependencies:
+    - docker_build
+    - versionning
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - pulse-cli.log
+      - licenses.json
+      - sbom.json
+      - vulns.json
+      - policy_evaluation.json
 
 release:ngc:
   stage: deploy
