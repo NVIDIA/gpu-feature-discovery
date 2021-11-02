@@ -103,21 +103,6 @@ docker_build:
   dependencies:
     - versionning
 
-.scan:
-  stage: scan
-  services:
-    - docker:dind
-  image: docker:dind
-  before_script:
-    - source version
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-    - docker pull ${CI_REGISTRY_IMAGE}:${VERSION}
-  script:
-    - 'false'
-  dependencies:
-    - docker_build
-    - versionning
-
 release:dockerhub:
   stage: deploy
   image: docker:dind
