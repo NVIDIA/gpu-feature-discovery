@@ -12,5 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+VERSION ?= v0.4.1
+
 CUDA_VERSION := 11.0
 GOLANG_VERSION := 1.15.6
