@@ -1,121 +1,123 @@
+# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 default:
-  image: golang:1.15.6
+  image: docker:stable
+  services:
+    - name: docker:stable-dind
+      command: ["--experimental"]
 
 variables:
   AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin --nvcr"
-  DOCKER_IMAGE_NAME: "gpu-feature-discovery"
-  DOCKER_REPO: "nvidia"
-  DOCKER_PROD_IMAGE: "${DOCKER_REPO}/${DOCKER_IMAGE_NAME}"
   TF_VAR_FILE: "$CI_PROJECT_DIR/tests/terraform.tfvars"
   GIT_SUBMODULE_STRATEGY: recursive
+  BUILDIMAGE: "${CI_REGISTRY_IMAGE}/build:${CI_COMMIT_SHORT_SHA}"
 
 stages:
-  - versionning
-  - tests
-  - docker_build
+  - image
+  - lint
+  - go-checks
+  - go-build
+  - unit-tests
+  - package-build
+  - image-build
+  - test
   - scan
   - aws_kube_setup
   - integration_tests
   - e2e_tests
   - aws_kube_clean
-  - deploy
+  - release
 
-versionning:
-  stage: versionning
-  image:
-    name: alpine/git
-    entrypoint: ['/usr/bin/env']
-  script:
-    - "git diff-index --quiet HEAD -- || ( echo ERROR: Unstaged files or dirty index ; exit 1 )"
-    - echo export VERSION=$(git describe --tags --dirty --always) > version
-    - echo export LAST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1)) >> version
-  artifacts:
-    paths:
-      - version
+# Define the distribution targets
+.dist-ubi8:
+  variables:
+    DIST: ubi8
 
-check_yamls:
-  stage: tests
-  script:
-    - source version
-    - cd tests && ./check-yamls.sh ${VERSION}
-  dependencies:
-    - versionning
-  only:
-    - tags
-
-lint:
-  stage: tests
+# Define test helpers
+.integration:
+  stage: test
+  variables:
+    IMAGE_NAME: "${CI_REGISTRY_IMAGE}"
+    VERSION: "${CI_COMMIT_SHORT_SHA}"
   before_script:
-    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
-    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
+    - apk add --no-cache make bash jq
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - docker pull "${IMAGE_NAME}:${VERSION}-${DIST}"
   script:
-    - GO111MODULE=off go get -u golang.org/x/lint/golint
-    - golint -set_exit_status github.com/NVIDIA/gpu-feature-discovery
+    - make -f deployments/container/Makefile test-${DIST}
 
-vet:
-  stage: tests
+# .release forms the base of the deployment jobs which push images to the CI registry.
+# This is extended with the version to be deployed (e.g. the SHA or TAG) and the
+# target os.
+.release:
+  stage:
+    release
+  variables:
+    # Define the source image for the release
+    IMAGE_NAME: "${CI_REGISTRY_IMAGE}"
+    VERSION: "${CI_COMMIT_SHORT_SHA}"
+    # OUT_IMAGE_VERSION is overridden for external releases
+    OUT_IMAGE_VERSION: "${CI_COMMIT_SHORT_SHA}"
+  stage: release
   before_script:
-    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
-    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
-  script:
-    - go vet github.com/NVIDIA/gpu-feature-discovery
+    # We ensure that the OUT_IMAGE_VERSION is set
+    - 'echo Version: ${OUT_IMAGE_VERSION} ; [[ -n "${OUT_IMAGE_VERSION}" ]] || exit 1'
 
-unit_test:
-  stage: tests
-  before_script:
-    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
-    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
+    # In the case where we are deploying a different version to the CI_COMMIT_SHA, we
+    # need to tag the image.
+    # Note: a leading 'v' is stripped from the version if present
+    - apk add --no-cache make bash
+    - 'echo "Logging in to CI registry ${CI_REGISTRY}"'
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - docker pull "${IMAGE_NAME}:${VERSION}-${DIST}"
   script:
-    - go test github.com/NVIDIA/gpu-feature-discovery
+    - docker tag "${IMAGE_NAME}:${VERSION}-${DIST}" "${OUT_IMAGE_NAME}:${OUT_IMAGE_VERSION}-${DIST}"
+    # Log in to the "output" registry, tag the image and push the image
+    - 'echo "Logging in to output registry ${OUT_REGISTRY}"'
+    - docker logout
+    - docker login -u "${OUT_REGISTRY_USER}" -p "${OUT_REGISTRY_TOKEN}" "${OUT_REGISTRY}"
+    - make IMAGE_NAME=${OUT_IMAGE_NAME} VERSION=${OUT_IMAGE_VERSION} -f deployments/container/Makefile push-${DIST}
 
-fmt:
-  stage: tests
-  script:
-    - res=$(gofmt -l *.go)
-    - echo "$res"
-    - test -z "$res"
+# Define a staging release step that pushes an image to an internal "staging" repository
+# This is triggered for all pipelines (i.e. not only tags) to test the pipeline steps
+# outside of the release process.
+.release:staging:
+  extends:
+    - .release
+  variables:
+    OUT_REGISTRY_USER: "${CI_REGISTRY_USER}"
+    OUT_REGISTRY_TOKEN: "${CI_REGISTRY_PASSWORD}"
+    OUT_REGISTRY: "${CI_REGISTRY}"
+    OUT_IMAGE_NAME: "${CI_REGISTRY_IMAGE}/staging/gpu-feature-discovery"
 
-ineffassign:
-  stage: tests
-  before_script:
-    - mkdir -p ${GOPATH}/src/github.com/NVIDIA/
-    - ln -s ${CI_PROJECT_DIR} ${GOPATH}/src/github.com/NVIDIA/gpu-feature-discovery
-  script:
-    - GO111MODULE=off go get -u github.com/gordonklaus/ineffassign
-    - ineffassign github.com/NVIDIA/gpu-feature-discovery
+# Define an external release step that pushes an image to an external repository.
+# This includes a devlopment image off master.
+.release:external:
+  extends:
+    - .release
+  rules:
+    - if: $CI_COMMIT_TAG
+      variables:
+        OUT_IMAGE_VERSION: "${CI_COMMIT_TAG}"
+    - if: $CI_COMMIT_BRANCH == $RELEASE_DEVEL_BRANCH
+      variables:
+        OUT_IMAGE_VERSION: "${DEVEL_RELEASE_IMAGE_VERSION}"
 
-misspell:
-  stage: tests
-  script:
-    - GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell
-    - misspell *.go
-
-docker_build:
-  stage: docker_build
-  services:
-    - docker:dind
-  image: docker:dind
-  script:
-    - source version
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-    - docker build --build-arg GFD_VERSION=${VERSION} . -t ${CI_REGISTRY_IMAGE}:${VERSION}
-    - docker push ${CI_REGISTRY_IMAGE}:${VERSION}
-  dependencies:
-    - versionning
-
-release:dockerhub:
-  stage: deploy
-  image: docker:dind
-  services:
-    - docker:dind
-  script:
-    - source version
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-    - docker pull ${CI_REGISTRY_IMAGE}:${VERSION}
-    - docker tag ${CI_REGISTRY_IMAGE}:${VERSION} ${DOCKER_PROD_IMAGE}:${VERSION}
-    - docker login -u ${REGISTRY_USER} -p ${REGISTRY_TOKEN}
-    - docker push ${DOCKER_PROD_IMAGE}:${VERSION}
-  dependencies:
-    - versionning
-  only:
-    - tags
+# Define the release jobs
+release:staging-ubi8:
+  extends:
+    - .release:staging
+    - .dist-ubi8
+  needs:
+    - image-ubi8
