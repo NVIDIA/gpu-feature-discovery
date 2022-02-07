@@ -5,8 +5,11 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +17,55 @@ import (
 	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 	"github.com/stretchr/testify/require"
 )
+
+type testConfig struct {
+	root string
+}
+
+var cfg *testConfig
+
+func TestMain(m *testing.M) {
+	// TEST SETUP
+	// Determine the module root and the test binary path
+	var err error
+	moduleRoot, err := getModuleRoot()
+	if err != nil {
+		log.Printf("error in test setup: could not get module root: %v", err)
+		os.Exit(1)
+	}
+
+	// Store the root and binary paths in the test Config
+	cfg = &testConfig{
+		root: moduleRoot,
+	}
+
+	// RUN TESTS
+	exitCode := m.Run()
+
+	os.Exit(exitCode)
+}
+
+func getModuleRoot() (string, error) {
+	_, filename, _, _ := runtime.Caller(0)
+
+	return hasGoMod(filename)
+}
+
+func hasGoMod(dir string) (string, error) {
+	if dir == "" || dir == "/" {
+		return "", fmt.Errorf("module root not found")
+	}
+
+	_, err := os.Stat(filepath.Join(dir, "go.mod"))
+	if err != nil {
+		return hasGoMod(filepath.Dir(dir))
+	}
+	return dir, nil
+}
+
+func (t testConfig) Path(path string) string {
+	return filepath.Join(t.root, path)
+}
 
 func NewTestNvmlMock() *NvmlMock {
 	one := 1
@@ -183,10 +235,10 @@ func TestRunOneshot(t *testing.T) {
 	result, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(result, "tests/expected-output.txt")
+	err = checkResult(result, cfg.Path("tests/expected-output.txt"), false)
 	require.NoError(t, err, "Checking result")
 
-	err = checkResult(result, "tests/expected-output-vgpu.txt")
+	err = checkResult(result, cfg.Path("tests/expected-output-vgpu.txt"), true)
 	require.NoError(t, err, "Checking result for vgpu labels")
 }
 
@@ -221,11 +273,11 @@ func TestRunWithNoTimestamp(t *testing.T) {
 	result, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(result, "tests/expected-output.txt")
+	err = checkResult(result, cfg.Path("tests/expected-output.txt"), false)
 	require.NoError(t, err, "Checking result")
 	require.NotContains(t, string(result), "nvidia.com/gfd.timestamp=", "Checking absent timestamp")
 
-	err = checkResult(result, "tests/expected-output-vgpu.txt")
+	err = checkResult(result, cfg.Path("tests/expected-output-vgpu.txt"), true)
 	require.NoError(t, err, "Checking result for vgpu labels")
 }
 
@@ -282,9 +334,9 @@ func TestRunSleep(t *testing.T) {
 		err = outFile.Close()
 		require.NoErrorf(t, err, "Close output file: %d", i)
 
-		err = checkResult(output, "tests/expected-output.txt")
+		err = checkResult(output, cfg.Path("tests/expected-output.txt"), false)
 		require.NoErrorf(t, err, "Checking result: %d", i)
-		err = checkResult(output, "tests/expected-output-vgpu.txt")
+		err = checkResult(output, cfg.Path("tests/expected-output-vgpu.txt"), true)
 		require.NoErrorf(t, err, "Checking result for vgpu labels: %d", i)
 
 		labels, err := buildLabelMapFromOutput(output)
@@ -402,7 +454,7 @@ func buildLabelMapFromOutput(output []byte) (map[string]string, error) {
 	return labels, nil
 }
 
-func checkResult(result []byte, expectedOutputPath string) error {
+func checkResult(result []byte, expectedOutputPath string, isVGPU bool) error {
 	expected, err := ioutil.ReadFile(expectedOutputPath)
 	if err != nil {
 		return fmt.Errorf("Opening expected output file: %v", err)
@@ -415,7 +467,7 @@ func checkResult(result []byte, expectedOutputPath string) error {
 
 LOOP:
 	for _, line := range strings.Split(strings.TrimRight(string(result), "\n"), "\n") {
-		if expectedOutputPath == "tests/expected-output-vgpu.txt" {
+		if isVGPU {
 			if !strings.Contains(line, "vgpu") {
 				// ignore other labels when vgpu file is specified
 				continue

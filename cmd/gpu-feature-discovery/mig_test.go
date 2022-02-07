@@ -67,7 +67,7 @@ func TestMigStrategyNone(t *testing.T) {
 	output, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(output, "tests/expected-output-mig-none.txt")
+	err = checkResult(output, cfg.Path("tests/expected-output-mig-none.txt"), false)
 	require.NoError(t, err, "Checking result")
 
 	labels, err := buildLabelMapFromOutput(output)
@@ -110,7 +110,7 @@ func TestMigStrategySingleForNoMigDevices(t *testing.T) {
 	output, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(output, "tests/expected-output-mig-single.txt")
+	err = checkResult(output, cfg.Path("tests/expected-output-mig-single.txt"), false)
 	require.NoError(t, err, "Checking result")
 
 	labels, err := buildLabelMapFromOutput(output)
@@ -175,7 +175,7 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 	output, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(output, "tests/expected-output-mig-single.txt")
+	err = checkResult(output, cfg.Path("tests/expected-output-mig-single.txt"), false)
 	require.NoError(t, err, "Checking result")
 
 	labels, err := buildLabelMapFromOutput(output)
@@ -241,7 +241,7 @@ func TestMigStrategySingle(t *testing.T) {
 	output, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(output, "tests/expected-output-mig-single.txt")
+	err = checkResult(output, cfg.Path("tests/expected-output-mig-single.txt"), false)
 	require.NoError(t, err, "Checking result")
 
 	labels, err := buildLabelMapFromOutput(output)
@@ -302,7 +302,7 @@ func TestMigStrategyMixed(t *testing.T) {
 	output, err := ioutil.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
-	err = checkResult(output, "tests/expected-output-mig-mixed.txt")
+	err = checkResult(output, cfg.Path("tests/expected-output-mig-mixed.txt"), false)
 	require.NoError(t, err, "Checking result")
 
 	labels, err := buildLabelMapFromOutput(output)
