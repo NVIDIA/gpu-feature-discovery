@@ -18,9 +18,9 @@ default:
       command: ["--experimental"]
 
 variables:
+  GIT_SUBMODULE_STRATEGY: recursive
   AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin --nvcr"
   TF_VAR_FILE: "$CI_PROJECT_DIR/tests/terraform.tfvars"
-  GIT_SUBMODULE_STRATEGY: recursive
   BUILDIMAGE: "${CI_REGISTRY_IMAGE}/build:${CI_COMMIT_SHORT_SHA}"
 
 stages:

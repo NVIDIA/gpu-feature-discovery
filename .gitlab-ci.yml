@@ -13,10 +13,10 @@
 # limitations under the License.
 
 include:
-  - .common-ci.yml
+  - local: '.common-ci.yml'
   - project: nvidia/container-infrastructure/aws-kube-ci
     file: aws-kube-ci.yml
-    ref: 21.02.23
+    ref: 21.12.16
 
 
 build-dev-image:
