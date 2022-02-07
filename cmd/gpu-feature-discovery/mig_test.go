@@ -19,7 +19,7 @@ func TestMigStrategyNone(t *testing.T) {
 
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
@@ -28,7 +28,7 @@ func TestMigStrategyNone(t *testing.T) {
 				MemorySizeMB:          20000,
 			},
 		},
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
@@ -128,7 +128,7 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 	vgpuMock := NewTestVGPUMock()
 	nvmlMock.devices[0].migEnabled = false
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
@@ -137,7 +137,7 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 				MemorySizeMB:          20000,
 			},
 		},
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
@@ -193,7 +193,7 @@ func TestMigStrategySingle(t *testing.T) {
 	vgpuMock := NewTestVGPUMock()
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
@@ -202,7 +202,7 @@ func TestMigStrategySingle(t *testing.T) {
 				MemorySizeMB:          20000,
 			},
 		},
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
@@ -260,13 +260,13 @@ func TestMigStrategyMixed(t *testing.T) {
 
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
-		NvmlMockDevice{
+		{
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
 		},
-		NvmlMockDevice{
+		{
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 1,
 				MemorySizeMB:          5000,

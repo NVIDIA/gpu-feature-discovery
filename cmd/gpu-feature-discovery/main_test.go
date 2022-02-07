@@ -80,7 +80,7 @@ func NewTestNvmlMock() *NvmlMock {
 
 	return &NvmlMock{
 		devices: []NvmlMockDevice{
-			NvmlMockDevice{
+			{
 				instance:   &device,
 				attributes: &nvml.DeviceAttributes{},
 				migEnabled: false,
