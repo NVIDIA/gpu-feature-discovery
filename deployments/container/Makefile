@@ -28,7 +28,7 @@ REGISTRY ?= nvidia
 IMAGE_NAME := $(REGISTRY)/gpu-feature-discovery
 endif
 
-IMAGE_VERSION := $(vVERSION)
+IMAGE_VERSION := $(VERSION)
 
 IMAGE_TAG ?= $(IMAGE_VERSION)-$(DIST)
 IMAGE = $(IMAGE_NAME):$(IMAGE_TAG)
