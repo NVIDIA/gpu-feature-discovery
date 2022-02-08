@@ -40,13 +40,13 @@ OUT_IMAGE = $(OUT_IMAGE_NAME):$(OUT_IMAGE_TAG)
 
 ##### Public rules #####
 DEFAULT_PUSH_TARGET := ubi8
-TARGETS := ubi8
+DISTRIBUTIONS := ubi8
 
-BUILD_TARGETS := $(patsubst %,build-%,$(TARGETS))
-PUSH_TARGETS := $(patsubst %,push-%,$(TARGETS))
-TEST_TARGETS := $(patsubst %,test-%, $(TARGETS))
+BUILD_TARGETS := $(patsubst %,build-%,$(DISTRIBUTIONS))
+PUSH_TARGETS := $(patsubst %,push-%,$(DISTRIBUTIONS))
+TEST_TARGETS := $(patsubst %,test-%, $(DISTRIBUTIONS))
 
-.PHONY: $(TARGETS) $(PUSH_TARGETS) $(BUILD_TARGETS) $(TEST_TARGETS)
+.PHONY: $(DISTRIBUTIONS) $(PUSH_TARGETS) $(BUILD_TARGETS) $(TEST_TARGETS)
 
 ifneq ($(BUILD_MULTI_ARCH_IMAGES),true)
 include $(CURDIR)/deployments/container/native-only.mk
