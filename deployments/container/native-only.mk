@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VERSION ?= v0.4.1
+DOCKER_BUILD_PLATFORM_OPTIONS = --platform=linux/amd64
 
-vVERSION := v$(VERSION:v%=%)
+$(PUSH_TARGETS): push-%:
+	$(DOCKER) push "$(IMAGE_NAME):$(IMAGE_TAG)"
 
-CUDA_VERSION := 11.0
-GOLANG_VERSION := 1.15.6
+push-short:
+	$(DOCKER) tag "$(IMAGE_NAME):$(VERSION)-$(DEFAULT_PUSH_TARGET)" "$(IMAGE_NAME):$(VERSION)"
+	$(DOCKER) push "$(IMAGE_NAME):$(VERSION)"

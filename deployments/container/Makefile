@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DOCKER   ?= docker
+BUILD_MULTI_ARCH_IMAGES ?= no
+DOCKER ?= docker
+BUILDX  =
+ifeq ($(BUILD_MULTI_ARCH_IMAGES),true)
+BUILDX = buildx
+endif
 MKDIR    ?= mkdir
 
 ##### Global variables #####
@@ -23,8 +28,15 @@ REGISTRY ?= nvidia
 IMAGE_NAME := $(REGISTRY)/gpu-feature-discovery
 endif
 
-IMAGE_TAG ?= $(VERSION)-$(DIST)
+IMAGE_VERSION := $(vVERSION)
+
+IMAGE_TAG ?= $(IMAGE_VERSION)-$(DIST)
 IMAGE = $(IMAGE_NAME):$(IMAGE_TAG)
+
+OUT_IMAGE_NAME ?= $(IMAGE_NAME)
+OUT_IMAGE_VERSION ?= $(IMAGE_VERSION)
+OUT_IMAGE_TAG = $(OUT_IMAGE_VERSION)-$(DIST)
+OUT_IMAGE = $(OUT_IMAGE_NAME):$(OUT_IMAGE_TAG)
 
 ##### Public rules #####
 DEFAULT_PUSH_TARGET := ubi8
@@ -36,9 +48,11 @@ TEST_TARGETS := $(patsubst %,test-%, $(TARGETS))
 
 .PHONY: $(TARGETS) $(PUSH_TARGETS) $(BUILD_TARGETS) $(TEST_TARGETS)
 
-push-%: DIST = $(*)
-$(PUSH_TARGETS): push-%:
-	$(DOCKER) push "$(IMAGE_NAME):$(IMAGE_TAG)"
+ifneq ($(BUILD_MULTI_ARCH_IMAGES),true)
+include $(CURDIR)/deployments/container/native-only.mk
+else
+include $(CURDIR)/deployments/container/multi-arch.mk
+endif
 
 # For the default push target we also push a short tag equal to the version.
 # We skip this for the development release
@@ -46,10 +60,9 @@ DEVEL_RELEASE_IMAGE_VERSION ?= devel
 ifneq ($(strip $(VERSION)),$(DEVEL_RELEASE_IMAGE_VERSION))
 push-$(DEFAULT_PUSH_TARGET): push-short
 endif
-push-short:
-	$(DOCKER) tag "$(IMAGE_NAME):$(VERSION)-$(DEFAULT_PUSH_TARGET)" "$(IMAGE_NAME):$(VERSION)"
-	$(DOCKER) push "$(IMAGE_NAME):$(VERSION)"
 
+push-%: DIST = $(*)
+push-short: DIST = $(DEFAULT_PUSH_TARGET)
 
 build-%: DIST = $(*)
 build-%: DOCKERFILE_SUFFIX = $(*)
@@ -58,8 +71,9 @@ build-%: DOCKERFILE = $(CURDIR)/deployments/container/Dockerfile.$(DOCKERFILE_SU
 # Use a generic build target to build the relevant images
 $(BUILD_TARGETS): build-%:
 	DOCKER_BUILDKIT=1 \
-		$(DOCKER) build --pull \
-		--platform=linux/amd64 \
+		$(DOCKER) $(BUILDX) build --pull \
+		$(DOCKER_BUILD_OPTIONS) \
+		$(DOCKER_BUILD_PLATFORM_OPTIONS) \
 		--tag $(IMAGE) \
 		--build-arg BASE_DIST="$(DIST)" \
 		--build-arg CUDA_VERSION="$(CUDA_VERSION)" \

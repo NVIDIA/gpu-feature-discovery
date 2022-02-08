@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VERSION ?= v0.4.1
+PUSH_ON_BUILD ?= false
+DOCKER_BUILD_OPTIONS = --output=type=image,push=$(PUSH_ON_BUILD)
+DOCKER_BUILD_PLATFORM_OPTIONS = --platform=linux/amd64,linux/arm64
 
-vVERSION := v$(VERSION:v%=%)
+REGCTL ?= regctl
+$(PUSH_TARGETS): push-%:
+	$(REGCTL) \
+	        image copy \
+	        $(IMAGE) $(OUT_IMAGE)
 
-CUDA_VERSION := 11.0
-GOLANG_VERSION := 1.15.6
+push-short:
+	$(REGCTL) \
+	        image copy \
+	        $(IMAGE) $(OUT_IMAGE_NAME):$(OUT_IMAGE_VERSION)
