@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ARG BASE_DIST=ubi8
-ARG CUDA_VERSION=11.0
+ARG CUDA_VERSION=11.6.0
 ARG GOLANG_VERSION=1.15.6
 
 FROM golang:${GOLANG_VERSION} as build
