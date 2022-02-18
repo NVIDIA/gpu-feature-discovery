@@ -1,7 +1,10 @@
-# github.com/NVIDIA/gpu-monitoring-tools v0.0.0-20200615193909-2bf4f2bae622
+# github.com/NVIDIA/go-nvml v0.11.1-0
 ## explicit
-github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml
-# github.com/davecgh/go-spew v1.1.1
+github.com/NVIDIA/go-nvml/pkg/dl
+github.com/NVIDIA/go-nvml/pkg/nvml
+# github.com/NVIDIA/gpu-monitoring-tools v0.0.0-20211102125545-5a2c58442e48
+## explicit
+# github.com/davecgh/go-spew v1.1.0
 github.com/davecgh/go-spew/spew
 # github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
 ## explicit
@@ -12,7 +15,7 @@ github.com/pmezard/go-difflib/difflib
 ## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# gopkg.in/yaml.v2 v2.2.8
+# gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2
 # k8s.io/api => k8s.io/api v0.18.2
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.18.2

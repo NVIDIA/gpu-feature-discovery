@@ -3,7 +3,7 @@ module github.com/NVIDIA/gpu-feature-discovery
 go 1.15
 
 require (
-	github.com/NVIDIA/gpu-monitoring-tools v0.0.0-20200615193909-2bf4f2bae622
+	github.com/NVIDIA/go-nvml v0.11.1-0
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/stretchr/testify v1.5.1
 )
