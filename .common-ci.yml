@@ -45,6 +45,15 @@ stages:
   variables:
     DIST: ubi8
 
+# Define the platform targets
+.platform-amd64:
+  variables:
+    PLATFORM: linux/amd64
+
+.platform-arm64:
+  variables:
+    PLATFORM: linux/arm64
+
 # Make buildx available as a docker CLI plugin
 .buildx-setup:
   before_script:

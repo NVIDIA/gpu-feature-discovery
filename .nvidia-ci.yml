@@ -91,7 +91,7 @@ image-ubi8:
   before_script:
     - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
     # TODO: We should specify the architecture here and scan all architectures
-    - docker pull "${IMAGE}"
+    - docker pull --platform="${PLATFORM}" "${IMAGE}"
     - docker save "${IMAGE}" -o "${IMAGE_ARCHIVE}"
     - AuthHeader=$(echo -n $SSA_CLIENT_ID:$SSA_CLIENT_SECRET | base64 -w0)
     - >
@@ -110,12 +110,23 @@ image-ubi8:
       - policy_evaluation.json
 
 # Define the scan targets
-scan-ubi8:
+scan-ubi8-amd64:
   extends:
     - .scan
     - .dist-ubi8
+    - .platform-amd64
   needs:
     - image-ubi8
+
+# Define the scan targets
+scan-ubi8-arm64:
+  extends:
+    - .scan
+    - .dist-ubi8
+    - .platform-arm64
+  needs:
+    - image-ubi8
+    - scan-ubi8-amd64
 
 # Define external release helpers
 .release:ngc:
