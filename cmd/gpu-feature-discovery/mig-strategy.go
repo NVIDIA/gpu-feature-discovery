@@ -66,15 +66,22 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 		return nil, fmt.Errorf("error getting device: %v", err)
 	}
 
+	model, err := device.GetName()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get device model: %v", err)
+	}
+	memoryInfo, err := device.GetMemoryInfo()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get memory info for device: %v", err)
+	}
+
 	labels := make(map[string]string)
 	labels["nvidia.com/gpu.count"] = fmt.Sprintf("%d", count)
-	if device.Instance().Model != nil {
-		model := strings.Replace(*device.Instance().Model, " ", "-", -1)
-		labels["nvidia.com/gpu.product"] = model
+	if model != "" {
+		labels["nvidia.com/gpu.product"] = strings.Replace(model, " ", "-", -1)
 	}
-	if device.Instance().Memory != nil {
-		memory := *device.Instance().Memory
-		labels["nvidia.com/gpu.memory"] = fmt.Sprintf("%d", memory)
+	if memoryInfo.Total != 0 {
+		labels["nvidia.com/gpu.memory"] = fmt.Sprintf("%d", memoryInfo.Total)
 	}
 
 	return labels, nil

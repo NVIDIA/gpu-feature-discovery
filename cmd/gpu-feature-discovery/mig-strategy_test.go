@@ -5,7 +5,7 @@ package main
 import (
 	"testing"
 
-	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
+	"github.com/NVIDIA/go-nvml/pkg/nvml"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,11 +28,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			description: "single non-mig device returns non-mig (none) labels",
 			devices: []NvmlMockDevice{
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: false,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  false,
 				},
 			},
 			expectedLabels: map[string]string{
@@ -46,18 +44,14 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			description: "multiple non-mig device returns non-mig (none) labels",
 			devices: []NvmlMockDevice{
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: false,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  false,
 				},
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: false,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  false,
 				},
 			},
 			expectedLabels: map[string]string{
@@ -71,11 +65,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			description: "single mig-enabled device returns mig labels",
 			devices: []NvmlMockDevice{
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: true,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  true,
 					migDevices: []NvmlMockDevice{
 						{
 							attributes: &nvml.DeviceAttributes{
@@ -106,11 +98,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			description: "multiple mig-enabled devices returns mig labels",
 			devices: []NvmlMockDevice{
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: true,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  true,
 					migDevices: []NvmlMockDevice{
 						{
 							attributes: &nvml.DeviceAttributes{
@@ -128,11 +118,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					},
 				},
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: true,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  true,
 					migDevices: []NvmlMockDevice{
 						{
 							attributes: &nvml.DeviceAttributes{
@@ -169,11 +157,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			description: "empty mig devices returns MIG invalid label",
 			devices: []NvmlMockDevice{
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: true,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  true,
 				},
 			},
 			expectedLabels: map[string]string{
@@ -187,11 +173,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			description: "mixed mig config returns MIG invalid label",
 			devices: []NvmlMockDevice{
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: true,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  true,
 					migDevices: []NvmlMockDevice{
 						{
 							attributes: &nvml.DeviceAttributes{
@@ -221,11 +205,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			description: "mixed mig enabled and disabled returns invalid config",
 			devices: []NvmlMockDevice{
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: true,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  true,
 					migDevices: []NvmlMockDevice{
 						{
 							attributes: &nvml.DeviceAttributes{
@@ -237,11 +219,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					},
 				},
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: false,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  false,
 				},
 			},
 			expectedLabels: map[string]string{
@@ -255,11 +235,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			description: "enabled, disabled, and empty returns invalid config",
 			devices: []NvmlMockDevice{
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: true,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  true,
 					migDevices: []NvmlMockDevice{
 						{
 							attributes: &nvml.DeviceAttributes{
@@ -271,18 +249,14 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					},
 				},
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: false,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  false,
 				},
 				{
-					instance: &nvml.Device{
-						Model:  &mockModel,
-						Memory: &mockMemory,
-					},
-					migEnabled: true,
+					model:       "MOCKMODEL",
+					totalMemory: mockMemory,
+					migEnabled:  true,
 				},
 			},
 			expectedLabels: map[string]string{

@@ -237,6 +237,11 @@ func generateCommonLabels(nvml Nvml) (map[string]string, error) {
 		return nil, fmt.Errorf("error getting device: %v", err)
 	}
 
+	computeMajor, computeMinor, err := device.GetCudaComputeCapability()
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine CUDA compute capability: %v", err)
+	}
+
 	labels := make(map[string]string)
 	labels["nvidia.com/cuda.driver.major"] = driverMajor
 	labels["nvidia.com/cuda.driver.minor"] = driverMinor
@@ -244,13 +249,11 @@ func generateCommonLabels(nvml Nvml) (map[string]string, error) {
 	labels["nvidia.com/cuda.runtime.major"] = fmt.Sprintf("%d", *cudaMajor)
 	labels["nvidia.com/cuda.runtime.minor"] = fmt.Sprintf("%d", *cudaMinor)
 	labels["nvidia.com/gpu.machine"] = strings.Replace(machineType, " ", "-", -1)
-	if device.Instance().CudaComputeCapability.Major != nil {
-		major := *device.Instance().CudaComputeCapability.Major
-		minor := *device.Instance().CudaComputeCapability.Minor
-		family := getArchFamily(major, minor)
+	if computeMajor != 0 {
+		family := getArchFamily(computeMajor, computeMinor)
 		labels["nvidia.com/gpu.family"] = family
-		labels["nvidia.com/gpu.compute.major"] = fmt.Sprintf("%d", major)
-		labels["nvidia.com/gpu.compute.minor"] = fmt.Sprintf("%d", minor)
+		labels["nvidia.com/gpu.compute.major"] = fmt.Sprintf("%d", computeMajor)
+		labels["nvidia.com/gpu.compute.minor"] = fmt.Sprintf("%d", computeMinor)
 	}
 
 	return labels, nil
