@@ -1,9 +1,108 @@
+# Copyright (c) 2019-2021, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 include:
   - local: '.common-ci.yml'
   - project: nvidia/container-infrastructure/aws-kube-ci
     file: aws-kube-ci.yml
-    ref: 21.02.23
+    ref: 21.12.16
 
+
+build-dev-image:
+  stage: image
+  script:
+    - apk --no-cache add make bash
+    - make .build-image
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - make .push-build-image
+
+.requires-build-image:
+  image: "${BUILDIMAGE}"
+
+.go-check:
+  extends:
+    - .requires-build-image
+  stage: go-checks
+
+fmt:
+  extends:
+    - .go-check
+  script:
+    - make assert-fmt
+
+vet:
+  extends:
+    - .go-check
+  script:
+    - make vet
+
+lint:
+  extends:
+    - .go-check
+  script:
+    - make lint
+  allow_failure: true
+
+ineffassign:
+  extends:
+    - .go-check
+  script:
+    - make ineffassign
+  allow_failure: true
+
+misspell:
+  extends:
+    - .go-check
+  script:
+    - make misspell
+
+go-build:
+  extends:
+    - .requires-build-image
+  stage: go-build
+  script:
+    - make build
+
+unit-tests:
+  extends:
+    - .requires-build-image
+  stage: unit-tests
+  script:
+    - make coverage
+
+# Define the image build targets
+.image-build:
+  stage: image-build
+  variables:
+    IMAGE_NAME: "${CI_REGISTRY_IMAGE}"
+    VERSION: "${CI_COMMIT_SHORT_SHA}"
+    PUSH_ON_BUILD: "true"
+  before_script:
+    - !reference [.buildx-setup, before_script]
+
+    - apk add --no-cache bash make
+    - 'echo "Logging in to CI registry ${CI_REGISTRY}"'
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+  script:
+    - make -f deployments/container/Makefile build-${DIST}
+
+image-ubi8:
+  extends:
+    - .image-build
+    - .dist-ubi8
+
+# The integration and end-to-end test targets
 aws_kube_setup:
   extends: .aws_kube_setup
   except:
@@ -17,29 +116,28 @@ aws_kube_clean:
 integration_tests:
   stage: integration_tests
   image: alpine
+  variables:
+    DIST: "ubi8"
+    VERSION: "${CI_COMMIT_SHORT_SHA}"
   script:
-    - source version
     - source aws-kube-ci/hostname
     - apk add --no-cache openssh-client
     - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
     - ssh -i aws-kube-ci/key ${instance_hostname} \
-      "cd ~/project/tests && ./ci-run-integration.sh ${CI_REGISTRY_IMAGE}:${VERSION}"
+      "cd ~/project/tests && ./ci-run-integration.sh ${CI_REGISTRY_IMAGE}:${VERSION}-${DIST}"
   dependencies:
     - aws_kube_setup
-    - versionning
 
 e2e_tests:
   stage: e2e_tests
-  image: docker:dind
-  services:
-    - docker:dind
+  variables:
+    DIST: "ubi8"
+    VERSION: "${CI_COMMIT_SHORT_SHA}"
   script:
-    - source version
     - source aws-kube-ci/hostname
     - apk add --no-cache openssh-client
     - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
     - ssh -i aws-kube-ci/key ${instance_hostname} \
-      "cd ~/project/tests && ./ci-run-e2e.sh ${CI_REGISTRY_IMAGE} ${VERSION} ${CI_COMMIT_TAG}"
+      "cd ~/project/tests && ./ci-run-e2e.sh ${CI_REGISTRY_IMAGE} ${VERSION}-${DIST} ${CI_COMMIT_TAG}"
   dependencies:
     - aws_kube_setup
-    - versionning

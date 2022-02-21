@@ -72,7 +72,7 @@ func TestSingleStrategyReturnsErrorMigEnabledMismatchedSlices(t *testing.T) {
 
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
@@ -84,7 +84,7 @@ func TestSingleStrategyReturnsErrorMigEnabledMismatchedSlices(t *testing.T) {
 	}
 	nvmlMock.devices[1].migEnabled = true
 	nvmlMock.devices[1].migDevices = []NvmlMockDevice{
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
@@ -108,7 +108,7 @@ func TestSingleStrategyReturnsLabelsMigEnabledMatchedSlices(t *testing.T) {
 
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
@@ -120,7 +120,7 @@ func TestSingleStrategyReturnsLabelsMigEnabledMatchedSlices(t *testing.T) {
 	}
 	nvmlMock.devices[1].migEnabled = true
 	nvmlMock.devices[1].migDevices = []NvmlMockDevice{
-		NvmlMockDevice{
+		{
 			instance: &nvml.Device{
 				Model: nvmlMock.devices[0].Instance().Model,
 			},
