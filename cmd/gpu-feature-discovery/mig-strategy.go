@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -102,15 +103,23 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 		return labels, nil
 	}
 
+	// If any migEnabled=true device is empty, we return all labels except for the gpu.count.
+	hasEmpty, err := devices.AnyMigEnabledDeviceIsEmpty()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check for empty MIG-enabled devices: %v", err)
+	}
+	if hasEmpty {
+		s.setInvalidMigStrategyLabels(labels, "at least one MIG device is enabled but empty")
+		return labels, nil
+	}
+
 	migDisabledDevices, err := devices.GetDevicesWithMigDisabled()
 	if err != nil {
 		return nil, fmt.Errorf("unabled to retrieve list of non-MIG-enabled devices: %v", err)
 	}
 	if len(migDisabledDevices) != 0 {
-		return nil, fmt.Errorf("for mig.strategy=single all devices on the node must all be configured with the same migEnabled value")
-	}
-	if err := devices.AssertAllMigEnabledDevicesAreValid(); err != nil {
-		return nil, fmt.Errorf("at least one device with migEnabled=true was not configured correctly: %v", err)
+		s.setInvalidMigStrategyLabels(labels, "devices with MIG enabled and disable detected")
+		return labels, nil
 	}
 
 	// Verify that all MIG devices on this node are the same type
@@ -129,12 +138,9 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 		counts[name]++
 	}
 
-	if len(counts) == 0 {
-		return nil, fmt.Errorf("no MIG devices present on node")
-	}
-
 	if len(counts) != 1 {
-		return nil, fmt.Errorf("more than one MIG device type present on node")
+		s.setInvalidMigStrategyLabels(labels, "more than one MIG device type present on node")
+		return labels, nil
 	}
 
 	// Get the attributes of only the first MIG device (since they are all the same)
@@ -159,6 +165,16 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	labels["nvidia.com/gpu.engines.ofa"] = fmt.Sprintf("%d", attributes.SharedOfaCount)
 
 	return labels, nil
+}
+
+// setInvalidMigStrategyLabels modifies the labels in-place; indicating that the device configuration is invalid for
+// the 'single' MIG strategy
+func (s *migStrategySingle) setInvalidMigStrategyLabels(labels map[string]string, reason string) {
+	log.Printf("WARNING: Invalid configuration detected for mig-strategy=single: %v", reason)
+
+	labels["nvidia.com/gpu.count"] = "0"
+	labels["nvidia.com/gpu.memory"] = "0"
+	labels["nvidia.com/gpu.product"] = fmt.Sprintf("%s-MIG-INVALID", labels["nvidia.com/gpu.product"])
 }
 
 // migStrategyMixed

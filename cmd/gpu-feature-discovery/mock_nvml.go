@@ -45,7 +45,7 @@ func (nvmlMock NvmlMock) GetDeviceCount() (uint, error) {
 
 // NewDevice : Get information about a fake GPU
 func (nvmlMock NvmlMock) NewDevice(id uint) (NvmlDevice, error) {
-	if int(id) <= len(nvmlMock.devices) {
+	if int(id) < len(nvmlMock.devices) {
 		return nvmlMock.devices[id], nil
 	}
 	return nil, fmt.Errorf("invalid index: %d", id)
