@@ -45,14 +45,14 @@ func NewVGPULib(pci NvidiaPCI) VGPU {
 func (v *VGPULib) Devices() ([]*VGPUDevice, error) {
 	pciDevices, err := v.pci.Devices()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting NVIDIA specific PCI devices: %v", err)
+		return nil, fmt.Errorf("error getting NVIDIA specific PCI devices: %v", err)
 	}
 
 	var vgpus []*VGPUDevice
 	for _, device := range pciDevices {
 		capability, err := device.GetVendorSpecificCapability()
 		if err != nil {
-			return nil, fmt.Errorf("Unable to read vendor specific capability for %s: %v", device.Address, err)
+			return nil, fmt.Errorf("unable to read vendor specific capability for %s: %v", device.Address, err)
 		}
 		if capability == nil {
 			continue
@@ -86,7 +86,7 @@ func (v *VGPULib) IsVGPUDevice(capability []byte) bool {
 // GetInfo returns information about vGPU manager running on the underlying hypervisor host
 func (d *VGPUDevice) GetInfo() (*VGPUInfo, error) {
 	if len(d.vGPUCapability) == 0 {
-		return nil, fmt.Errorf("Vendor capability record is not populated for device %s", d.pci.Address)
+		return nil, fmt.Errorf("vendor capability record is not populated for device %s", d.pci.Address)
 	}
 
 	// traverse vGPU vendor capability records until host driver version record(id: 0) is found
@@ -120,7 +120,7 @@ func (d *VGPUDevice) GetInfo() (*VGPUInfo, error) {
 	}
 
 	if !foundDriverVersionRecord {
-		return nil, fmt.Errorf("Cannot find driver version record in vendor specific capability for device %s", d.pci.Address)
+		return nil, fmt.Errorf("cannot find driver version record in vendor specific capability for device %s", d.pci.Address)
 	}
 
 	info := &VGPUInfo{

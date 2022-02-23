@@ -82,7 +82,7 @@ func (devices *MIGCapableDevices) AssertAllMigEnabledDevicesAreValid() error {
 			return err
 		}
 		if len(migs) == 0 {
-			return fmt.Errorf("No MIG devices associated with %v: %v", d.Instance().Path, d.Instance().UUID)
+			return fmt.Errorf("no MIG devices associated with %v: %v", d.Instance().Path, d.Instance().UUID)
 		}
 	}
 	return nil

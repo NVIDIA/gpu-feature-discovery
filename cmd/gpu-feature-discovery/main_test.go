@@ -440,13 +440,13 @@ func buildLabelMapFromOutput(output []byte) (map[string]string, error) {
 	for _, line := range lines {
 		split := strings.Split(line, "=")
 		if len(split) != 2 {
-			return nil, fmt.Errorf("Unexpected format in line: '%v'", line)
+			return nil, fmt.Errorf("unexpected format in line: '%v'", line)
 		}
 		key := split[0]
 		value := split[1]
 
 		if v, ok := labels[key]; ok {
-			return nil, fmt.Errorf("Duplicate label '%v': %v (overwrites %v)", key, v, value)
+			return nil, fmt.Errorf("duplicate label '%v': %v (overwrites %v)", key, v, value)
 		}
 		labels[key] = value
 	}
@@ -457,7 +457,7 @@ func buildLabelMapFromOutput(output []byte) (map[string]string, error) {
 func checkResult(result []byte, expectedOutputPath string, isVGPU bool) error {
 	expected, err := ioutil.ReadFile(expectedOutputPath)
 	if err != nil {
-		return fmt.Errorf("Opening expected output file: %v", err)
+		return fmt.Errorf("opening expected output file: %v", err)
 	}
 
 	var expectedRegexps []*regexp.Regexp
@@ -483,7 +483,7 @@ LOOP:
 				continue LOOP
 			}
 		}
-		return fmt.Errorf("Line does not match any regexp: %v", string(line))
+		return fmt.Errorf("line does not match any regexp: %v", string(line))
 	}
 	return nil
 }

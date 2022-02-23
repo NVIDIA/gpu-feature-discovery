@@ -46,7 +46,7 @@ func NewMigStrategy(strategy string, nvml Nvml) (MigStrategy, error) {
 	case MigStrategyMixed:
 		return &migStrategyMixed{nvml}, nil
 	}
-	return nil, fmt.Errorf("Unknown strategy: %v", strategy)
+	return nil, fmt.Errorf("unknown strategy: %v", strategy)
 }
 
 type migStrategyNone struct{ nvml Nvml }
@@ -57,12 +57,12 @@ type migStrategyMixed struct{ nvml Nvml }
 func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 	count, err := s.nvml.GetDeviceCount()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting device count: %v", err)
+		return nil, fmt.Errorf("error getting device count: %v", err)
 	}
 
 	device, err := s.nvml.NewDevice(0)
 	if err != nil {
-		return nil, fmt.Errorf("Error getting device: %v", err)
+		return nil, fmt.Errorf("error getting device: %v", err)
 	}
 
 	labels := make(map[string]string)
@@ -85,7 +85,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	none, _ := NewMigStrategy(MigStrategyNone, s.nvml)
 	labels, err := none.GenerateLabels()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to generate base labels: %v", err)
+		return nil, fmt.Errorf("unable to generate base labels: %v", err)
 	}
 
 	// Add a new label specifying the MIG strategy
@@ -95,7 +95,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 
 	migEnabledDevices, err := devices.GetDevicesWithMigEnabled()
 	if err != nil {
-		return nil, fmt.Errorf("Unabled to retrieve list of MIG-enabled devices: %v", err)
+		return nil, fmt.Errorf("unabled to retrieve list of MIG-enabled devices: %v", err)
 	}
 	// No devices have migEnabled=true. This is equivalent to the `none` MIG strategy
 	if len(migEnabledDevices) == 0 {
@@ -104,13 +104,13 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 
 	migDisabledDevices, err := devices.GetDevicesWithMigDisabled()
 	if err != nil {
-		return nil, fmt.Errorf("Unabled to retrieve list of non-MIG-enabled devices: %v", err)
+		return nil, fmt.Errorf("unabled to retrieve list of non-MIG-enabled devices: %v", err)
 	}
 	if len(migDisabledDevices) != 0 {
-		return nil, fmt.Errorf("For mig.strategy=single all devices on the node must all be configured with the same migEnabled value")
+		return nil, fmt.Errorf("for mig.strategy=single all devices on the node must all be configured with the same migEnabled value")
 	}
 	if err := devices.AssertAllMigEnabledDevicesAreValid(); err != nil {
-		return nil, fmt.Errorf("At least one device with migEnabled=true was not configured correctly: %v", err)
+		return nil, fmt.Errorf("at least one device with migEnabled=true was not configured correctly: %v", err)
 	}
 
 	// Verify that all MIG devices on this node are the same type
@@ -119,28 +119,28 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 
 	migs, err := devices.GetAllMigDevices()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to retrieve list of MIG devices: %v", err)
+		return nil, fmt.Errorf("unable to retrieve list of MIG devices: %v", err)
 	}
 	for _, mig := range migs {
 		name, err = getMigDeviceName(mig)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to parse MIG device name: %v", err)
+			return nil, fmt.Errorf("unable to parse MIG device name: %v", err)
 		}
 		counts[name]++
 	}
 
 	if len(counts) == 0 {
-		return nil, fmt.Errorf("No MIG devices present on node")
+		return nil, fmt.Errorf("no MIG devices present on node")
 	}
 
 	if len(counts) != 1 {
-		return nil, fmt.Errorf("More than one MIG device type present on node")
+		return nil, fmt.Errorf("more than one MIG device type present on node")
 	}
 
 	// Get the attributes of only the first MIG device (since they are all the same)
 	attributes, err := migs[0].GetAttributes()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to get attributes of MIG device: %v", err)
+		return nil, fmt.Errorf("unable to get attributes of MIG device: %v", err)
 	}
 
 	// Override some top-level GPU labels set by the 'none' strategy with MIG specific values
@@ -167,7 +167,7 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 	none, _ := NewMigStrategy(MigStrategyNone, s.nvml)
 	labels, err := none.GenerateLabels()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to generate base labels: %v", err)
+		return nil, fmt.Errorf("unable to generate base labels: %v", err)
 	}
 
 	// Add a new label specifying the MIG strategy
@@ -179,7 +179,7 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 	// configured with migEnabled=true but exposing no MIG devices.
 	migs, err := devices.GetAllMigDevices()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to retrieve list of MIG devices: %v", err)
+		return nil, fmt.Errorf("unable to retrieve list of MIG devices: %v", err)
 	}
 
 	// Add new MIG related labels on each individual MIG type
@@ -187,14 +187,14 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 	for _, mig := range migs {
 		name, err := getMigDeviceName(mig)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to parse MIG device name: %v", err)
+			return nil, fmt.Errorf("unable to parse MIG device name: %v", err)
 		}
 
 		// Only set labels for a MIG device type the first time we encounter it
 		if counts[name] == 0 {
 			attributes, err := mig.GetAttributes()
 			if err != nil {
-				return nil, fmt.Errorf("Unable to get attributes of MIG device: %v", err)
+				return nil, fmt.Errorf("unable to get attributes of MIG device: %v", err)
 			}
 
 			prefix := fmt.Sprintf("nvidia.com/mig-%s", name)
