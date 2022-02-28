@@ -54,7 +54,7 @@ func NewNvidiaPCILib() NvidiaPCI {
 func (p *NvidiaPCILib) Devices() ([]*PCIDevice, error) {
 	deviceDirs, err := ioutil.ReadDir(PciDevicesRoot)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to read PCI bus devices: %v", err)
+		return nil, fmt.Errorf("unable to read PCI bus devices: %v", err)
 	}
 
 	var devices []*PCIDevice
@@ -64,7 +64,7 @@ func (p *NvidiaPCILib) Devices() ([]*PCIDevice, error) {
 
 		vendor, err := ioutil.ReadFile(path.Join(devicePath, "vendor"))
 		if err != nil {
-			return nil, fmt.Errorf("Unable to read PCI device vendor id for %s: %v", address, err)
+			return nil, fmt.Errorf("unable to read PCI device vendor id for %s: %v", address, err)
 		}
 
 		if strings.TrimSpace(string(vendor)) != PciNvidiaVendorID {
@@ -73,12 +73,12 @@ func (p *NvidiaPCILib) Devices() ([]*PCIDevice, error) {
 
 		class, err := ioutil.ReadFile(path.Join(devicePath, "class"))
 		if err != nil {
-			return nil, fmt.Errorf("Unable to read PCI device class for %s: %v", address, err)
+			return nil, fmt.Errorf("unable to read PCI device class for %s: %v", address, err)
 		}
 
 		config, err := ioutil.ReadFile(path.Join(devicePath, "config"))
 		if err != nil {
-			return nil, fmt.Errorf("Unable to read PCI configuration space for %s: %v", address, err)
+			return nil, fmt.Errorf("unable to read PCI configuration space for %s: %v", address, err)
 		}
 
 		device := &PCIDevice{
@@ -98,7 +98,7 @@ func (p *NvidiaPCILib) Devices() ([]*PCIDevice, error) {
 // GetVendorSpecificCapability returns the vendor specific capability from configuration space
 func (d *PCIDevice) GetVendorSpecificCapability() ([]byte, error) {
 	if len(d.Config) < 256 {
-		return nil, fmt.Errorf("Entire PCI configuration is not read for device %s. Please run GFD with privileged mode to read complete PCI configuration data", d.Address)
+		return nil, fmt.Errorf("entire PCI configuration is not read for device %s. Please run GFD with privileged mode to read complete PCI configuration data", d.Address)
 	}
 
 	if d.Config[PciStatusByte]&PciStatusCapabilityList == 0 {

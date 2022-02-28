@@ -95,14 +95,14 @@ L:
 		if err != nil {
 			_, isInitError := err.(NvmlInitError)
 			if !isInitError || (isInitError && conf.FailOnInitError) {
-				return fmt.Errorf("Error generating NVML labels: %v", err)
+				return fmt.Errorf("error generating NVML labels: %v", err)
 			}
 			log.Printf("Warning: Error generating NVML labels: %v", err)
 		}
 
 		vGPULabels, err := getvGPULabels(vgpu)
 		if err != nil {
-			return fmt.Errorf("Error generating vGPU labels: %v", err)
+			return fmt.Errorf("error generating vGPU labels: %v", err)
 		}
 
 		if len(nvmlLabels) == 0 && len(vGPULabels) == 0 {
@@ -117,7 +117,7 @@ L:
 		log.Print("Writing labels to output file")
 		err = writeLabelsToFile(conf.OutputFilePath, allLabels...)
 		if err != nil {
-			return fmt.Errorf("Error writing file '%s': %v", conf.OutputFilePath, err)
+			return fmt.Errorf("error writing file '%s': %v", conf.OutputFilePath, err)
 		}
 
 		if conf.Oneshot {
@@ -140,7 +140,7 @@ L:
 func getvGPULabels(vgpu VGPU) (map[string]string, error) {
 	devices, err := vgpu.Devices()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to get vGPU devices: %v", err)
+		return nil, fmt.Errorf("unable to get vGPU devices: %v", err)
 	}
 	labels := make(map[string]string)
 	if len(devices) > 0 {
@@ -149,7 +149,7 @@ func getvGPULabels(vgpu VGPU) (map[string]string, error) {
 	for _, device := range devices {
 		info, err := device.GetInfo()
 		if err != nil {
-			return nil, fmt.Errorf("Error getting vGPU device info: %v", err)
+			return nil, fmt.Errorf("error getting vGPU device info: %v", err)
 		}
 		labels["nvidia.com/vgpu.host-driver-version"] = info.HostDriverVersion
 		labels["nvidia.com/vgpu.host-driver-branch"] = info.HostDriverBranch
@@ -159,7 +159,7 @@ func getvGPULabels(vgpu VGPU) (map[string]string, error) {
 
 func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
 	if err := nvml.Init(); err != nil {
-		return nil, NvmlInitError{fmt.Errorf("Failed to initialize NVML: %v", err)}
+		return nil, NvmlInitError{fmt.Errorf("failed to initialize NVML: %v", err)}
 	}
 
 	defer func() {
@@ -171,7 +171,7 @@ func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
 
 	count, err := nvml.GetDeviceCount()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting device count: %v", err)
+		return nil, fmt.Errorf("error getting device count: %v", err)
 	}
 
 	if count == 0 {
@@ -180,17 +180,17 @@ func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
 
 	commonLabels, err := generateCommonLabels(nvml)
 	if err != nil {
-		return nil, fmt.Errorf("Error generating common labels: %v", err)
+		return nil, fmt.Errorf("error generating common labels: %v", err)
 	}
 
 	migStrategy, err := NewMigStrategy(MigStrategy, nvml)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating MIG strategy: %v", err)
+		return nil, fmt.Errorf("error creating MIG strategy: %v", err)
 	}
 
 	migStrategyLabels, err := migStrategy.GenerateLabels()
 	if err != nil {
-		return nil, fmt.Errorf("Error generating labels from MIG strategy: %v", err)
+		return nil, fmt.Errorf("error generating labels from MIG strategy: %v", err)
 	}
 
 	allLabels := make(map[string]string)
@@ -207,12 +207,12 @@ func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
 func generateCommonLabels(nvml Nvml) (map[string]string, error) {
 	driverVersion, err := nvml.GetDriverVersion()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting driver version: %v", err)
+		return nil, fmt.Errorf("error getting driver version: %v", err)
 	}
 
 	driverVersionSplit := strings.Split(driverVersion, ".")
 	if len(driverVersionSplit) > 3 || len(driverVersionSplit) < 2 {
-		return nil, fmt.Errorf("Error getting driver version: Version \"%s\" does not match format \"X.Y[.Z]\"", driverVersion)
+		return nil, fmt.Errorf("error getting driver version: Version \"%s\" does not match format \"X.Y[.Z]\"", driverVersion)
 	}
 
 	driverMajor := driverVersionSplit[0]
@@ -224,17 +224,17 @@ func generateCommonLabels(nvml Nvml) (map[string]string, error) {
 
 	cudaMajor, cudaMinor, err := nvml.GetCudaDriverVersion()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting cuda driver version: %v", err)
+		return nil, fmt.Errorf("error getting cuda driver version: %v", err)
 	}
 
 	machineType, err := getMachineType(MachineTypePath)
 	if err != nil {
-		return nil, fmt.Errorf("Error getting machine type: %v", err)
+		return nil, fmt.Errorf("error getting machine type: %v", err)
 	}
 
 	device, err := nvml.NewDevice(0)
 	if err != nil {
-		return nil, fmt.Errorf("Error getting device: %v", err)
+		return nil, fmt.Errorf("error getting device: %v", err)
 	}
 
 	labels := make(map[string]string)
@@ -297,7 +297,7 @@ func writeLabelsToFile(path string, labelSets ...map[string]string) error {
 	}
 	err := writeFileAtomically(path, output.Bytes(), 0644)
 	if err != nil {
-		return fmt.Errorf("Error atomically writing file '%s': %v", path, err)
+		return fmt.Errorf("error atomically writing file '%s': %v", path, err)
 	}
 	return nil
 }
@@ -305,7 +305,7 @@ func writeLabelsToFile(path string, labelSets ...map[string]string) error {
 func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return fmt.Errorf("Failed to retrieve absolute path of output file: %v", err)
+		return fmt.Errorf("failed to retrieve absolute path of output file: %v", err)
 	}
 
 	absDir := filepath.Dir(absPath)
@@ -313,7 +313,7 @@ func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
 
 	err = os.Mkdir(tmpDir, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
-		return fmt.Errorf("Failed to create temporary directory: %v", err)
+		return fmt.Errorf("failed to create temporary directory: %v", err)
 	}
 	defer func() {
 		if err != nil {
@@ -323,7 +323,7 @@ func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
 
 	tmpFile, err := ioutil.TempFile(tmpDir, "gfd-")
 	if err != nil {
-		return fmt.Errorf("Fail to create temporary output file: %v", err)
+		return fmt.Errorf("fail to create temporary output file: %v", err)
 	}
 	defer func() {
 		if err != nil {
@@ -334,17 +334,17 @@ func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
 
 	err = ioutil.WriteFile(tmpFile.Name(), contents, perm)
 	if err != nil {
-		return fmt.Errorf("Error writing temporary file '%v': %v", tmpFile.Name(), err)
+		return fmt.Errorf("error writing temporary file '%v': %v", tmpFile.Name(), err)
 	}
 
 	err = os.Rename(tmpFile.Name(), path)
 	if err != nil {
-		return fmt.Errorf("Error moving temporary file to '%v': %v", path, err)
+		return fmt.Errorf("error moving temporary file to '%v': %v", path, err)
 	}
 
 	err = os.Chmod(path, perm)
 	if err != nil {
-		return fmt.Errorf("Error setting permissions on '%v': %v", path, err)
+		return fmt.Errorf("error setting permissions on '%v': %v", path, err)
 	}
 
 	return nil
@@ -353,7 +353,7 @@ func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
 func removeOutputFile(path string) error {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return fmt.Errorf("Failed to retrieve absolute path of output file: %v", err)
+		return fmt.Errorf("failed to retrieve absolute path of output file: %v", err)
 	}
 
 	absDir := filepath.Dir(absPath)
@@ -361,12 +361,12 @@ func removeOutputFile(path string) error {
 
 	err = os.RemoveAll(tmpDir)
 	if err != nil {
-		return fmt.Errorf("Failed to remove temporary output directory: %v", err)
+		return fmt.Errorf("failed to remove temporary output directory: %v", err)
 	}
 
 	err = os.Remove(absPath)
 	if err != nil {
-		return fmt.Errorf("Failed to remove output file: %v", err)
+		return fmt.Errorf("failed to remove output file: %v", err)
 	}
 
 	return nil

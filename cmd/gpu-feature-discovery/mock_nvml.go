@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 )
 
@@ -27,7 +28,7 @@ type NvmlMockDevice struct {
 // Init : Init the mock
 func (nvmlMock NvmlMock) Init() error {
 	if nvmlMock.errorOnInit {
-		return fmt.Errorf("NvmlMock error on init")
+		return fmt.Errorf("nvmlMock error on init")
 	}
 	return nil
 }
@@ -44,10 +45,10 @@ func (nvmlMock NvmlMock) GetDeviceCount() (uint, error) {
 
 // NewDevice : Get information about a fake GPU
 func (nvmlMock NvmlMock) NewDevice(id uint) (NvmlDevice, error) {
-	if int(id) <= len(nvmlMock.devices) {
+	if int(id) < len(nvmlMock.devices) {
 		return nvmlMock.devices[id], nil
 	}
-	return nil, fmt.Errorf("Invalid index: %d", id)
+	return nil, fmt.Errorf("invalid index: %d", id)
 }
 
 // GetDriverVersion : Return a fake driver version

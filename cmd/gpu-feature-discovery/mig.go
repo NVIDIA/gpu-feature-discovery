@@ -2,10 +2,6 @@
 
 package main
 
-import (
-	"fmt"
-)
-
 // MIGCapableDevices stores information about all devices on the node
 type MIGCapableDevices struct {
 	// The NVML library
@@ -67,25 +63,28 @@ func (devices *MIGCapableDevices) GetDevicesWithMigDisabled() ([]NvmlDevice, err
 	return devicesMap[false], nil
 }
 
-// AssertAllMigEnabledDevicesAreValid ensures that all devices with migEnabled=true are valid. This means:
-// * The have at least 1 mig devices associated with them
-// Returns nill if the device is valid, or an error if these are not valid
-func (devices *MIGCapableDevices) AssertAllMigEnabledDevicesAreValid() error {
+// AnyMigEnabledDeviceIsEmpty checks whether at least one MIG device has no MIG devices configured
+func (devices *MIGCapableDevices) AnyMigEnabledDeviceIsEmpty() (bool, error) {
 	devicesMap, err := devices.getDevicesMap()
 	if err != nil {
-		return err
+		return false, err
+	}
+
+	if len(devicesMap[true]) == 0 {
+		// By definition the property is true for the empty set
+		return true, nil
 	}
 
 	for _, d := range devicesMap[true] {
 		migs, err := d.GetMigDevices()
 		if err != nil {
-			return err
+			return false, err
 		}
 		if len(migs) == 0 {
-			return fmt.Errorf("No MIG devices associated with %v: %v", d.Instance().Path, d.Instance().UUID)
+			return true, nil
 		}
 	}
-	return nil
+	return false, nil
 }
 
 // GetAllMigDevices returns a list of all MIG devices.
