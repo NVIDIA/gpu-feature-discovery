@@ -50,4 +50,11 @@ LABEL summary="GPU plugin to the node feature discovery for Kubernetes"
 LABEL description="GPU plugin to the node feature discovery for Kubernetes"
 COPY ./LICENSE /licenses/LICENSE
 
+# Install / upgrade packages here that are required to resolve CVEs
+ARG CVE_UPDATES
+RUN if [ -n "${CVE_UPDATES}" ]; then \
+        yum update -y ${CVE_UPDATES} && \
+        rm -rf /var/cache/yum/*; \
+    fi
+
 ENTRYPOINT ["/usr/bin/gpu-feature-discovery"]
