@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VERSION ?= v0.4.1
+VERSION ?= v0.5.0
 
 vVERSION := v$(VERSION:v%=%)
 
