@@ -281,7 +281,8 @@ of customizable values. The most commonly overridden ones are:
   nfd.deploy:
       When set to true, deploy NFD as a subchart with all of the proper
       parameters set for it (default "true")
-
+  runtimeClassName:
+      the runtimeClassName to use, for use with clusters that have multiple runtimes
 ```
 
 **Note:** The following document provides more information on the available MIG
