@@ -136,7 +136,7 @@ stages:
     OUT_IMAGE_NAME: "${CI_REGISTRY_IMAGE}/staging/gpu-feature-discovery"
 
 # Define an external release step that pushes an image to an external repository.
-# This includes a devlopment image off master.
+# This includes a devlopment image off main.
 # NOTE: job is skipped if OUT_REGISTRY is null or empty. Can be used to disable release(s) with CI/CD env.
 .release:external:
   extends:
