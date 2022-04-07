@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
+	"github.com/NVIDIA/go-nvml/pkg/nvml"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,18 +20,14 @@ func TestMigStrategyNone(t *testing.T) {
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
 		{
-			instance: &nvml.Device{
-				Model: nvmlMock.devices[0].Instance().Model,
-			},
+			model: "MOCKMODEL",
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
 		},
 		{
-			instance: &nvml.Device{
-				Model: nvmlMock.devices[0].Instance().Model,
-			},
+			model: "MOCKMODEL",
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
@@ -129,18 +125,14 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 	nvmlMock.devices[0].migEnabled = false
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
 		{
-			instance: &nvml.Device{
-				Model: nvmlMock.devices[0].Instance().Model,
-			},
+			model: "MOCKMODEL",
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
 		},
 		{
-			instance: &nvml.Device{
-				Model: nvmlMock.devices[0].Instance().Model,
-			},
+			model: "MOCKMODEL",
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
@@ -194,18 +186,14 @@ func TestMigStrategySingle(t *testing.T) {
 	nvmlMock.devices[0].migEnabled = true
 	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
 		{
-			instance: &nvml.Device{
-				Model: nvmlMock.devices[0].Instance().Model,
-			},
+			model: "MOCKMODEL",
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
 		},
 		{
-			instance: &nvml.Device{
-				Model: nvmlMock.devices[0].Instance().Model,
-			},
+			model: "MOCKMODEL",
 			attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,

@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,24 +67,16 @@ func (t testConfig) Path(path string) string {
 }
 
 func NewTestNvmlMock() *NvmlMock {
-	one := 1
-	model := "MOCKMODEL"
-	memory := uint64(128)
-
-	device := nvml.Device{}
-	device.Model = &model
-	device.Memory = &memory
-	device.CudaComputeCapability.Major = &one
-	device.CudaComputeCapability.Minor = &one
+	device := NvmlMockDevice{
+		model:        "MOCKMODEL",
+		computeMajor: 1,
+		computeMinor: 1,
+		totalMemory:  uint64(128),
+	}
 
 	return &NvmlMock{
 		devices: []NvmlMockDevice{
-			{
-				instance:   &device,
-				attributes: &nvml.DeviceAttributes{},
-				migEnabled: false,
-				migDevices: []NvmlMockDevice{},
-			},
+			device,
 		},
 		driverVersion: "400.300",
 		cudaMajor:     1,

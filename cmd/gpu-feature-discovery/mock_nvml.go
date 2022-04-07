@@ -5,7 +5,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/NVIDIA/gpu-monitoring-tools/bindings/go/nvml"
+	"github.com/NVIDIA/go-nvml/pkg/nvml"
 )
 
 // NvmlMock : Implementation of Nvml using mocked calls
@@ -19,11 +19,18 @@ type NvmlMock struct {
 
 // NvmlMockDevice : Implementation of NvmlDevice using mocked calls
 type NvmlMockDevice struct {
-	instance   *nvml.Device
-	attributes *nvml.DeviceAttributes
-	migEnabled bool
-	migDevices []NvmlMockDevice
+	instance     *nvml.Device
+	attributes   *nvml.DeviceAttributes
+	migEnabled   bool
+	migDevices   []NvmlMockDevice
+	model        string
+	computeMajor int
+	computeMinor int
+	totalMemory  uint64
+	uuid         string
 }
+
+var _ NvmlDevice = (*NvmlMockDevice)(nil)
 
 // Init : Init the mock
 func (nvmlMock NvmlMock) Init() error {
@@ -83,4 +90,24 @@ func (d NvmlMockDevice) GetMigDevices() ([]NvmlDevice, error) {
 // GetAttributes : Returns the set of of Devices attributes
 func (d NvmlMockDevice) GetAttributes() (nvml.DeviceAttributes, error) {
 	return *d.attributes, nil
+}
+
+// GetCudaComputeCapability returns the mocked CUDA Compute capability
+func (d NvmlMockDevice) GetCudaComputeCapability() (int, int, error) {
+	return d.computeMajor, d.computeMinor, nil
+}
+
+// GetMemoryInfo returns the mocked memory info
+func (d NvmlMockDevice) GetMemoryInfo() (nvml.Memory, error) {
+	return nvml.Memory{Total: d.totalMemory}, nil
+}
+
+// GetName returns the mocked device name
+func (d NvmlMockDevice) GetName() (string, error) {
+	return d.model, nil
+}
+
+// GetUUID returns the mocked device uuid
+func (d NvmlMockDevice) GetUUID() (string, error) {
+	return d.uuid, nil
 }
