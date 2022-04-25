@@ -80,7 +80,7 @@ spec:
               mountPath: "/sys/class/dmi/id/product_name"
           {{- with .Values.resources }}
           resources:
-            {{- toYaml . | nindent 10 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
         - name: output-dir
