@@ -31,13 +31,32 @@ nfd:
   deploy: true
 
 node-feature-discovery:
+  worker:
+    tolerations:
+    - key: "node-role.kubernetes.io/master"
+      operator: "Equal"
+      value: ""
+      effect: "NoSchedule"
+    - key: "nvidia.com/gpu"
+      operator: "Equal"
+      value: "present"
+      effect: "NoSchedule"
+
+    config:
+      sources:
+        pci:
+          deviceClassWhitelist:
+          - "02"
+          - "0200"
+          - "0207"
+          - "0300"
+          - "0302"
+          deviceLabelFields:
+          - vendor
+
   master:
     extraLabelNs:
       - nvidia.com
-  worker:
-    options:
-      sources:
-        pci:
-          deviceLabelFields:
-            - vendor
 
+  serviceAccount:
+    name: node-feature-discovery
