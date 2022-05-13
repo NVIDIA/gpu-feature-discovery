@@ -202,6 +202,17 @@ func (VgpuInstance VgpuInstance) GetFbUsage() (uint64, Return) {
 	return VgpuInstanceGetFbUsage(VgpuInstance)
 }
 
+// nvml.VgpuInstanceGetLicenseInfo()
+func VgpuInstanceGetLicenseInfo(VgpuInstance VgpuInstance) (VgpuLicenseInfo, Return) {
+	var LicenseInfo VgpuLicenseInfo
+	ret := nvmlVgpuInstanceGetLicenseInfo(VgpuInstance, &LicenseInfo)
+	return LicenseInfo, ret
+}
+
+func (VgpuInstance VgpuInstance) GetLicenseInfo() (VgpuLicenseInfo, Return) {
+	return VgpuInstanceGetLicenseInfo(VgpuInstance)
+}
+
 // nvml.VgpuInstanceGetLicenseStatus()
 func VgpuInstanceGetLicenseStatus(VgpuInstance VgpuInstance) (int, Return) {
 	var Licensed uint32
@@ -310,6 +321,37 @@ func VgpuInstanceGetFBCSessions(VgpuInstance VgpuInstance) (int, FBCSessionInfo,
 
 func (VgpuInstance VgpuInstance) GetFBCSessions() (int, FBCSessionInfo, Return) {
 	return VgpuInstanceGetFBCSessions(VgpuInstance)
+}
+
+// nvml.VgpuInstanceGetGpuInstanceId()
+func VgpuInstanceGetGpuInstanceId(VgpuInstance VgpuInstance) (int, Return) {
+	var gpuInstanceId uint32
+	ret := nvmlVgpuInstanceGetGpuInstanceId(VgpuInstance, &gpuInstanceId)
+	return int(gpuInstanceId), ret
+}
+
+func (VgpuInstance VgpuInstance) GetGpuInstanceId() (int, Return) {
+	return VgpuInstanceGetGpuInstanceId(VgpuInstance)
+}
+
+// nvml.VgpuInstanceGetGpuPciId()
+func VgpuInstanceGetGpuPciId(VgpuInstance VgpuInstance) (string, Return) {
+	var Length uint32 = 1 // Will be reduced upon returning
+	for {
+		VgpuPciId := make([]byte, Length)
+		ret := nvmlVgpuInstanceGetGpuPciId(VgpuInstance, &VgpuPciId[0], &Length)
+		if ret == SUCCESS {
+			return string(VgpuPciId[:clen(VgpuPciId)]), ret
+		}
+		if ret != ERROR_INSUFFICIENT_SIZE {
+			return "", ret
+		}
+		Length *= 2
+	}
+}
+
+func (VgpuInstance VgpuInstance) GetGpuPciId() (string, Return) {
+	return VgpuInstanceGetGpuPciId(VgpuInstance)
 }
 
 // nvml.VgpuInstanceGetMetadata()
