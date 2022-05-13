@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -128,19 +129,17 @@ func start(ctx *cli.Context, config *spec.Config) error {
 
 	log.Printf("Running %s in version %s", Bin, Version)
 
+	configJSON, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal config to JSON: %v", err)
+	}
+	log.Printf("\nRunning with config:\n%v", string(configJSON))
+
 	nvml := NvmlLib{}
 	vgpul := NewVGPULib(NewNvidiaPCILib())
 
-	log.Print("Loaded configuration:")
-	log.Print("Oneshot: ", config.Flags.GFD.Oneshot)
-	log.Print("FailOnInitError: ", config.Flags.FailOnInitError)
-	log.Print("SleepInterval: ", config.Flags.GFD.SleepInterval)
-	log.Print("MigStrategy: ", config.Flags.MigStrategy)
-	log.Print("NoTimestamp: ", config.Flags.GFD.NoTimestamp)
-	log.Print("OutputFilePath: ", config.Flags.GFD.OutputFile)
-
 	log.Print("Start running")
-	err := run(nvml, vgpul, config)
+	err = run(nvml, vgpul, config)
 	if err != nil {
 		log.Printf("Unexpected error: %v", err)
 	}
