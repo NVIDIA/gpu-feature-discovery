@@ -13,6 +13,10 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
+	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v2/altsrc"
 )
 
 const (
@@ -30,6 +34,91 @@ var (
 )
 
 func main() {
+	var config spec.Config
+	// TODO: Change this one we switch to loading values from config files.
+	flags := &config.Flags
+	var configFile string
+
+	c := cli.NewApp()
+	c.Name = "GPU Feature Discovery"
+	c.Usage = "generate labels for NVIDIA devices"
+	c.Version = Version
+	c.Action = func(ctx *cli.Context) error {
+		return start(ctx, &config)
+	}
+
+	c.Flags = []cli.Flag{
+		altsrc.NewStringFlag(
+			&cli.StringFlag{
+				Name:        "mig-strategy",
+				Value:       spec.MigStrategyNone,
+				Usage:       "the desired strategy for exposing MIG devices on GPUs that support it:\n\t\t[none | single | mixed]",
+				Destination: &flags.MigStrategy,
+				EnvVars:     []string{"GFD_MIG_STRATEGY"},
+			},
+		),
+		altsrc.NewBoolFlag(
+			&cli.BoolFlag{
+				Name:        "fail-on-init-error",
+				Value:       true,
+				Usage:       "fail the plugin if an error is encountered during initialization, otherwise block indefinitely",
+				Destination: &flags.FailOnInitError,
+				EnvVars:     []string{"GFD_FAIL_ON_INIT_ERROR"},
+			},
+		),
+		altsrc.NewBoolFlag(
+			&cli.BoolFlag{
+				Name:        "oneshot",
+				Value:       false,
+				Usage:       "Label once and exit",
+				Destination: &flags.GFD.Oneshot,
+				EnvVars:     []string{"GFD_ONESHOT"},
+			},
+		),
+		altsrc.NewBoolFlag(
+			&cli.BoolFlag{
+				Name:        "no-timestamp",
+				Value:       false,
+				Usage:       "Do not add the timestamp to the labels",
+				Destination: &flags.GFD.NoTimestamp,
+				EnvVars:     []string{"GFD_NO_TIMESTAMP"},
+			},
+		),
+		altsrc.NewDurationFlag(
+			&cli.DurationFlag{
+				Name:        "sleep-interval",
+				Value:       60 * time.Second,
+				Usage:       "Time to sleep between labeling",
+				Destination: &flags.GFD.SleepInterval,
+				EnvVars:     []string{"GFD_SLEEP_INTERVAL"},
+			},
+		),
+		altsrc.NewStringFlag(
+			&cli.StringFlag{
+				Name:        "output",
+				Aliases:     []string{"o"},
+				Value:       "/etc/kubernetes/node-feature-discovery/features.d/gfd",
+				Destination: &flags.GFD.OutputFile,
+				EnvVars:     []string{"GFD_OUTPUT_FILE"},
+			},
+		),
+		&cli.StringFlag{
+			Name:        "config-file",
+			Usage:       "the path to a config file as an alternative to command line options or environment variables",
+			Destination: &configFile,
+			EnvVars:     []string{"GFD_CONFIG_FILE"},
+		},
+	}
+
+	err := c.Run(os.Args)
+	if err != nil {
+		log.SetOutput(os.Stderr)
+		log.Printf("Error: %v", err)
+		os.Exit(1)
+	}
+}
+
+func start(ctx *cli.Context, config *spec.Config) error {
 	log.SetPrefix(Bin + ": ")
 
 	if Version == "" {
@@ -42,29 +131,27 @@ func main() {
 	nvml := NvmlLib{}
 	vgpul := NewVGPULib(NewNvidiaPCILib())
 
-	conf := Conf{}
-	conf.getConfFromArgv(os.Args)
-	conf.getConfFromEnv()
 	log.Print("Loaded configuration:")
-	log.Print("Oneshot: ", conf.Oneshot)
-	log.Print("FailOnInitError: ", conf.FailOnInitError)
-	log.Print("SleepInterval: ", conf.SleepInterval)
-	log.Print("MigStrategy: ", conf.MigStrategy)
-	log.Print("NoTimestamp: ", conf.NoTimestamp)
-	log.Print("OutputFilePath: ", conf.OutputFilePath)
+	log.Print("Oneshot: ", config.Flags.GFD.Oneshot)
+	log.Print("FailOnInitError: ", config.Flags.FailOnInitError)
+	log.Print("SleepInterval: ", config.Flags.GFD.SleepInterval)
+	log.Print("MigStrategy: ", config.Flags.MigStrategy)
+	log.Print("NoTimestamp: ", config.Flags.GFD.NoTimestamp)
+	log.Print("OutputFilePath: ", config.Flags.GFD.OutputFile)
 
 	log.Print("Start running")
-	err := run(nvml, vgpul, conf)
+	err := run(nvml, vgpul, config)
 	if err != nil {
 		log.Printf("Unexpected error: %v", err)
 	}
 	log.Print("Exiting")
+	return err
 }
 
-func run(nvml Nvml, vgpu VGPU, conf Conf) error {
+func run(nvml Nvml, vgpu VGPU, config *spec.Config) error {
 	defer func() {
-		if !conf.Oneshot {
-			err := removeOutputFile(conf.OutputFilePath)
+		if !config.Flags.GFD.Oneshot {
+			err := removeOutputFile(config.Flags.GFD.OutputFile)
 			if err != nil {
 				log.Printf("Warning: Error removing output file: %v", err)
 			}
@@ -85,16 +172,16 @@ func run(nvml Nvml, vgpu VGPU, conf Conf) error {
 	}()
 
 	gfdLabels := make(map[string]string)
-	if !conf.NoTimestamp {
+	if !config.Flags.GFD.NoTimestamp {
 		gfdLabels["nvidia.com/gfd.timestamp"] = fmt.Sprintf("%d", time.Now().Unix())
 	}
 
 L:
 	for {
-		nvmlLabels, err := getNVMLLabels(nvml, conf.MigStrategy)
+		nvmlLabels, err := getNVMLLabels(nvml, config.Flags.MigStrategy)
 		if err != nil {
 			_, isInitError := err.(NvmlInitError)
-			if !isInitError || (isInitError && conf.FailOnInitError) {
+			if !isInitError || (isInitError && config.Flags.FailOnInitError) {
 				return fmt.Errorf("error generating NVML labels: %v", err)
 			}
 			log.Printf("Warning: Error generating NVML labels: %v", err)
@@ -115,21 +202,21 @@ L:
 			nvmlLabels,
 		}
 		log.Print("Writing labels to output file")
-		err = writeLabelsToFile(conf.OutputFilePath, allLabels...)
+		err = writeLabelsToFile(config.Flags.GFD.OutputFile, allLabels...)
 		if err != nil {
-			return fmt.Errorf("error writing file '%s': %v", conf.OutputFilePath, err)
+			return fmt.Errorf("error writing file '%s': %v", config.Flags.GFD.OutputFile, err)
 		}
 
-		if conf.Oneshot {
+		if config.Flags.GFD.Oneshot {
 			break
 		}
 
-		log.Print("Sleeping for ", conf.SleepInterval)
+		log.Print("Sleeping for ", config.Flags.GFD.SleepInterval)
 
 		select {
 		case <-exitChan:
 			break L
-		case <-time.After(conf.SleepInterval):
+		case <-time.After(config.Flags.GFD.SleepInterval):
 			break
 		}
 	}
