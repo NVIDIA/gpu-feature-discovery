@@ -96,8 +96,8 @@ func main() {
 		),
 		altsrc.NewStringFlag(
 			&cli.StringFlag{
-				Name:        "output",
-				Aliases:     []string{"o"},
+				Name:        "output-file",
+				Aliases:     []string{"output", "o"},
 				Value:       "/etc/kubernetes/node-feature-discovery/features.d/gfd",
 				Destination: &flags.GFD.OutputFile,
 				EnvVars:     []string{"GFD_OUTPUT_FILE"},
