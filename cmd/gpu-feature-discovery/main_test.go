@@ -289,7 +289,7 @@ func TestFailOnNVMLInitError(t *testing.T) {
 				FailOnInitError: true,
 				GFD: config.GFDCommandLineFlags{
 					Oneshot:       true,
-					OutputFile:    "./gfd-test-loop",
+					OutputFile:    "./gfd-test-fail-on-nvml-init",
 					SleepInterval: 500 * time.Millisecond,
 					NoTimestamp:   false,
 				},
