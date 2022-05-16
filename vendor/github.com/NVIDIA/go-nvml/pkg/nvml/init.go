@@ -90,8 +90,46 @@ var nvmlDeviceRemoveGpu = nvmlDeviceRemoveGpu_v1
 var nvmlDeviceGetGridLicensableFeatures = nvmlDeviceGetGridLicensableFeatures_v1
 var nvmlEventSetWait = nvmlEventSetWait_v1
 var nvmlDeviceGetAttributes = nvmlDeviceGetAttributes_v1
-var nvmlDeviceGetComputeRunningProcesses = nvmlDeviceGetComputeRunningProcesses_v1
-var nvmlDeviceGetGraphicsRunningProcesses = nvmlDeviceGetGraphicsRunningProcesses_v1
+var nvmlComputeInstanceGetInfo = nvmlComputeInstanceGetInfo_v1
+var DeviceGetComputeRunningProcesses = deviceGetComputeRunningProcesses_v1
+var DeviceGetGraphicsRunningProcesses = deviceGetGraphicsRunningProcesses_v1
+var DeviceGetMPSComputeRunningProcesses = deviceGetMPSComputeRunningProcesses_v1
+var GetBlacklistDeviceCount = GetExcludedDeviceCount
+var GetBlacklistDeviceInfoByIndex = GetExcludedDeviceInfoByIndex
+var nvmlDeviceGetGpuInstancePossiblePlacements = nvmlDeviceGetGpuInstancePossiblePlacements_v1
+var nvmlVgpuInstanceGetLicenseInfo = nvmlVgpuInstanceGetLicenseInfo_v1
+
+type BlacklistDeviceInfo = ExcludedDeviceInfo
+type ProcessInfo_v1Slice []ProcessInfo_v1
+type ProcessInfo_v2Slice []ProcessInfo_v2
+
+func (pis ProcessInfo_v1Slice) ToProcessInfoSlice() []ProcessInfo {
+	var newInfos []ProcessInfo
+	for _, pi := range pis {
+		info := ProcessInfo{
+			Pid:               pi.Pid,
+			UsedGpuMemory:     pi.UsedGpuMemory,
+			GpuInstanceId:     0xFFFFFFFF, // GPU instance ID is invalid in v1
+			ComputeInstanceId: 0xFFFFFFFF, // Compute instance ID is invalid in v1
+		}
+		newInfos = append(newInfos, info)
+	}
+	return newInfos
+}
+
+func (pis ProcessInfo_v2Slice) ToProcessInfoSlice() []ProcessInfo {
+	var newInfos []ProcessInfo
+	for _, pi := range pis {
+		info := ProcessInfo{
+			Pid:               pi.Pid,
+			UsedGpuMemory:     pi.UsedGpuMemory,
+			GpuInstanceId:     pi.GpuInstanceId,
+			ComputeInstanceId: pi.ComputeInstanceId,
+		}
+		newInfos = append(newInfos, info)
+	}
+	return newInfos
+}
 
 // updateVersionedSymbols()
 func updateVersionedSymbols() {
@@ -137,6 +175,10 @@ func updateVersionedSymbols() {
 	if err == nil {
 		nvmlDeviceGetGridLicensableFeatures = nvmlDeviceGetGridLicensableFeatures_v3
 	}
+	err = nvml.Lookup("nvmlDeviceGetGridLicensableFeatures_v4")
+	if err == nil {
+		nvmlDeviceGetGridLicensableFeatures = nvmlDeviceGetGridLicensableFeatures_v4
+	}
 	err = nvml.Lookup("nvmlEventSetWait_v2")
 	if err == nil {
 		nvmlEventSetWait = nvmlEventSetWait_v2
@@ -145,13 +187,40 @@ func updateVersionedSymbols() {
 	if err == nil {
 		nvmlDeviceGetAttributes = nvmlDeviceGetAttributes_v2
 	}
+	err = nvml.Lookup("nvmlComputeInstanceGetInfo_v2")
+	if err == nil {
+		nvmlComputeInstanceGetInfo = nvmlComputeInstanceGetInfo_v2
+	}
 	err = nvml.Lookup("nvmlDeviceGetComputeRunningProcesses_v2")
 	if err == nil {
-		nvmlDeviceGetComputeRunningProcesses = nvmlDeviceGetComputeRunningProcesses_v2
+		DeviceGetComputeRunningProcesses = deviceGetComputeRunningProcesses_v2
+	}
+	err = nvml.Lookup("nvmlDeviceGetComputeRunningProcesses_v3")
+	if err == nil {
+		DeviceGetComputeRunningProcesses = deviceGetComputeRunningProcesses_v3
 	}
 	err = nvml.Lookup("nvmlDeviceGetGraphicsRunningProcesses_v2")
 	if err == nil {
-		nvmlDeviceGetGraphicsRunningProcesses = nvmlDeviceGetGraphicsRunningProcesses_v2
+		DeviceGetGraphicsRunningProcesses = deviceGetGraphicsRunningProcesses_v2
 	}
-
+	err = nvml.Lookup("nvmlDeviceGetGraphicsRunningProcesses_v3")
+	if err == nil {
+		DeviceGetGraphicsRunningProcesses = deviceGetGraphicsRunningProcesses_v3
+	}
+	err = nvml.Lookup("nvmlDeviceGetMPSComputeRunningProcesses_v2")
+	if err == nil {
+		DeviceGetMPSComputeRunningProcesses = deviceGetMPSComputeRunningProcesses_v2
+	}
+	err = nvml.Lookup("nvmlDeviceGetMPSComputeRunningProcesses_v3")
+	if err == nil {
+		DeviceGetMPSComputeRunningProcesses = deviceGetMPSComputeRunningProcesses_v3
+	}
+	err = nvml.Lookup("nvmlDeviceGetGpuInstancePossiblePlacements_v2")
+	if err == nil {
+		nvmlDeviceGetGpuInstancePossiblePlacements = nvmlDeviceGetGpuInstancePossiblePlacements_v2
+	}
+	err = nvml.Lookup("nvmlVgpuInstanceGetLicenseInfo_v2")
+	if err == nil {
+		nvmlVgpuInstanceGetLicenseInfo = nvmlVgpuInstanceGetLicenseInfo_v2
+	}
 }

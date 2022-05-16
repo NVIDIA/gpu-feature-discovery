@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NVIDIA/go-nvml/pkg/nvml"
+	config "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +36,20 @@ func TestMigStrategyNone(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, true, "none", "./gfd-test-mig-none", time.Second, false}
+	conf := &config.Config{
+		Flags: config.Flags{
+			CommandLineFlags: config.CommandLineFlags{
+				MigStrategy:     "none",
+				FailOnInitError: true,
+				GFD: config.GFDCommandLineFlags{
+					Oneshot:       true,
+					OutputFile:    "./gfd-test-mig-none",
+					SleepInterval: time.Second,
+					NoTimestamp:   false,
+				},
+			},
+		},
+	}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -50,13 +64,13 @@ func TestMigStrategyNone(t *testing.T) {
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
-	outFile, err := os.Open(conf.OutputFilePath)
+	outFile, err := os.Open(conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
 
 	defer func() {
 		err = outFile.Close()
 		require.NoError(t, err, "Closing output file")
-		err = os.Remove(conf.OutputFilePath)
+		err = os.Remove(conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
@@ -79,7 +93,20 @@ func TestMigStrategySingleForNoMigDevices(t *testing.T) {
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
 
-	conf := Conf{true, true, "single", "./gfd-test-mig-single-no-mig", time.Second, false}
+	conf := &config.Config{
+		Flags: config.Flags{
+			CommandLineFlags: config.CommandLineFlags{
+				MigStrategy:     "single",
+				FailOnInitError: true,
+				GFD: config.GFDCommandLineFlags{
+					Oneshot:       true,
+					OutputFile:    "./gfd-test-mig-single-no-mig",
+					SleepInterval: time.Second,
+					NoTimestamp:   false,
+				},
+			},
+		},
+	}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -93,13 +120,13 @@ func TestMigStrategySingleForNoMigDevices(t *testing.T) {
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
-	outFile, err := os.Open(conf.OutputFilePath)
+	outFile, err := os.Open(conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
 
 	defer func() {
 		err = outFile.Close()
 		require.NoError(t, err, "Closing output file")
-		err = os.Remove(conf.OutputFilePath)
+		err = os.Remove(conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
@@ -140,7 +167,20 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, true, "single", "./gfd-test-mig-single-no-mig", time.Second, false}
+	conf := &config.Config{
+		Flags: config.Flags{
+			CommandLineFlags: config.CommandLineFlags{
+				MigStrategy:     "single",
+				FailOnInitError: true,
+				GFD: config.GFDCommandLineFlags{
+					Oneshot:       true,
+					OutputFile:    "./gfd-test-mig-single-no-mig",
+					SleepInterval: time.Second,
+					NoTimestamp:   false,
+				},
+			},
+		},
+	}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -154,13 +194,13 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
-	outFile, err := os.Open(conf.OutputFilePath)
+	outFile, err := os.Open(conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
 
 	defer func() {
 		err = outFile.Close()
 		require.NoError(t, err, "Closing output file")
-		err = os.Remove(conf.OutputFilePath)
+		err = os.Remove(conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
@@ -201,7 +241,20 @@ func TestMigStrategySingle(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, true, "single", "./gfd-test-mig-single", time.Second, false}
+	conf := &config.Config{
+		Flags: config.Flags{
+			CommandLineFlags: config.CommandLineFlags{
+				MigStrategy:     "single",
+				FailOnInitError: true,
+				GFD: config.GFDCommandLineFlags{
+					Oneshot:       true,
+					OutputFile:    "./gfd-test-mig-single",
+					SleepInterval: time.Second,
+					NoTimestamp:   false,
+				},
+			},
+		},
+	}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -216,13 +269,13 @@ func TestMigStrategySingle(t *testing.T) {
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
-	outFile, err := os.Open(conf.OutputFilePath)
+	outFile, err := os.Open(conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
 
 	defer func() {
 		err = outFile.Close()
 		require.NoError(t, err, "Closing output file")
-		err = os.Remove(conf.OutputFilePath)
+		err = os.Remove(conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
@@ -262,7 +315,20 @@ func TestMigStrategyMixed(t *testing.T) {
 		},
 	}
 
-	conf := Conf{true, true, "mixed", "./gfd-test-mig-mixed", time.Second, false}
+	conf := &config.Config{
+		Flags: config.Flags{
+			CommandLineFlags: config.CommandLineFlags{
+				MigStrategy:     "mixed",
+				FailOnInitError: true,
+				GFD: config.GFDCommandLineFlags{
+					Oneshot:       true,
+					OutputFile:    "./gfd-test-mig-mixed",
+					SleepInterval: time.Second,
+					NoTimestamp:   false,
+				},
+			},
+		},
+	}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
@@ -277,13 +343,13 @@ func TestMigStrategyMixed(t *testing.T) {
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
-	outFile, err := os.Open(conf.OutputFilePath)
+	outFile, err := os.Open(conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
 
 	defer func() {
 		err = outFile.Close()
 		require.NoError(t, err, "Closing output file")
-		err = os.Remove(conf.OutputFilePath)
+		err = os.Remove(conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
