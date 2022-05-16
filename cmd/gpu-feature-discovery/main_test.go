@@ -16,7 +16,7 @@ import (
 
 	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
-	config "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
+	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,6 +25,11 @@ type testConfig struct {
 }
 
 var cfg *testConfig
+
+// prt returns a reference to whatever type is passed into it
+func ptr[T any](x T) *T {
+	return &x
+}
 
 func TestMain(m *testing.M) {
 	// TEST SETUP
@@ -94,16 +99,16 @@ func NewTestVGPUMock() vgpu.Interface {
 func TestRunOneshot(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := &config.Config{
-		Flags: config.Flags{
-			CommandLineFlags: config.CommandLineFlags{
-				MigStrategy:     "none",
-				FailOnInitError: true,
-				GFD: config.GFDCommandLineFlags{
-					Oneshot:       true,
-					OutputFile:    "./gfd-test-oneshot",
-					SleepInterval: time.Second,
-					NoTimestamp:   false,
+	conf := &spec.Config{
+		Flags: spec.Flags{
+			CommandLineFlags: spec.CommandLineFlags{
+				MigStrategy:     ptr("none"),
+				FailOnInitError: ptr(true),
+				GFD: &spec.GFDCommandLineFlags{
+					Oneshot:       ptr(true),
+					OutputFile:    ptr("./gfd-test-oneshot"),
+					SleepInterval: ptr(spec.Duration(time.Second)),
+					NoTimestamp:   ptr(false),
 				},
 			},
 		},
@@ -122,13 +127,13 @@ func TestRunOneshot(t *testing.T) {
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
-	outFile, err := os.Open(conf.Flags.GFD.OutputFile)
+	outFile, err := os.Open(*conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
 
 	defer func() {
 		err = outFile.Close()
 		require.NoError(t, err, "Closing output file")
-		err = os.Remove(conf.Flags.GFD.OutputFile)
+		err = os.Remove(*conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
@@ -145,16 +150,16 @@ func TestRunOneshot(t *testing.T) {
 func TestRunWithNoTimestamp(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := &config.Config{
-		Flags: config.Flags{
-			CommandLineFlags: config.CommandLineFlags{
-				MigStrategy:     "none",
-				FailOnInitError: true,
-				GFD: config.GFDCommandLineFlags{
-					Oneshot:       true,
-					OutputFile:    "./gfd-test-with-no-timestamp",
-					SleepInterval: time.Second,
-					NoTimestamp:   true,
+	conf := &spec.Config{
+		Flags: spec.Flags{
+			CommandLineFlags: spec.CommandLineFlags{
+				MigStrategy:     ptr("none"),
+				FailOnInitError: ptr(true),
+				GFD: &spec.GFDCommandLineFlags{
+					Oneshot:       ptr(true),
+					OutputFile:    ptr("./gfd-test-with-no-timestamp"),
+					SleepInterval: ptr(spec.Duration(time.Second)),
+					NoTimestamp:   ptr(true),
 				},
 			},
 		},
@@ -173,13 +178,13 @@ func TestRunWithNoTimestamp(t *testing.T) {
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Error from run function")
 
-	outFile, err := os.Open(conf.Flags.GFD.OutputFile)
+	outFile, err := os.Open(*conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
 
 	defer func() {
 		err = outFile.Close()
 		require.NoError(t, err, "Closing output file")
-		err = os.Remove(conf.Flags.GFD.OutputFile)
+		err = os.Remove(*conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
@@ -197,16 +202,16 @@ func TestRunWithNoTimestamp(t *testing.T) {
 func TestRunSleep(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := &config.Config{
-		Flags: config.Flags{
-			CommandLineFlags: config.CommandLineFlags{
-				MigStrategy:     "none",
-				FailOnInitError: true,
-				GFD: config.GFDCommandLineFlags{
-					Oneshot:       false,
-					OutputFile:    "./gfd-test-loop",
-					SleepInterval: time.Second,
-					NoTimestamp:   false,
+	conf := &spec.Config{
+		Flags: spec.Flags{
+			CommandLineFlags: spec.CommandLineFlags{
+				MigStrategy:     ptr("none"),
+				FailOnInitError: ptr(true),
+				GFD: &spec.GFDCommandLineFlags{
+					Oneshot:       ptr(false),
+					OutputFile:    ptr("./gfd-test-loop"),
+					SleepInterval: ptr(spec.Duration(time.Second)),
+					NoTimestamp:   ptr(false),
 				},
 			},
 		},
@@ -220,7 +225,7 @@ func TestRunSleep(t *testing.T) {
 	defer func() {
 		err = os.Remove(MachineTypePath)
 		require.NoError(t, err, "Removing machine type mock file")
-		err = os.Remove(conf.Flags.GFD.OutputFile)
+		err = os.Remove(*conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
@@ -233,7 +238,7 @@ func TestRunSleep(t *testing.T) {
 	timestampLabels := make([]string, 2)
 	// Read two iterations of the output file
 	for i := 0; i < 2; i++ {
-		outFile, err := waitForFile(conf.Flags.GFD.OutputFile, 5, time.Second)
+		outFile, err := waitForFile(*conf.Flags.GFD.OutputFile, 5, time.Second)
 		require.NoErrorf(t, err, "Open output file: %d", i)
 
 		var outFileStat os.FileInfo
@@ -242,7 +247,7 @@ func TestRunSleep(t *testing.T) {
 		for attempt := 0; i > 0 && attempt < 3; attempt++ {
 			// We ensure that the output file has been modified. Note, we expect the contents to remain the
 			// same so we check the modification timestamp of the file.
-			outFileStat, err = os.Stat(conf.Flags.GFD.OutputFile)
+			outFileStat, err = os.Stat(*conf.Flags.GFD.OutputFile)
 			require.NoError(t, err, "Getting output file info")
 
 			ts = outFileStat.ModTime().Unix()
@@ -250,7 +255,7 @@ func TestRunSleep(t *testing.T) {
 				break
 			}
 			// We wait for conf.SleepInterval, as the labels should be updated at least once in that period
-			time.Sleep(conf.Flags.GFD.SleepInterval)
+			time.Sleep(time.Duration(*conf.Flags.GFD.SleepInterval))
 		}
 		outFileModificationTime[i] = ts
 
@@ -284,16 +289,16 @@ func TestRunSleep(t *testing.T) {
 func TestFailOnNVMLInitError(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	vgpuMock := NewTestVGPUMock()
-	conf := &config.Config{
-		Flags: config.Flags{
-			CommandLineFlags: config.CommandLineFlags{
-				MigStrategy:     "none",
-				FailOnInitError: true,
-				GFD: config.GFDCommandLineFlags{
-					Oneshot:       true,
-					OutputFile:    "./gfd-test-fail-on-nvml-init",
-					SleepInterval: 500 * time.Millisecond,
-					NoTimestamp:   false,
+	conf := &spec.Config{
+		Flags: spec.Flags{
+			CommandLineFlags: spec.CommandLineFlags{
+				MigStrategy:     ptr("none"),
+				FailOnInitError: ptr(true),
+				GFD: &spec.GFDCommandLineFlags{
+					Oneshot:       ptr(true),
+					OutputFile:    ptr("./gfd-test-fail-on-nvml-init"),
+					SleepInterval: ptr(spec.Duration(500 * time.Millisecond)),
+					NoTimestamp:   ptr(false),
 				},
 			},
 		},
@@ -311,63 +316,63 @@ func TestFailOnNVMLInitError(t *testing.T) {
 
 	defer func() {
 		// Remove the output file created by any "success" cases below
-		err = os.Remove(conf.Flags.GFD.OutputFile)
+		err = os.Remove(*conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
 	// Test for case (errorOnInit = true, failOnInitError = true, no other errors)
 	nvmlMock.ErrorOnInit = true
-	conf.Flags.FailOnInitError = true
-	conf.Flags.MigStrategy = "none"
+	*conf.Flags.FailOnInitError = true
+	*conf.Flags.MigStrategy = "none"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.Error(t, err, "Expected error from NVML Init")
 
 	// Test for case (errorOnInit = true, failOnInitError = true, some other error)
 	nvmlMock.ErrorOnInit = true
-	conf.Flags.FailOnInitError = true
-	conf.Flags.MigStrategy = "bogus"
+	*conf.Flags.FailOnInitError = true
+	*conf.Flags.MigStrategy = "bogus"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.Error(t, err, "Expected error from NVML Init")
 
 	// Test for case (errorOnInit = true, failOnInitError = false, no other errors)
 	nvmlMock.ErrorOnInit = true
-	conf.Flags.FailOnInitError = false
-	conf.Flags.MigStrategy = "none"
+	*conf.Flags.FailOnInitError = false
+	*conf.Flags.MigStrategy = "none"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected to skip error from NVML Init")
 
 	// Test for case (errorOnInit = true, failOnInitError = false, some other error)
 	nvmlMock.ErrorOnInit = true
-	conf.Flags.FailOnInitError = false
-	conf.Flags.MigStrategy = "bogus"
+	*conf.Flags.FailOnInitError = false
+	*conf.Flags.MigStrategy = "bogus"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected to skip error from NVML Init")
 
 	// Test for case (errorOnInit = false, failOnInitError = true, no other errors)
 	nvmlMock.ErrorOnInit = false
-	conf.Flags.FailOnInitError = true
-	conf.Flags.MigStrategy = "none"
+	*conf.Flags.FailOnInitError = true
+	*conf.Flags.MigStrategy = "none"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected no errors")
 
 	// Test for case (errorOnInit = false, failOnInitError = true, some other error)
 	nvmlMock.ErrorOnInit = false
-	conf.Flags.FailOnInitError = true
-	conf.Flags.MigStrategy = "bogus"
+	*conf.Flags.FailOnInitError = true
+	*conf.Flags.MigStrategy = "bogus"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.Error(t, err, "Expected error since MIGStrategy is 'bogus'")
 
 	// Test for case (errorOnInit = false, failOnInitError = false, no other errors)
 	nvmlMock.ErrorOnInit = false
-	conf.Flags.FailOnInitError = false
-	conf.Flags.MigStrategy = "none"
+	*conf.Flags.FailOnInitError = false
+	*conf.Flags.MigStrategy = "none"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected no errors")
 
 	// Test for case (errorOnInit = false, failOnInitError = false, some other error)
 	nvmlMock.ErrorOnInit = false
-	conf.Flags.FailOnInitError = false
-	conf.Flags.MigStrategy = "bogus"
+	*conf.Flags.FailOnInitError = false
+	*conf.Flags.MigStrategy = "bogus"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.Error(t, err, "Expected error since MIGStrategy is 'bogus'")
 }

@@ -42,8 +42,8 @@ type common struct {
 func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string) (Labeler, error) {
 	l := nvmlLabeler{
 		nvml:            nvml,
-		failOnInitError: config.Flags.FailOnInitError,
-		migStrategy:     config.Flags.MigStrategy,
+		failOnInitError: *config.Flags.FailOnInitError,
+		migStrategy:     *config.Flags.MigStrategy,
 		common:          NewCommonLabeler(nvml, machineTypePath),
 	}
 
