@@ -55,7 +55,7 @@ func main() {
 				Value:       spec.MigStrategyNone,
 				Usage:       "the desired strategy for exposing MIG devices on GPUs that support it:\n\t\t[none | single | mixed]",
 				Destination: &flags.MigStrategy,
-				EnvVars:     []string{"GFD_MIG_STRATEGY"},
+				EnvVars:     []string{"GFD_MIG_STRATEGY", "MIG_STRATEGY"},
 			},
 		),
 		altsrc.NewBoolFlag(
@@ -64,7 +64,7 @@ func main() {
 				Value:       true,
 				Usage:       "fail the plugin if an error is encountered during initialization, otherwise block indefinitely",
 				Destination: &flags.FailOnInitError,
-				EnvVars:     []string{"GFD_FAIL_ON_INIT_ERROR"},
+				EnvVars:     []string{"GFD_FAIL_ON_INIT_ERROR", "FAIL_ON_INIT_ERROR"},
 			},
 		),
 		altsrc.NewBoolFlag(
@@ -107,7 +107,7 @@ func main() {
 			Name:        "config-file",
 			Usage:       "the path to a config file as an alternative to command line options or environment variables",
 			Destination: &configFile,
-			EnvVars:     []string{"GFD_CONFIG_FILE"},
+			EnvVars:     []string{"GFD_CONFIG_FILE", "CONFIG_FILE"},
 		},
 	}
 
