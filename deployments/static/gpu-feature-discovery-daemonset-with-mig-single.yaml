@@ -21,7 +21,6 @@ spec:
       containers:
         - image: nvcr.io/nvidia/gpu-feature-discovery:v0.5.0
           name: gpu-feature-discovery
-          args: ["--mig-strategy=single"]
           volumeMounts:
             - name: output-dir
               mountPath: "/etc/kubernetes/node-feature-discovery/features.d"
@@ -30,6 +29,8 @@ spec:
           env:
             - name: NVIDIA_MIG_MONITOR_DEVICES
               value: all
+            - name: MIG_STRATEGY
+              value: single
           securityContext:
             privileged: true
       nodeSelector:
