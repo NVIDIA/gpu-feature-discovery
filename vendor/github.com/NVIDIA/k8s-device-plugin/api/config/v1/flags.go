@@ -17,10 +17,27 @@
 package v1
 
 import (
-	"time"
-
 	cli "github.com/urfave/cli/v2"
 )
+
+// prt returns a reference to whatever type is passed into it
+func ptr[T any](x T) *T {
+	return &x
+}
+
+// updateFromCLIFlag conditionally updates the config flag at 'pflag' to the value of the CLI flag with name 'flagName'
+func updateFromCLIFlag[T any](pflag **T, c *cli.Context, flagName string) {
+	if c.IsSet(flagName) || *pflag == (*T)(nil) {
+		switch flag := any(pflag).(type) {
+		case **string:
+			*flag = ptr(c.String(flagName))
+		case **bool:
+			*flag = ptr(c.Bool(flagName))
+		case **Duration:
+			*flag = ptr(Duration(c.Duration(flagName)))
+		}
+	}
+}
 
 // Flags holds the full list of flags used to configure the device plugin and GFD.
 type Flags struct {
@@ -29,63 +46,67 @@ type Flags struct {
 
 // CommandLineFlags holds the list of command line flags used to configure the device plugin and GFD.
 type CommandLineFlags struct {
-	MigStrategy      string                 `json:"migStrategy"      yaml:"migStrategy"`
-	FailOnInitError  bool                   `json:"failOnInitError"  yaml:"failOnInitError"`
-	NvidiaDriverRoot string                 `json:"nvidiaDriverRoot" yaml:"nvidiaDriverRoot"`
-	Plugin           PluginCommandLineFlags `json:"plugin"           yaml:"plugin"`
-	GFD              GFDCommandLineFlags    `json:"gfd"              yaml:"gfd"`
+	MigStrategy      *string                 `json:"migStrategy"                yaml:"migStrategy"`
+	FailOnInitError  *bool                   `json:"failOnInitError"            yaml:"failOnInitError"`
+	NvidiaDriverRoot *string                 `json:"nvidiaDriverRoot,omitempty" yaml:"nvidiaDriverRoot,omitempty"`
+	Plugin           *PluginCommandLineFlags `json:"plugin,omitempty"           yaml:"plugin,omitempty"`
+	GFD              *GFDCommandLineFlags    `json:"gfd,omitempty"              yaml:"gfd,omitempty"`
 }
 
 // PluginCommandLineFlags holds the list of command line flags specific to the device plugin.
 type PluginCommandLineFlags struct {
-	PassDeviceSpecs    bool   `json:"passDeviceSpecs"    yaml:"passDeviceSpecs"`
-	DeviceListStrategy string `json:"deviceListStrategy" yaml:"deviceListStrategy"`
-	DeviceIDStrategy   string `json:"deviceIDStrategy"   yaml:"deviceIDStrategy"`
+	PassDeviceSpecs    *bool   `json:"passDeviceSpecs"    yaml:"passDeviceSpecs"`
+	DeviceListStrategy *string `json:"deviceListStrategy" yaml:"deviceListStrategy"`
+	DeviceIDStrategy   *string `json:"deviceIDStrategy"   yaml:"deviceIDStrategy"`
 }
 
 // GFDCommandLineFlags holds the list of command line flags specific to GFD.
 type GFDCommandLineFlags struct {
-	Oneshot       bool          `json:"oneshot"       yaml:"oneshot"`
-	NoTimestamp   bool          `json:"noTimestamp"   yaml:"noTimestamp"`
-	SleepInterval time.Duration `json:"sleepInterval" yaml:"sleepInterval"`
-	OutputFile    string        `json:"outputFile"    yaml:"outputFile"`
+	Oneshot       *bool     `json:"oneshot"       yaml:"oneshot"`
+	NoTimestamp   *bool     `json:"noTimestamp"   yaml:"noTimestamp"`
+	SleepInterval *Duration `json:"sleepInterval" yaml:"sleepInterval"`
+	OutputFile    *string   `json:"outputFile"    yaml:"outputFile"`
 }
 
-// NewCommandLineFlags builds out a CommandLineFlags struct from the flags in cli.Context.
-func NewCommandLineFlags(c *cli.Context) CommandLineFlags {
-	return CommandLineFlags{
-		MigStrategy:      c.String("mig-strategy"),
-		FailOnInitError:  c.Bool("fail-on-init-error"),
-		NvidiaDriverRoot: c.String("nvidia-driver-root"),
-		Plugin: PluginCommandLineFlags{
-			PassDeviceSpecs:    c.Bool("pass-device-specs"),
-			DeviceListStrategy: c.String("device-list-strategy"),
-			DeviceIDStrategy:   c.String("device-id-strategy"),
-		},
-		GFD: GFDCommandLineFlags{
-			Oneshot:       c.Bool("oneshot"),
-			OutputFile:    c.String("output-file"),
-			SleepInterval: c.Duration("sleep-interval"),
-			NoTimestamp:   c.Bool("no-timestamp"),
-		},
-	}
-}
-
-// ToMap converts a Flags struct into a generic map[interface{}]interface{}
-func (f *Flags) ToMap() map[interface{}]interface{} {
-	return map[interface{}]interface{}{
-		// Common flags
-		"mig-strategy":       f.MigStrategy,
-		"fail-on-init-error": f.FailOnInitError,
-		"nvidia-driver-root": f.NvidiaDriverRoot,
-		// Plugin specific flags
-		"pass-device-specs":    f.Plugin.PassDeviceSpecs,
-		"device-list-strategy": f.Plugin.DeviceListStrategy,
-		"device-id-strategy":   f.Plugin.DeviceIDStrategy,
-		// GFD specific flags
-		"oneshot":        f.GFD.Oneshot,
-		"output-file":    f.GFD.OutputFile,
-		"sleep-interval": f.GFD.SleepInterval,
-		"no-timestamp":   f.GFD.NoTimestamp,
+// UpdateFromCLIFlags updates Flags from settings in the cli Flags if they are set.
+func (f *Flags) UpdateFromCLIFlags(c *cli.Context, flags []cli.Flag) {
+	for _, flag := range flags {
+		for _, n := range flag.Names() {
+			// Common flags
+			switch n {
+			case "mig-strategy":
+				updateFromCLIFlag(&f.MigStrategy, c, n)
+			case "fail-on-init-error":
+				updateFromCLIFlag(&f.FailOnInitError, c, n)
+			case "nvidia-driver-root":
+				updateFromCLIFlag(&f.NvidiaDriverRoot, c, n)
+			}
+			// Plugin specific flags
+			if f.Plugin == nil {
+				f.Plugin = &PluginCommandLineFlags{}
+			}
+			switch n {
+			case "pass-device-specs":
+				updateFromCLIFlag(&f.Plugin.PassDeviceSpecs, c, n)
+			case "device-list-strategy":
+				updateFromCLIFlag(&f.Plugin.DeviceListStrategy, c, n)
+			case "device-id-strategy":
+				updateFromCLIFlag(&f.Plugin.DeviceIDStrategy, c, n)
+			}
+			// GFD specific flags
+			if f.GFD == nil {
+				f.GFD = &GFDCommandLineFlags{}
+			}
+			switch n {
+			case "oneshot":
+				updateFromCLIFlag(&f.GFD.Oneshot, c, n)
+			case "output-file":
+				updateFromCLIFlag(&f.GFD.OutputFile, c, n)
+			case "sleep-interval":
+				updateFromCLIFlag(&f.GFD.SleepInterval, c, n)
+			case "no-timestamp":
+				updateFromCLIFlag(&f.GFD.NoTimestamp, c, n)
+			}
+		}
 	}
 }
