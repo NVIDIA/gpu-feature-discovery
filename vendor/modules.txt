@@ -1,64 +1,74 @@
 # github.com/BurntSushi/toml v1.1.0
+## explicit; go 1.16
 github.com/BurntSushi/toml
 github.com/BurntSushi/toml/internal
 # github.com/NVIDIA/go-nvml v0.11.6-0
-## explicit
+## explicit; go 1.15
 github.com/NVIDIA/go-nvml/pkg/dl
 github.com/NVIDIA/go-nvml/pkg/nvml
 # github.com/NVIDIA/k8s-device-plugin v0.11.1-0.20220513123710-ace9787b1542
-## explicit
+## explicit; go 1.14
 github.com/NVIDIA/k8s-device-plugin/api/config/v1
 # github.com/cpuguy83/go-md2man/v2 v2.0.2
-## explicit
+## explicit; go 1.11
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.1
+## explicit
 github.com/davecgh/go-spew/spew
 # github.com/gogo/protobuf v1.3.2
+## explicit; go 1.15
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/sortkeys
 # github.com/google/gofuzz v1.2.0
-## explicit
+## explicit; go 1.12
 github.com/google/gofuzz
 github.com/google/gofuzz/bytesource
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
 # github.com/json-iterator/go v1.1.12
-## explicit
+## explicit; go 1.12
 github.com/json-iterator/go
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+## explicit
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.2
+## explicit; go 1.12
 github.com/modern-go/reflect2
 # github.com/pmezard/go-difflib v1.0.0
+## explicit
 github.com/pmezard/go-difflib/difflib
 # github.com/russross/blackfriday/v2 v2.1.0
+## explicit
 github.com/russross/blackfriday/v2
 # github.com/stretchr/testify v1.5.1
-## explicit
+## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/urfave/cli/v2 v2.6.0
-## explicit
+## explicit; go 1.18
 github.com/urfave/cli/v2
 github.com/urfave/cli/v2/altsrc
 # golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
-## explicit
+## explicit; go 1.17
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 # golang.org/x/text v0.3.7
+## explicit; go 1.17
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 # gopkg.in/inf.v0 v0.9.1
+## explicit
 gopkg.in/inf.v0
 # gopkg.in/yaml.v2 v2.4.0
+## explicit; go 1.15
 gopkg.in/yaml.v2
 # k8s.io/apimachinery v0.24.0 => k8s.io/apimachinery v0.18.2
-## explicit
+## explicit; go 1.13
 k8s.io/apimachinery/pkg/api/equality
 k8s.io/apimachinery/pkg/api/meta
 k8s.io/apimachinery/pkg/api/resource
@@ -85,12 +95,13 @@ k8s.io/apimachinery/pkg/util/validation/field
 k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/reflect
 # k8s.io/klog v1.0.0
+## explicit; go 1.12
 k8s.io/klog
 # sigs.k8s.io/structured-merge-diff/v3 v3.0.1
-## explicit
+## explicit; go 1.13
 sigs.k8s.io/structured-merge-diff/v3/value
 # sigs.k8s.io/yaml v1.3.0
-## explicit
+## explicit; go 1.12
 sigs.k8s.io/yaml
 # k8s.io/api => k8s.io/api v0.18.2
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.18.2
