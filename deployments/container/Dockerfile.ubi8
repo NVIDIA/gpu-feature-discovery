@@ -27,8 +27,9 @@ COPY . .
 
 RUN go test ./...
 
-ARG VERSION=unset
-RUN GOPATH=/artifacts go install -ldflags "-X main.Version=${VERSION}" ./cmd/...
+RUN mkdir -p /artifacts
+ARG VERSION
+RUN make PREFIX=/artifacts cmds
 
 FROM nvidia/cuda:${CUDA_VERSION}-base-${BASE_DIST}
 
@@ -37,7 +38,7 @@ ENV NVIDIA_DISABLE_REQUIRE="true"
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=utility,compute
 
-COPY --from=build /artifacts/bin/gpu-feature-discovery /usr/bin/gpu-feature-discovery
+COPY --from=build /artifacts/gpu-feature-discovery /usr/bin/gpu-feature-discovery
 
 ARG VERSION=unset
 

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+MODULE := github.com/NVIDIA/gpu-feature-discovery
+
 VERSION ?= v0.5.0
 
 vVERSION := v$(VERSION:v%=%)
