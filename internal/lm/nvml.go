@@ -19,14 +19,35 @@ package lm
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strings"
 
 	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 )
+
+type nvmlLabeler struct {
+	nvml            nvml.Nvml
+	failOnInitError bool
+	migStrategy     string
+	common          Labeler
+}
 
 type common struct {
 	nvml            nvml.Nvml
 	machineTypePath string
+}
+
+// NewNVMLLabeler creates a new NVML-based labeler using the provided NVML library and config.
+func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string) (Labeler, error) {
+	l := nvmlLabeler{
+		nvml:            nvml,
+		failOnInitError: config.Flags.FailOnInitError,
+		migStrategy:     config.Flags.MigStrategy,
+		common:          NewCommonLabeler(nvml, machineTypePath),
+	}
+
+	return l, nil
 }
 
 // NewCommonLabeler creates a labeler for generating common NVML-based labels
@@ -37,6 +58,58 @@ func NewCommonLabeler(nvml nvml.Nvml, machineTypePath string) Labeler {
 	}
 
 	return l
+}
+
+// Labels generates NVML-based labels
+func (labeler nvmlLabeler) Labels() (Labels, error) {
+	if err := labeler.nvml.Init(); err != nil {
+		if labeler.failOnInitError {
+			return nil, fmt.Errorf("failed to initialize NVML: %v", err)
+		}
+		log.Printf("Warning: Error generating NVML labels: %v", err)
+		return nil, nil
+	}
+
+	defer func() {
+		err := labeler.nvml.Shutdown()
+		if err != nil {
+			fmt.Printf("Warning: Shutdown of NVML returned: %v", err)
+		}
+	}()
+
+	count, err := labeler.nvml.GetDeviceCount()
+	if err != nil {
+		return nil, fmt.Errorf("error getting device count: %v", err)
+	}
+
+	if count == 0 {
+		return nil, nil
+	}
+
+	commonLabels, err := labeler.common.Labels()
+	if err != nil {
+		return nil, fmt.Errorf("error generating common labels: %v", err)
+	}
+
+	migStrategyLabler, err := NewMigStrategy(labeler.migStrategy, labeler.nvml)
+	if err != nil {
+		return nil, fmt.Errorf("error creating MIG strategy: %v", err)
+	}
+
+	migStrategyLabels, err := migStrategyLabler.Labels()
+	if err != nil {
+		return nil, fmt.Errorf("error generating labels from MIG strategy: %v", err)
+	}
+
+	allLabels := make(map[string]string)
+	for k, v := range commonLabels {
+		allLabels[k] = v
+	}
+	for k, v := range migStrategyLabels {
+		allLabels[k] = v
+	}
+
+	return allLabels, nil
 }
 
 // Labels generates common (non-MIG) NVML-based labels
@@ -95,8 +168,8 @@ func (labeler common) Labels() (Labels, error) {
 	return labels, nil
 }
 
-func (manager common) getMachineTypeLabels() (Labels, error) {
-	data, err := ioutil.ReadFile(manager.machineTypePath)
+func (labeler common) getMachineTypeLabels() (Labels, error) {
+	data, err := ioutil.ReadFile(labeler.machineTypePath)
 	if err != nil {
 		return nil, fmt.Errorf("error getting machine type: %v", err)
 	}

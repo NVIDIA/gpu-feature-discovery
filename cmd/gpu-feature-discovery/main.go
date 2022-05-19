@@ -178,13 +178,13 @@ func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config) error {
 
 L:
 	for {
-		nvmlLabels, err := getNVMLLabels(nvml, config.Flags.MigStrategy)
+		nvmlLabeler, err := lm.NewNVMLLabeler(nvml, config, MachineTypePath)
 		if err != nil {
-			isInitError := nvml.IsInitError(err)
-			if !isInitError || (isInitError && config.Flags.FailOnInitError) {
-				return fmt.Errorf("error generating NVML labels: %v", err)
-			}
-			log.Printf("Warning: Error generating NVML labels: %v", err)
+			return fmt.Errorf("error creating NVML labeler: %v", err)
+		}
+		nvmlLabels, err := nvmlLabeler.Labels()
+		if err != nil {
+			return fmt.Errorf("error generating NVML labels: %v", err)
 		}
 
 		vGPULabels, err := lm.NewVGPULabeler(vgpu).Labels()
@@ -222,53 +222,6 @@ L:
 	}
 
 	return nil
-}
-
-func getNVMLLabels(nvml nvml.Nvml, MigStrategy string) (lm.Labels, error) {
-	if err := nvml.Init(); err != nil {
-		return nil, nvml.AsInitError(fmt.Errorf("failed to initialize NVML: %v", err))
-	}
-
-	defer func() {
-		err := nvml.Shutdown()
-		if err != nil {
-			fmt.Printf("Warning: Shutdown of NVML returned: %v", err)
-		}
-	}()
-
-	count, err := nvml.GetDeviceCount()
-	if err != nil {
-		return nil, fmt.Errorf("error getting device count: %v", err)
-	}
-
-	if count == 0 {
-		return nil, nil
-	}
-
-	commonLabels, err := lm.NewCommonLabeler(nvml, MachineTypePath).Labels()
-	if err != nil {
-		return nil, fmt.Errorf("error generating common labels: %v", err)
-	}
-
-	migStrategy, err := lm.NewMigStrategy(MigStrategy, nvml)
-	if err != nil {
-		return nil, fmt.Errorf("error creating MIG strategy: %v", err)
-	}
-
-	migStrategyLabels, err := migStrategy.Labels()
-	if err != nil {
-		return nil, fmt.Errorf("error generating labels from MIG strategy: %v", err)
-	}
-
-	allLabels := make(lm.Labels)
-	for k, v := range commonLabels {
-		allLabels[k] = v
-	}
-	for k, v := range migStrategyLabels {
-		allLabels[k] = v
-	}
-
-	return allLabels, nil
 }
 
 func removeOutputFile(path string) error {
