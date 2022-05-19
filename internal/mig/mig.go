@@ -18,23 +18,23 @@ package mig
 
 import "github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 
-// MIGCapableDevices stores information about all devices on the node
-type MIGCapableDevices struct {
+// DeviceInfo stores information about all devices on the node
+type DeviceInfo struct {
 	// The NVML library
 	nvml nvml.Nvml
 	// devicesMap holds a list of devices, separated by whether they have MigEnabled or not
 	devicesMap map[bool][]nvml.Device
 }
 
-// NewMIGCapableDevices creates a new MIGCapableDevices struct and returns a pointer to it.
-func NewMIGCapableDevices(nvml nvml.Nvml) *MIGCapableDevices {
-	return &MIGCapableDevices{
+// NewDeviceInfo creates a new DeviceInfo struct and returns a pointer to it.
+func NewDeviceInfo(nvml nvml.Nvml) *DeviceInfo {
+	return &DeviceInfo{
 		nvml:       nvml,
 		devicesMap: nil, // Is initialized on first use
 	}
 }
 
-func (devices *MIGCapableDevices) getDevicesMap() (map[bool][]nvml.Device, error) {
+func (devices *DeviceInfo) getDevicesMap() (map[bool][]nvml.Device, error) {
 	if devices.devicesMap == nil {
 		n, err := devices.nvml.GetDeviceCount()
 		if err != nil {
@@ -62,7 +62,7 @@ func (devices *MIGCapableDevices) getDevicesMap() (map[bool][]nvml.Device, error
 }
 
 // GetDevicesWithMigEnabled returns a list of devices with migEnabled=true
-func (devices *MIGCapableDevices) GetDevicesWithMigEnabled() ([]nvml.Device, error) {
+func (devices *DeviceInfo) GetDevicesWithMigEnabled() ([]nvml.Device, error) {
 	devicesMap, err := devices.getDevicesMap()
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (devices *MIGCapableDevices) GetDevicesWithMigEnabled() ([]nvml.Device, err
 }
 
 // GetDevicesWithMigDisabled returns a list of devices with migEnabled=false
-func (devices *MIGCapableDevices) GetDevicesWithMigDisabled() ([]nvml.Device, error) {
+func (devices *DeviceInfo) GetDevicesWithMigDisabled() ([]nvml.Device, error) {
 	devicesMap, err := devices.getDevicesMap()
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (devices *MIGCapableDevices) GetDevicesWithMigDisabled() ([]nvml.Device, er
 }
 
 // AnyMigEnabledDeviceIsEmpty checks whether at least one MIG device has no MIG devices configured
-func (devices *MIGCapableDevices) AnyMigEnabledDeviceIsEmpty() (bool, error) {
+func (devices *DeviceInfo) AnyMigEnabledDeviceIsEmpty() (bool, error) {
 	devicesMap, err := devices.getDevicesMap()
 	if err != nil {
 		return false, err
@@ -104,7 +104,7 @@ func (devices *MIGCapableDevices) AnyMigEnabledDeviceIsEmpty() (bool, error) {
 }
 
 // GetAllMigDevices returns a list of all MIG devices.
-func (devices *MIGCapableDevices) GetAllMigDevices() ([]nvml.Device, error) {
+func (devices *DeviceInfo) GetAllMigDevices() ([]nvml.Device, error) {
 	devicesMap, err := devices.getDevicesMap()
 	if err != nil {
 		return nil, err

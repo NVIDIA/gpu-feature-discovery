@@ -102,9 +102,9 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	// Add a new label specifying the MIG strategy
 	labels["nvidia.com/mig.strategy"] = "single"
 
-	devices := mig.NewMIGCapableDevices(s.nvml)
+	deviceInfo := mig.NewDeviceInfo(s.nvml)
 
-	migEnabledDevices, err := devices.GetDevicesWithMigEnabled()
+	migEnabledDevices, err := deviceInfo.GetDevicesWithMigEnabled()
 	if err != nil {
 		return nil, fmt.Errorf("unabled to retrieve list of MIG-enabled devices: %v", err)
 	}
@@ -114,7 +114,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	}
 
 	// If any migEnabled=true device is empty, we return all labels except for the gpu.count.
-	hasEmpty, err := devices.AnyMigEnabledDeviceIsEmpty()
+	hasEmpty, err := deviceInfo.AnyMigEnabledDeviceIsEmpty()
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for empty MIG-enabled devices: %v", err)
 	}
@@ -123,7 +123,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 		return labels, nil
 	}
 
-	migDisabledDevices, err := devices.GetDevicesWithMigDisabled()
+	migDisabledDevices, err := deviceInfo.GetDevicesWithMigDisabled()
 	if err != nil {
 		return nil, fmt.Errorf("unabled to retrieve list of non-MIG-enabled devices: %v", err)
 	}
@@ -136,7 +136,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	name := ""
 	counts := make(MigDeviceCounts)
 
-	migs, err := devices.GetAllMigDevices()
+	migs, err := deviceInfo.GetAllMigDevices()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve list of MIG devices: %v", err)
 	}
@@ -199,11 +199,11 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 	// Add a new label specifying the MIG strategy
 	labels["nvidia.com/mig.strategy"] = "mixed"
 
-	devices := mig.NewMIGCapableDevices(s.nvml)
+	deviceInfo := mig.NewDeviceInfo(s.nvml)
 
 	// Enumerate the MIG devices on this node. In mig.strategy=mixed we ignore devices
 	// configured with migEnabled=true but exposing no MIG devices.
-	migs, err := devices.GetAllMigDevices()
+	migs, err := deviceInfo.GetAllMigDevices()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve list of MIG devices: %v", err)
 	}
