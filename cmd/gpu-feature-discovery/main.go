@@ -173,9 +173,9 @@ func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config) error {
 		}
 	}()
 
-	gfdLabels := make(lm.Labels)
-	if !config.Flags.GFD.NoTimestamp {
-		gfdLabels["nvidia.com/gfd.timestamp"] = fmt.Sprintf("%d", time.Now().Unix())
+	gfdLabels, err := lm.NewTimestampLabeler(config).Labels()
+	if err != nil {
+		return fmt.Errorf("error generating timestamp labels: %v", err)
 	}
 
 L:
