@@ -28,7 +28,7 @@ const (
 var (
 	// Version : Version of the binary
 	// This will be set using ldflags at compile time
-	Version = ""
+	version = ""
 	// MachineTypePath : Path to the file describing the machine type
 	// This will be override during unit testing
 	MachineTypePath = "/sys/class/dmi/id/product_name"
@@ -43,7 +43,7 @@ func main() {
 	c := cli.NewApp()
 	c.Name = "GPU Feature Discovery"
 	c.Usage = "generate labels for NVIDIA devices"
-	c.Version = Version
+	c.Version = version
 	c.Action = func(ctx *cli.Context) error {
 		return start(ctx, &config)
 	}
@@ -122,12 +122,12 @@ func main() {
 func start(ctx *cli.Context, config *spec.Config) error {
 	log.SetPrefix(Bin + ": ")
 
-	if Version == "" {
+	if version == "" {
 		log.Print("Version is not set.")
-		log.Fatal("Be sure to compile with '-ldflags \"-X main.Version=${GFD_VERSION}\"' and to set $GFD_VERSION")
+		log.Fatal("Be sure to compile with '-ldflags \"-X main.version=${GFD_VERSION}\"' and to set $GFD_VERSION")
 	}
 
-	log.Printf("Running %s in version %s", Bin, Version)
+	log.Printf("Running %s in version %s", Bin, version)
 
 	configJSON, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {

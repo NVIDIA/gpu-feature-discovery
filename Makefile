@@ -18,8 +18,6 @@ DIST_DIR ?= $(CURDIR)/dist
 
 include $(CURDIR)/versions.mk
 
-MODULE := github.com/NVIDIA/gpu-feature-discovery
-
 ifeq ($(IMAGE_NAME),)
 REGISTRY ?= nvidia
 IMAGE_NAME = $(REGISTRY)/gpu-feature-discovery
@@ -33,8 +31,6 @@ EXAMPLE_TARGETS := $(patsubst %,example-%, $(EXAMPLES))
 
 CMDS := $(patsubst ./cmd/%/,%,$(sort $(dir $(wildcard ./cmd/*/))))
 CMD_TARGETS := $(patsubst %,cmd-%, $(CMDS))
-
-$(info CMD_TARGETS=$(CMD_TARGETS))
 
 CHECK_TARGETS := assert-fmt vet lint ineffassign misspell
 MAKE_TARGETS := binaries build check fmt lint-internal test examples cmds coverage generate $(CHECK_TARGETS)
@@ -52,7 +48,8 @@ cmd-%: COMMAND_BUILD_OPTIONS = -o $(PREFIX)/$(*)
 endif
 cmds: $(CMD_TARGETS)
 $(CMD_TARGETS): cmd-%:
-	GOOS=$(GOOS) go build -ldflags "-s -w -X main.Version=$(VERSION)" $(COMMAND_BUILD_OPTIONS) $(MODULE)/cmd/$(*)
+	CGO_LDFLAGS_ALLOW='-Wl,--unresolved-symbols=ignore-in-object-files' GOOS=$(GOOS) \
+		go build -ldflags "-s -w -X main.version=$(VERSION)" $(COMMAND_BUILD_OPTIONS) $(MODULE)/cmd/$(*)
 
 build:
 	GOOS=$(GOOS) go build ./...
@@ -86,7 +83,7 @@ ineffassign:
 
 lint:
 # We use `go list -f '{{.Dir}}' $(MODULE)/...` to skip the `vendor` folder.
-	go list -f '{{.Dir}}' $(MODULE)/... | grep -v /internal/ | xargs golint -set_exit_status
+	go list -f '{{.Dir}}' $(MODULE)/... | xargs golint -set_exit_status
 
 lint-internal:
 # We use `go list -f '{{.Dir}}' $(MODULE)/...` to skip the `vendor` folder.
