@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NVIDIA/gpu-feature-discovery/internal/lm"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
@@ -173,7 +173,7 @@ func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config) error {
 		}
 	}()
 
-	gfdLabels := make(map[string]string)
+	gfdLabels := make(lm.Labels)
 	if !config.Flags.GFD.NoTimestamp {
 		gfdLabels["nvidia.com/gfd.timestamp"] = fmt.Sprintf("%d", time.Now().Unix())
 	}
@@ -198,13 +198,13 @@ L:
 			log.Printf("Warning: no labels generated from any source")
 		}
 
-		allLabels := []map[string]string{
+		allLabels := lm.AsSet(
 			gfdLabels,
 			vGPULabels,
 			nvmlLabels,
-		}
+		)
 		log.Print("Writing labels to output file")
-		err = writeLabelsToFile(config.Flags.GFD.OutputFile, allLabels...)
+		err = allLabels.WriteToFile(config.Flags.GFD.OutputFile)
 		if err != nil {
 			return fmt.Errorf("error writing file '%s': %v", config.Flags.GFD.OutputFile, err)
 		}
@@ -226,12 +226,12 @@ L:
 	return nil
 }
 
-func getvGPULabels(vgpu vgpu.Interface) (map[string]string, error) {
+func getvGPULabels(vgpu vgpu.Interface) (lm.Labels, error) {
 	devices, err := vgpu.Devices()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get vGPU devices: %v", err)
 	}
-	labels := make(map[string]string)
+	labels := make(lm.Labels)
 	if len(devices) > 0 {
 		labels["nvidia.com/vgpu.present"] = "true"
 	}
@@ -246,7 +246,7 @@ func getvGPULabels(vgpu vgpu.Interface) (map[string]string, error) {
 	return labels, nil
 }
 
-func getNVMLLabels(nvml nvml.Nvml, MigStrategy string) (map[string]string, error) {
+func getNVMLLabels(nvml nvml.Nvml, MigStrategy string) (lm.Labels, error) {
 	if err := nvml.Init(); err != nil {
 		return nil, nvml.AsInitError(fmt.Errorf("failed to initialize NVML: %v", err))
 	}
@@ -282,7 +282,7 @@ func getNVMLLabels(nvml nvml.Nvml, MigStrategy string) (map[string]string, error
 		return nil, fmt.Errorf("error generating labels from MIG strategy: %v", err)
 	}
 
-	allLabels := make(map[string]string)
+	allLabels := make(lm.Labels)
 	for k, v := range commonLabels {
 		allLabels[k] = v
 	}
@@ -293,7 +293,7 @@ func getNVMLLabels(nvml nvml.Nvml, MigStrategy string) (map[string]string, error
 	return allLabels, nil
 }
 
-func generateCommonLabels(nvml nvml.Nvml) (map[string]string, error) {
+func generateCommonLabels(nvml nvml.Nvml) (lm.Labels, error) {
 	driverVersion, err := nvml.GetDriverVersion()
 	if err != nil {
 		return nil, fmt.Errorf("error getting driver version: %v", err)
@@ -331,7 +331,7 @@ func generateCommonLabels(nvml nvml.Nvml) (map[string]string, error) {
 		return nil, fmt.Errorf("failed to determine CUDA compute capability: %v", err)
 	}
 
-	labels := make(map[string]string)
+	labels := make(lm.Labels)
 	labels["nvidia.com/cuda.driver.major"] = driverMajor
 	labels["nvidia.com/cuda.driver.minor"] = driverMinor
 	labels["nvidia.com/cuda.driver.rev"] = driverRev
@@ -354,69 +354,6 @@ func getMachineType(path string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(data)), nil
-}
-
-// writeLabelsToFile writes a set of labels to the specified path. The file is written atomocally
-func writeLabelsToFile(path string, labelSets ...map[string]string) error {
-	output := new(bytes.Buffer)
-	for _, labels := range labelSets {
-		for k, v := range labels {
-			fmt.Fprintf(output, "%s=%s\n", k, v)
-		}
-	}
-	err := writeFileAtomically(path, output.Bytes(), 0644)
-	if err != nil {
-		return fmt.Errorf("error atomically writing file '%s': %v", path, err)
-	}
-	return nil
-}
-
-func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve absolute path of output file: %v", err)
-	}
-
-	absDir := filepath.Dir(absPath)
-	tmpDir := filepath.Join(absDir, "gfd-tmp")
-
-	err = os.Mkdir(tmpDir, os.ModePerm)
-	if err != nil && !os.IsExist(err) {
-		return fmt.Errorf("failed to create temporary directory: %v", err)
-	}
-	defer func() {
-		if err != nil {
-			os.RemoveAll(tmpDir)
-		}
-	}()
-
-	tmpFile, err := ioutil.TempFile(tmpDir, "gfd-")
-	if err != nil {
-		return fmt.Errorf("fail to create temporary output file: %v", err)
-	}
-	defer func() {
-		if err != nil {
-			tmpFile.Close()
-			os.Remove(tmpFile.Name())
-		}
-	}()
-
-	err = ioutil.WriteFile(tmpFile.Name(), contents, perm)
-	if err != nil {
-		return fmt.Errorf("error writing temporary file '%v': %v", tmpFile.Name(), err)
-	}
-
-	err = os.Rename(tmpFile.Name(), path)
-	if err != nil {
-		return fmt.Errorf("error moving temporary file to '%v': %v", path, err)
-	}
-
-	err = os.Chmod(path, perm)
-	if err != nil {
-		return fmt.Errorf("error setting permissions on '%v': %v", path, err)
-	}
-
-	return nil
 }
 
 func removeOutputFile(path string) error {
