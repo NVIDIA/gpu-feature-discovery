@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
 	config "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
 )
@@ -85,8 +86,8 @@ func NewTestNvmlMock() *NvmlMock {
 	}
 }
 
-func NewTestVGPUMock() VGPU {
-	return NewMockVGPU()
+func NewTestVGPUMock() vgpu.VGPU {
+	return vgpu.NewMockVGPU()
 }
 
 func TestRunOneshot(t *testing.T) {

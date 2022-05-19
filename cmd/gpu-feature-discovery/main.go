@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/urfave/cli/v2"
 	"github.com/urfave/cli/v2/altsrc"
@@ -136,7 +137,8 @@ func start(ctx *cli.Context, config *spec.Config) error {
 	log.Printf("\nRunning with config:\n%v", string(configJSON))
 
 	nvml := NvmlLib{}
-	vgpul := NewVGPULib(NewNvidiaPCILib())
+
+	vgpul := vgpu.NewVGPULib(vgpu.NewNvidiaPCILib())
 
 	log.Print("Start running")
 	err = run(nvml, vgpul, config)
@@ -147,7 +149,7 @@ func start(ctx *cli.Context, config *spec.Config) error {
 	return err
 }
 
-func run(nvml Nvml, vgpu VGPU, config *spec.Config) error {
+func run(nvml Nvml, vgpu vgpu.VGPU, config *spec.Config) error {
 	defer func() {
 		if !config.Flags.GFD.Oneshot {
 			err := removeOutputFile(config.Flags.GFD.OutputFile)
@@ -223,7 +225,7 @@ L:
 	return nil
 }
 
-func getvGPULabels(vgpu VGPU) (map[string]string, error) {
+func getvGPULabels(vgpu vgpu.VGPU) (map[string]string, error) {
 	devices, err := vgpu.Devices()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get vGPU devices: %v", err)
