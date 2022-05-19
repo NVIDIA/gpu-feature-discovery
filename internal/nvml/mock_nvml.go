@@ -123,8 +123,8 @@ func (d MockDevice) GetCudaComputeCapability() (int, int, error) {
 }
 
 // GetMemoryInfo returns the mocked memory info
-func (d MockDevice) GetMemoryInfo() (nvml.Memory, error) {
-	return nvml.Memory{Total: d.TotalMemory}, nil
+func (d MockDevice) GetMemoryInfo() (Memory, error) {
+	return Memory{Total: d.TotalMemory}, nil
 }
 
 // GetName returns the mocked device name

@@ -43,7 +43,7 @@ type Device interface {
 	GetCudaComputeCapability() (int, int, error)
 	GetUUID() (string, error)
 	GetName() (string, error)
-	GetMemoryInfo() (nvml.Memory, error)
+	GetMemoryInfo() (Memory, error)
 }
 
 // InitError : Used to signal an error during initialization vs. other errors
@@ -73,6 +73,9 @@ type LibDevice struct {
 
 // DeviceAttributes mirrors the nvml Device attributes
 type DeviceAttributes nvml.DeviceAttributes
+
+// Memory mirrors the nvml Memory attributes
+type Memory nvml.Memory
 
 // Init : Init NVML lib
 func (nvmlLib Lib) Init() (err error) {
@@ -238,13 +241,13 @@ func (d LibDevice) GetName() (string, error) {
 }
 
 // GetMemoryInfo returns the total and available memory for a device
-func (d LibDevice) GetMemoryInfo() (nvml.Memory, error) {
+func (d LibDevice) GetMemoryInfo() (Memory, error) {
 	info, ret := d.device.GetMemoryInfo()
 	if ret != nvml.SUCCESS {
-		return nvml.Memory{}, errorString(ret)
+		return Memory{}, errorString(ret)
 	}
 
-	return info, nil
+	return Memory(info), nil
 }
 
 func errorString(r nvml.Return) error {
