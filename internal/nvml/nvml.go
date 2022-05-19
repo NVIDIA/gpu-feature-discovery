@@ -30,9 +30,6 @@ type Nvml interface {
 	NewDevice(id uint) (device Device, err error)
 	GetDriverVersion() (string, error)
 	GetCudaDriverVersion() (*uint, *uint, error)
-	// TODO: These will be removed in a follow-up commit
-	AsInitError(error) InitError
-	IsInitError(error) bool
 }
 
 // Device : Type to represent interactions with an nvml.Device
@@ -46,22 +43,6 @@ type Device interface {
 	GetMemoryInfo() (Memory, error)
 	// TODO: This can be cleaned up
 	GetArchFamily() (string, error)
-}
-
-// InitError : Used to signal an error during initialization vs. other errors
-type InitError struct {
-	error
-}
-
-// AsInitError creates an InitError
-func (nvmlLib Lib) AsInitError(err error) InitError {
-	return InitError{err}
-}
-
-// IsInitError checks if the specified error is an init error
-func (nvmlLib Lib) IsInitError(err error) bool {
-	_, isInitError := err.(InitError)
-	return isInitError
 }
 
 // Lib : Implementation of Nvml using the NVML lib

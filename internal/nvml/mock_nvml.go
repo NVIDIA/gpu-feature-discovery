@@ -46,17 +46,6 @@ type MockDevice struct {
 
 var _ Device = (*MockDevice)(nil)
 
-// AsInitError creates an InitError
-func (nvmlMock Mock) AsInitError(err error) InitError {
-	return InitError{err}
-}
-
-// IsInitError checks if the specified error is an init error
-func (nvmlMock Mock) IsInitError(err error) bool {
-	_, isInitError := err.(InitError)
-	return isInitError
-}
-
 // Init : Init the mock
 func (nvmlMock Mock) Init() error {
 	if nvmlMock.ErrorOnInit {
