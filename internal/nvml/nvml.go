@@ -44,6 +44,8 @@ type Device interface {
 	GetUUID() (string, error)
 	GetName() (string, error)
 	GetMemoryInfo() (Memory, error)
+	// TODO: This can be cleaned up
+	GetArchFamily() (string, error)
 }
 
 // InitError : Used to signal an error during initialization vs. other errors
@@ -255,4 +257,13 @@ func errorString(r nvml.Return) error {
 		return nil
 	}
 	return fmt.Errorf("NVML error: %v", nvml.ErrorString(r))
+}
+
+// GetArchFamily returns the architecture family string for the device
+func (d LibDevice) GetArchFamily() (string, error) {
+	computeMajor, computeMinor, err := d.GetCudaComputeCapability()
+	if err != nil {
+		return "", err
+	}
+	return getArchFamily(computeMajor, computeMinor), nil
 }

@@ -339,7 +339,7 @@ func generateCommonLabels(nvml nvml.Nvml) (map[string]string, error) {
 	labels["nvidia.com/cuda.runtime.minor"] = fmt.Sprintf("%d", *cudaMinor)
 	labels["nvidia.com/gpu.machine"] = strings.Replace(machineType, " ", "-", -1)
 	if computeMajor != 0 {
-		family := getArchFamily(computeMajor, computeMinor)
+		family, _ := device.GetArchFamily()
 		labels["nvidia.com/gpu.family"] = family
 		labels["nvidia.com/gpu.compute.major"] = fmt.Sprintf("%d", computeMajor)
 		labels["nvidia.com/gpu.compute.minor"] = fmt.Sprintf("%d", computeMinor)
@@ -354,29 +354,6 @@ func getMachineType(path string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(data)), nil
-}
-
-func getArchFamily(computeMajor, computeMinor int) string {
-	switch computeMajor {
-	case 1:
-		return "tesla"
-	case 2:
-		return "fermi"
-	case 3:
-		return "kepler"
-	case 5:
-		return "maxwell"
-	case 6:
-		return "pascal"
-	case 7:
-		if computeMinor < 5 {
-			return "volta"
-		}
-		return "turing"
-	case 8:
-		return "ampere"
-	}
-	return "undefined"
 }
 
 // writeLabelsToFile writes a set of labels to the specified path. The file is written atomocally
