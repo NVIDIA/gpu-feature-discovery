@@ -27,21 +27,11 @@ import (
 // Labels defines a type for labels
 type Labels map[string]string
 
-// LabelSet defines a collection of labels. This is used to write these to file
-type LabelSet []Labels
-
-// AsSet creates a new label set from a variadic list of labels.
-func AsSet(labels ...Labels) LabelSet {
-	return LabelSet(labels)
-}
-
-// WriteToFile writes a set of labels to the specified path. The file is written atomocally
-func (set LabelSet) WriteToFile(path string) error {
+// WriteToFile writes labels to the specified path. The file is written atomocally
+func (labels Labels) WriteToFile(path string) error {
 	output := new(bytes.Buffer)
-	for _, labels := range set {
-		for k, v := range labels {
-			fmt.Fprintf(output, "%s=%s\n", k, v)
-		}
+	for k, v := range labels {
+		fmt.Fprintf(output, "%s=%s\n", k, v)
 	}
 	err := writeFileAtomically(path, output.Bytes(), 0644)
 	if err != nil {

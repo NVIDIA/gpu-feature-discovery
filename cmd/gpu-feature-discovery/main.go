@@ -188,10 +188,8 @@ L:
 			log.Printf("Warning: no labels generated from any source")
 		}
 
-		allLabels := lm.AsSet(labels)
-
 		log.Print("Writing labels to output file")
-		err = allLabels.WriteToFile(config.Flags.GFD.OutputFile)
+		err = labels.WriteToFile(config.Flags.GFD.OutputFile)
 		if err != nil {
 			return fmt.Errorf("error writing file '%s': %v", config.Flags.GFD.OutputFile, err)
 		}
