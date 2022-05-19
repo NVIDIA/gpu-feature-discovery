@@ -25,16 +25,16 @@ import (
 
 // MockVGPU represents mock of VGPU interface
 type MockVGPU struct {
-	devices []*VGPUDevice
+	devices []*Device
 }
 
 // Devices returns VGPU devices with mocked data
-func (p *MockVGPU) Devices() ([]*VGPUDevice, error) {
+func (p *MockVGPU) Devices() ([]*Device, error) {
 	return p.devices, nil
 }
 
 func TestIsVGPUDevice(t *testing.T) {
-	mockVGPU := NewMockVGPU().(*VGPULib)
+	mockVGPU := NewMockVGPU().(*Lib)
 	devices, _ := mockVGPU.pci.Devices()
 	for _, device := range devices {
 		// check for vendor id

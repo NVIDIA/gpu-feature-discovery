@@ -21,19 +21,19 @@ import (
 	"strings"
 )
 
-// VGPU interface allows us to get a list of vGPU specific PCI devices
-type VGPU interface {
-	Devices() ([]*VGPUDevice, error)
+// Interface allows us to get a list of vGPU specific PCI devices
+type Interface interface {
+	Devices() ([]*Device, error)
 }
 
-// VGPUDevice is just an alias to a PCIDevice
-type VGPUDevice struct {
+// Device is just an alias to a PCIDevice
+type Device struct {
 	pci            *PCIDevice
 	vGPUCapability []byte
 }
 
-// VGPUInfo represents vGPU driver info running on underlying hypervisor host.
-type VGPUInfo struct {
+// Info represents vGPU driver info running on underlying hypervisor host.
+type Info struct {
 	HostDriverVersion string
 	HostDriverBranch  string
 }
@@ -47,29 +47,29 @@ const (
 	HostDriverBranchLength = 10
 )
 
-// VGPULib implements the NvidiaVGPU interface
-type VGPULib struct {
+// Lib implements the NvidiaVGPU interface
+type Lib struct {
 	pci NvidiaPCI
 }
 
-// NewVGPULib returns an instance of VGPULib implementing the VGPU interface
-func NewVGPULib(pci NvidiaPCI) VGPU {
-	return &VGPULib{pci: pci}
+// NewVGPULib returns an instance of Lib implementing the VGPU interface
+func NewVGPULib(pci NvidiaPCI) Interface {
+	return &Lib{pci: pci}
 }
 
-// NewMockVGPU initializes and returns mock VGPU interface type
-func NewMockVGPU() VGPU {
+// NewMockVGPU initializes and returns mock Interface interface type
+func NewMockVGPU() Interface {
 	return NewVGPULib(NewMockNvidiaPCI())
 }
 
 // Devices returns all vGPU devices attached to the guest
-func (v *VGPULib) Devices() ([]*VGPUDevice, error) {
+func (v *Lib) Devices() ([]*Device, error) {
 	pciDevices, err := v.pci.Devices()
 	if err != nil {
 		return nil, fmt.Errorf("error getting NVIDIA specific PCI devices: %v", err)
 	}
 
-	var vgpus []*VGPUDevice
+	var vgpus []*Device
 	for _, device := range pciDevices {
 		capability, err := device.GetVendorSpecificCapability()
 		if err != nil {
@@ -79,7 +79,7 @@ func (v *VGPULib) Devices() ([]*VGPUDevice, error) {
 			continue
 		}
 		if exists := v.IsVGPUDevice(capability); exists {
-			vgpu := &VGPUDevice{
+			vgpu := &Device{
 				pci:            device,
 				vGPUCapability: capability,
 			}
@@ -90,7 +90,7 @@ func (v *VGPULib) Devices() ([]*VGPUDevice, error) {
 }
 
 // IsVGPUDevice returns true if the device is of type vGPU
-func (v *VGPULib) IsVGPUDevice(capability []byte) bool {
+func (v *Lib) IsVGPUDevice(capability []byte) bool {
 	if len(capability) < 5 {
 		return false
 	}
@@ -105,7 +105,7 @@ func (v *VGPULib) IsVGPUDevice(capability []byte) bool {
 }
 
 // GetInfo returns information about vGPU manager running on the underlying hypervisor host
-func (d *VGPUDevice) GetInfo() (*VGPUInfo, error) {
+func (d *Device) GetInfo() (*Info, error) {
 	if len(d.vGPUCapability) == 0 {
 		return nil, fmt.Errorf("vendor capability record is not populated for device %s", d.pci.Address)
 	}
@@ -144,7 +144,7 @@ func (d *VGPUDevice) GetInfo() (*VGPUInfo, error) {
 		return nil, fmt.Errorf("cannot find driver version record in vendor specific capability for device %s", d.pci.Address)
 	}
 
-	info := &VGPUInfo{
+	info := &Info{
 		HostDriverVersion: hostDriverVersion,
 		HostDriverBranch:  hostDriverBranch,
 	}

@@ -149,7 +149,7 @@ func start(ctx *cli.Context, config *spec.Config) error {
 	return err
 }
 
-func run(nvml Nvml, vgpu vgpu.VGPU, config *spec.Config) error {
+func run(nvml Nvml, vgpu vgpu.Interface, config *spec.Config) error {
 	defer func() {
 		if !config.Flags.GFD.Oneshot {
 			err := removeOutputFile(config.Flags.GFD.OutputFile)
@@ -225,7 +225,7 @@ L:
 	return nil
 }
 
-func getvGPULabels(vgpu vgpu.VGPU) (map[string]string, error) {
+func getvGPULabels(vgpu vgpu.Interface) (map[string]string, error) {
 	devices, err := vgpu.Devices()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get vGPU devices: %v", err)

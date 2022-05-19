@@ -86,7 +86,7 @@ func NewTestNvmlMock() *NvmlMock {
 	}
 }
 
-func NewTestVGPUMock() vgpu.VGPU {
+func NewTestVGPUMock() vgpu.Interface {
 	return vgpu.NewMockVGPU()
 }
 
