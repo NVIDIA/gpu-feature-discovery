@@ -69,16 +69,16 @@ func (t testConfig) Path(path string) string {
 	return filepath.Join(t.root, path)
 }
 
-func NewTestNvmlMock() *nvml.NvmlMock {
-	device := nvml.NvmlMockDevice{
+func NewTestNvmlMock() *nvml.Mock {
+	device := nvml.MockDevice{
 		Model:        "MOCKMODEL",
 		ComputeMajor: 1,
 		ComputeMinor: 1,
 		TotalMemory:  uint64(128),
 	}
 
-	return &nvml.NvmlMock{
-		Devices: []nvml.NvmlMockDevice{
+	return &nvml.Mock{
+		Devices: []nvml.MockDevice{
 			device,
 		},
 		DriverVersion: "400.300",

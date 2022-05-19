@@ -22,21 +22,21 @@ import (
 	"github.com/NVIDIA/go-nvml/pkg/nvml"
 )
 
-// NvmlMock : Implementation of Nvml using mocked calls
-type NvmlMock struct {
-	Devices       []NvmlMockDevice
+// Mock : Implementation of Nvml using mocked calls
+type Mock struct {
+	Devices       []MockDevice
 	DriverVersion string
 	CudaMajor     uint
 	CudaMinor     uint
 	ErrorOnInit   bool
 }
 
-// NvmlMockDevice : Implementation of NvmlDevice using mocked calls
-type NvmlMockDevice struct {
+// MockDevice : Implementation of Device using mocked calls
+type MockDevice struct {
 	Handle       *nvml.Device
 	Attributes   *DeviceAttributes
 	MigEnabled   bool
-	MigDevices   []NvmlMockDevice
+	MigDevices   []MockDevice
 	Model        string
 	ComputeMajor int
 	ComputeMinor int
@@ -44,21 +44,21 @@ type NvmlMockDevice struct {
 	UUID         string
 }
 
-var _ NvmlDevice = (*NvmlMockDevice)(nil)
+var _ Device = (*MockDevice)(nil)
 
-// AsInitError creates an NvmlInitError
-func (nvmlMock Mock) AsInitError(err error) NvmlInitError {
-	return NvmlInitError{err}
+// AsInitError creates an InitError
+func (nvmlMock Mock) AsInitError(err error) InitError {
+	return InitError{err}
 }
 
 // IsInitError checks if the specified error is an init error
 func (nvmlMock Mock) IsInitError(err error) bool {
-	_, isInitError := err.(NvmlInitError)
+	_, isInitError := err.(InitError)
 	return isInitError
 }
 
 // Init : Init the mock
-func (nvmlMock NvmlMock) Init() error {
+func (nvmlMock Mock) Init() error {
 	if nvmlMock.ErrorOnInit {
 		return fmt.Errorf("nvmlMock error on init")
 	}
@@ -66,17 +66,17 @@ func (nvmlMock NvmlMock) Init() error {
 }
 
 // Shutdown : Shutdown the mock
-func (nvmlMock NvmlMock) Shutdown() error {
+func (nvmlMock Mock) Shutdown() error {
 	return nil
 }
 
 // GetDeviceCount : Return a fake number of devices
-func (nvmlMock NvmlMock) GetDeviceCount() (uint, error) {
+func (nvmlMock Mock) GetDeviceCount() (uint, error) {
 	return uint(len(nvmlMock.Devices)), nil
 }
 
 // NewDevice : Get information about a fake GPU
-func (nvmlMock NvmlMock) NewDevice(id uint) (NvmlDevice, error) {
+func (nvmlMock Mock) NewDevice(id uint) (Device, error) {
 	if int(id) < len(nvmlMock.Devices) {
 		return nvmlMock.Devices[id], nil
 	}
@@ -84,28 +84,28 @@ func (nvmlMock NvmlMock) NewDevice(id uint) (NvmlDevice, error) {
 }
 
 // GetDriverVersion : Return a fake driver version
-func (nvmlMock NvmlMock) GetDriverVersion() (string, error) {
+func (nvmlMock Mock) GetDriverVersion() (string, error) {
 	return nvmlMock.DriverVersion, nil
 }
 
 // GetCudaDriverVersion : Return a fake cuda version
-func (nvmlMock NvmlMock) GetCudaDriverVersion() (*uint, *uint, error) {
+func (nvmlMock Mock) GetCudaDriverVersion() (*uint, *uint, error) {
 	return &nvmlMock.CudaMajor, &nvmlMock.CudaMinor, nil
 }
 
 // Instance : Return the underlying NVML device instance
-func (d NvmlMockDevice) Instance() *nvml.Device {
+func (d MockDevice) Instance() *nvml.Device {
 	return d.Handle
 }
 
 // IsMigEnabled : Returns whether MIG is enabled on the device or not
-func (d NvmlMockDevice) IsMigEnabled() (bool, error) {
+func (d MockDevice) IsMigEnabled() (bool, error) {
 	return d.MigEnabled, nil
 }
 
 // GetMigDevices : Returns the list of MIG devices configured on this device
-func (d NvmlMockDevice) GetMigDevices() ([]NvmlDevice, error) {
-	var devices []NvmlDevice
+func (d MockDevice) GetMigDevices() ([]Device, error) {
+	var devices []Device
 	for _, m := range d.MigDevices {
 		devices = append(devices, m)
 	}
@@ -113,26 +113,26 @@ func (d NvmlMockDevice) GetMigDevices() ([]NvmlDevice, error) {
 }
 
 // GetAttributes : Returns the set of of Devices attributes
-func (d NvmlMockDevice) GetAttributes() (DeviceAttributes, error) {
+func (d MockDevice) GetAttributes() (DeviceAttributes, error) {
 	return *d.Attributes, nil
 }
 
 // GetCudaComputeCapability returns the mocked CUDA Compute capability
-func (d NvmlMockDevice) GetCudaComputeCapability() (int, int, error) {
+func (d MockDevice) GetCudaComputeCapability() (int, int, error) {
 	return d.ComputeMajor, d.ComputeMinor, nil
 }
 
 // GetMemoryInfo returns the mocked memory info
-func (d NvmlMockDevice) GetMemoryInfo() (nvml.Memory, error) {
+func (d MockDevice) GetMemoryInfo() (nvml.Memory, error) {
 	return nvml.Memory{Total: d.TotalMemory}, nil
 }
 
 // GetName returns the mocked device name
-func (d NvmlMockDevice) GetName() (string, error) {
+func (d MockDevice) GetName() (string, error) {
 	return d.Model, nil
 }
 
 // GetUUID returns the mocked device uuid
-func (d NvmlMockDevice) GetUUID() (string, error) {
+func (d MockDevice) GetUUID() (string, error) {
 	return d.UUID, nil
 }

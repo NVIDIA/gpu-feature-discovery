@@ -16,7 +16,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 
 	testCases := []struct {
 		description    string
-		devices        []nvml.NvmlMockDevice
+		devices        []nvml.MockDevice
 		expectedError  bool
 		expectedLabels map[string]string
 	}{
@@ -26,7 +26,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "single non-mig device returns non-mig (none) labels",
-			devices: []nvml.NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
 					TotalMemory: mockMemory,
@@ -42,7 +42,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "multiple non-mig device returns non-mig (none) labels",
-			devices: []nvml.NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
 					TotalMemory: mockMemory,
@@ -63,12 +63,12 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "single mig-enabled device returns mig labels",
-			devices: []nvml.NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
 					TotalMemory: mockMemory,
 					MigEnabled:  true,
-					MigDevices: []nvml.NvmlMockDevice{
+					MigDevices: []nvml.MockDevice{
 						{
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
@@ -96,12 +96,12 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "multiple mig-enabled devices returns mig labels",
-			devices: []nvml.NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
 					TotalMemory: mockMemory,
 					MigEnabled:  true,
-					MigDevices: []nvml.NvmlMockDevice{
+					MigDevices: []nvml.MockDevice{
 						{
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
@@ -121,7 +121,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					Model:       "MOCKMODEL",
 					TotalMemory: mockMemory,
 					MigEnabled:  true,
-					MigDevices: []nvml.NvmlMockDevice{
+					MigDevices: []nvml.MockDevice{
 						{
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
@@ -155,7 +155,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "empty mig devices returns MIG invalid label",
-			devices: []nvml.NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
 					TotalMemory: mockMemory,
@@ -171,12 +171,12 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "mixed mig config returns MIG invalid label",
-			devices: []nvml.NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
 					TotalMemory: mockMemory,
 					MigEnabled:  true,
-					MigDevices: []nvml.NvmlMockDevice{
+					MigDevices: []nvml.MockDevice{
 						{
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
@@ -203,12 +203,12 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "mixed mig enabled and disabled returns invalid config",
-			devices: []nvml.NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
 					TotalMemory: mockMemory,
 					MigEnabled:  true,
-					MigDevices: []nvml.NvmlMockDevice{
+					MigDevices: []nvml.MockDevice{
 						{
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
@@ -233,12 +233,12 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "enabled, disabled, and empty returns invalid config",
-			devices: []nvml.NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
 					TotalMemory: mockMemory,
 					MigEnabled:  true,
-					MigDevices: []nvml.NvmlMockDevice{
+					MigDevices: []nvml.MockDevice{
 						{
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
@@ -270,7 +270,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			nvmlMock := &nvml.NvmlMock{
+			nvmlMock := &nvml.Mock{
 				Devices:       tc.devices,
 				DriverVersion: "400.300",
 				CudaMajor:     1,

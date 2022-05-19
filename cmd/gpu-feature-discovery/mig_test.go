@@ -19,7 +19,7 @@ func TestMigStrategyNone(t *testing.T) {
 	vgpuMock := NewTestVGPUMock()
 
 	nvmlMock.Devices[0].MigEnabled = true
-	nvmlMock.Devices[0].MigDevices = []nvml.NvmlMockDevice{
+	nvmlMock.Devices[0].MigDevices = []nvml.MockDevice{
 		{
 			Model: "MOCKMODEL",
 			Attributes: &nvml.DeviceAttributes{
@@ -150,7 +150,7 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
 	nvmlMock.Devices[0].MigEnabled = false
-	nvmlMock.Devices[0].MigDevices = []nvml.NvmlMockDevice{
+	nvmlMock.Devices[0].MigDevices = []nvml.MockDevice{
 		{
 			Model: "MOCKMODEL",
 			Attributes: &nvml.DeviceAttributes{
@@ -224,7 +224,7 @@ func TestMigStrategySingle(t *testing.T) {
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
 	nvmlMock.Devices[0].MigEnabled = true
-	nvmlMock.Devices[0].MigDevices = []nvml.NvmlMockDevice{
+	nvmlMock.Devices[0].MigDevices = []nvml.MockDevice{
 		{
 			Model: "MOCKMODEL",
 			Attributes: &nvml.DeviceAttributes{
@@ -300,7 +300,7 @@ func TestMigStrategyMixed(t *testing.T) {
 	vgpuMock := NewTestVGPUMock()
 
 	nvmlMock.Devices[0].MigEnabled = true
-	nvmlMock.Devices[0].MigDevices = []nvml.NvmlMockDevice{
+	nvmlMock.Devices[0].MigDevices = []nvml.MockDevice{
 		{
 			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,

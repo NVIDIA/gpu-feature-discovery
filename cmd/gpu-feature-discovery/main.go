@@ -137,7 +137,7 @@ func start(ctx *cli.Context, config *spec.Config) error {
 	}
 	log.Printf("\nRunning with config:\n%v", string(configJSON))
 
-	nvml := nvml.NvmlLib{}
+	nvml := nvml.Lib{}
 
 	vgpul := vgpu.NewVGPULib(vgpu.NewNvidiaPCILib())
 

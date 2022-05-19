@@ -248,7 +248,7 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 }
 
 // getMigDeviceName() returns the canonical name of the MIG device
-func getMigDeviceName(mig nvml.NvmlDevice) (string, error) {
+func getMigDeviceName(mig nvml.Device) (string, error) {
 	attr, err := mig.GetAttributes()
 	if err != nil {
 		return "", err
