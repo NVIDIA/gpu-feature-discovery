@@ -252,12 +252,12 @@ func getNVMLLabels(nvml nvml.Nvml, MigStrategy string) (lm.Labels, error) {
 		return nil, fmt.Errorf("error generating common labels: %v", err)
 	}
 
-	migStrategy, err := NewMigStrategy(MigStrategy, nvml)
+	migStrategy, err := lm.NewMigStrategy(MigStrategy, nvml)
 	if err != nil {
 		return nil, fmt.Errorf("error creating MIG strategy: %v", err)
 	}
 
-	migStrategyLabels, err := migStrategy.GenerateLabels()
+	migStrategyLabels, err := migStrategy.Labels()
 	if err != nil {
 		return nil, fmt.Errorf("error generating labels from MIG strategy: %v", err)
 	}

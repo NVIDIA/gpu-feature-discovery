@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2020-2022, NVIDIA CORPORATION.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package main
+package lm
 
 import (
 	"fmt"
@@ -32,16 +32,11 @@ const (
 	MigStrategyMixed  = "mixed"
 )
 
-// MigStrategy defines the strategy to use for setting labels on MIG devices.
-type MigStrategy interface {
-	GenerateLabels() (map[string]string, error)
-}
-
 // MigDeviceCounts maintains a count of unique MIG device types across all GPUs on a node
 type MigDeviceCounts map[string]int
 
 // NewMigStrategy creates a new MIG strategy to generate labels with.
-func NewMigStrategy(strategy string, nvml nvml.Nvml) (MigStrategy, error) {
+func NewMigStrategy(strategy string, nvml nvml.Nvml) (Labeler, error) {
 	switch strategy {
 	case MigStrategyNone:
 		return &migStrategyNone{nvml}, nil
@@ -58,7 +53,7 @@ type migStrategySingle struct{ nvml nvml.Nvml }
 type migStrategyMixed struct{ nvml nvml.Nvml }
 
 // migStrategyNone
-func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
+func (s *migStrategyNone) Labels() (Labels, error) {
 	count, err := s.nvml.GetDeviceCount()
 	if err != nil {
 		return nil, fmt.Errorf("error getting device count: %v", err)
@@ -78,7 +73,7 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 		return nil, fmt.Errorf("failed to get memory info for device: %v", err)
 	}
 
-	labels := make(map[string]string)
+	labels := make(Labels)
 	labels["nvidia.com/gpu.count"] = fmt.Sprintf("%d", count)
 	if model != "" {
 		labels["nvidia.com/gpu.product"] = strings.Replace(model, " ", "-", -1)
@@ -91,10 +86,10 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 }
 
 // migStrategySingle
-func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
+func (s *migStrategySingle) Labels() (Labels, error) {
 	// Generate the same "base" labels as the none strategy
 	none, _ := NewMigStrategy(MigStrategyNone, s.nvml)
-	labels, err := none.GenerateLabels()
+	labels, err := none.Labels()
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate base labels: %v", err)
 	}
@@ -179,7 +174,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 
 // setInvalidMigStrategyLabels modifies the labels in-place; indicating that the device configuration is invalid for
 // the 'single' MIG strategy
-func (s *migStrategySingle) setInvalidMigStrategyLabels(labels map[string]string, reason string) {
+func (s *migStrategySingle) setInvalidMigStrategyLabels(labels Labels, reason string) {
 	log.Printf("WARNING: Invalid configuration detected for mig-strategy=single: %v", reason)
 
 	labels["nvidia.com/gpu.count"] = "0"
@@ -188,10 +183,10 @@ func (s *migStrategySingle) setInvalidMigStrategyLabels(labels map[string]string
 }
 
 // migStrategyMixed
-func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
+func (s *migStrategyMixed) Labels() (Labels, error) {
 	// Generate the same "base" labels as the none strategy
 	none, _ := NewMigStrategy(MigStrategyNone, s.nvml)
-	labels, err := none.GenerateLabels()
+	labels, err := none.Labels()
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate base labels: %v", err)
 	}
