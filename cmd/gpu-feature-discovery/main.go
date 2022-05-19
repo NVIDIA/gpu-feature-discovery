@@ -189,7 +189,7 @@ L:
 			log.Printf("Warning: Error generating NVML labels: %v", err)
 		}
 
-		vGPULabels, err := getvGPULabels(vgpu)
+		vGPULabels, err := lm.NewVGPULabeler(vgpu).Labels()
 		if err != nil {
 			return fmt.Errorf("error generating vGPU labels: %v", err)
 		}
@@ -224,26 +224,6 @@ L:
 	}
 
 	return nil
-}
-
-func getvGPULabels(vgpu vgpu.Interface) (lm.Labels, error) {
-	devices, err := vgpu.Devices()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get vGPU devices: %v", err)
-	}
-	labels := make(lm.Labels)
-	if len(devices) > 0 {
-		labels["nvidia.com/vgpu.present"] = "true"
-	}
-	for _, device := range devices {
-		info, err := device.GetInfo()
-		if err != nil {
-			return nil, fmt.Errorf("error getting vGPU device info: %v", err)
-		}
-		labels["nvidia.com/vgpu.host-driver-version"] = info.HostDriverVersion
-		labels["nvidia.com/vgpu.host-driver-branch"] = info.HostDriverBranch
-	}
-	return labels, nil
 }
 
 func getNVMLLabels(nvml nvml.Nvml, MigStrategy string) (lm.Labels, error) {
