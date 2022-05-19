@@ -21,8 +21,8 @@ import "fmt"
 // list represents a list of labelers that iself implements the Labeler interface.
 type list []Labeler
 
-// AsList converts a set of labelers to a single composite labeler.
-func AsList(labelers ...Labeler) Labeler {
+// Merge converts a set of labelers to a single composite labeler.
+func Merge(labelers ...Labeler) Labeler {
 	l := list(labelers)
 
 	return l
