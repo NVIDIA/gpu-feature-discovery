@@ -171,36 +171,25 @@ func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config) error {
 		}
 	}()
 
-	gfdLabels, err := lm.NewTimestampLabeler(config).Labels()
+	labelers, err := lm.NewLabelers(nvml, vgpu, config, MachineTypePath)
 	if err != nil {
-		return fmt.Errorf("error generating timestamp labels: %v", err)
+		return err
 	}
 
 L:
 	for {
-		nvmlLabeler, err := lm.NewNVMLLabeler(nvml, config, MachineTypePath)
+
+		labels, err := labelers.Labels()
 		if err != nil {
-			return fmt.Errorf("error creating NVML labeler: %v", err)
-		}
-		nvmlLabels, err := nvmlLabeler.Labels()
-		if err != nil {
-			return fmt.Errorf("error generating NVML labels: %v", err)
+			return fmt.Errorf("error generating labels: %v", err)
 		}
 
-		vGPULabels, err := lm.NewVGPULabeler(vgpu).Labels()
-		if err != nil {
-			return fmt.Errorf("error generating vGPU labels: %v", err)
-		}
-
-		if len(nvmlLabels) == 0 && len(vGPULabels) == 0 {
+		if len(labels) <= 1 {
 			log.Printf("Warning: no labels generated from any source")
 		}
 
-		allLabels := lm.AsSet(
-			gfdLabels,
-			vGPULabels,
-			nvmlLabels,
-		)
+		allLabels := lm.AsSet(labels)
+
 		log.Print("Writing labels to output file")
 		err = allLabels.WriteToFile(config.Flags.GFD.OutputFile)
 		if err != nil {

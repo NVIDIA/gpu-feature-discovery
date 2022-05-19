@@ -16,7 +16,31 @@
 
 package lm
 
+import (
+	"fmt"
+
+	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
+	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
+)
+
 // Labeler defines an interface for generating labels
 type Labeler interface {
 	Labels() (Labels, error)
+}
+
+// NewLabelers constructs the required labelers from the specified config
+func NewLabelers(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config, machineTypePath string) (Labeler, error) {
+	nvmlLabeler, err := NewNVMLLabeler(nvml, config, machineTypePath)
+	if err != nil {
+		return nil, fmt.Errorf("error creating NVML labeler: %v", err)
+	}
+
+	l := Merge(
+		NewTimestampLabeler(config),
+		nvmlLabeler,
+		NewVGPULabeler(vgpu),
+	)
+
+	return l, nil
 }
