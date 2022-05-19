@@ -14,7 +14,7 @@
 # limitations under the License.
 **/
 
-package main
+package nvml
 
 import (
 	"fmt"
@@ -30,13 +30,16 @@ type Nvml interface {
 	NewDevice(id uint) (device NvmlDevice, err error)
 	GetDriverVersion() (string, error)
 	GetCudaDriverVersion() (*uint, *uint, error)
+	// TODO: These will be removed in a follow-up commit
+	AsInitError(error) NvmlInitError
+	IsInitError(error) bool
 }
 
 // NvmlDevice : Type to represent interactions with an nvml.Device
 type NvmlDevice interface {
 	IsMigEnabled() (bool, error)
 	GetMigDevices() ([]NvmlDevice, error)
-	GetAttributes() (nvml.DeviceAttributes, error)
+	GetAttributes() (DeviceAttributes, error)
 	GetCudaComputeCapability() (int, int, error)
 	GetUUID() (string, error)
 	GetName() (string, error)
@@ -44,7 +47,20 @@ type NvmlDevice interface {
 }
 
 // NvmlInitError : Used to signal an error during initialization vs. other errors
-type NvmlInitError struct{ error }
+type NvmlInitError struct {
+	error
+}
+
+// AsInitError creates an NvmlInitError
+func (nvmlLib NvmlLib) AsInitError(err error) NvmlInitError {
+	return NvmlInitError{err}
+}
+
+// IsInitError checks if the specified error is an init error
+func (nvmlLib NvmlLib) IsInitError(err error) bool {
+	_, isInitError := err.(NvmlInitError)
+	return isInitError
+}
 
 // NvmlLib : Implementation of Nvml using the NVML lib
 type NvmlLib struct{}
@@ -54,6 +70,8 @@ type NvmlLibDevice struct {
 	device      *nvml.Device
 	isMigDevice bool
 }
+
+type DeviceAttributes nvml.DeviceAttributes
 
 // Init : Init NVML lib
 func (nvmlLib NvmlLib) Init() (err error) {
@@ -174,13 +192,13 @@ func (d NvmlLibDevice) GetMigDevices() ([]NvmlDevice, error) {
 }
 
 // GetAttributes : Returns the set of of Devices attributes
-func (d NvmlLibDevice) GetAttributes() (nvml.DeviceAttributes, error) {
+func (d NvmlLibDevice) GetAttributes() (DeviceAttributes, error) {
 	attributes, ret := d.device.GetAttributes()
 	if ret != nvml.SUCCESS {
-		return nvml.DeviceAttributes{}, errorString(ret)
+		return DeviceAttributes{}, errorString(ret)
 	}
 
-	return attributes, nil
+	return DeviceAttributes(attributes), nil
 }
 
 // GetCudaComputeCapability returns the CUDA Compute Capability major and minor versions.

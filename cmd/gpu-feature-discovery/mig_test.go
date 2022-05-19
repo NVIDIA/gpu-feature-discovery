@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/go-nvml/pkg/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 	config "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
 )
@@ -18,18 +18,18 @@ func TestMigStrategyNone(t *testing.T) {
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
 
-	nvmlMock.devices[0].migEnabled = true
-	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
+	nvmlMock.Devices[0].MigEnabled = true
+	nvmlMock.Devices[0].MigDevices = []nvml.NvmlMockDevice{
 		{
-			model: "MOCKMODEL",
-			attributes: &nvml.DeviceAttributes{
+			Model: "MOCKMODEL",
+			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
 		},
 		{
-			model: "MOCKMODEL",
-			attributes: &nvml.DeviceAttributes{
+			Model: "MOCKMODEL",
+			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
@@ -149,18 +149,18 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
-	nvmlMock.devices[0].migEnabled = false
-	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
+	nvmlMock.Devices[0].MigEnabled = false
+	nvmlMock.Devices[0].MigDevices = []nvml.NvmlMockDevice{
 		{
-			model: "MOCKMODEL",
-			attributes: &nvml.DeviceAttributes{
+			Model: "MOCKMODEL",
+			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
 		},
 		{
-			model: "MOCKMODEL",
-			attributes: &nvml.DeviceAttributes{
+			Model: "MOCKMODEL",
+			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
@@ -223,18 +223,18 @@ func TestMigStrategySingle(t *testing.T) {
 	nvmlMock := NewTestNvmlMock()
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
-	nvmlMock.devices[0].migEnabled = true
-	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
+	nvmlMock.Devices[0].MigEnabled = true
+	nvmlMock.Devices[0].MigDevices = []nvml.NvmlMockDevice{
 		{
-			model: "MOCKMODEL",
-			attributes: &nvml.DeviceAttributes{
+			Model: "MOCKMODEL",
+			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
 		},
 		{
-			model: "MOCKMODEL",
-			attributes: &nvml.DeviceAttributes{
+			Model: "MOCKMODEL",
+			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
@@ -299,16 +299,16 @@ func TestMigStrategyMixed(t *testing.T) {
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
 
-	nvmlMock.devices[0].migEnabled = true
-	nvmlMock.devices[0].migDevices = []NvmlMockDevice{
+	nvmlMock.Devices[0].MigEnabled = true
+	nvmlMock.Devices[0].MigDevices = []nvml.NvmlMockDevice{
 		{
-			attributes: &nvml.DeviceAttributes{
+			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
 		},
 		{
-			attributes: &nvml.DeviceAttributes{
+			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 1,
 				MemorySizeMB:          5000,
 			},

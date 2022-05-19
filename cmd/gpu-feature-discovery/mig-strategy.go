@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 )
 
 // Constants representing different MIG strategies.
@@ -38,7 +40,7 @@ type MigStrategy interface {
 type MigDeviceCounts map[string]int
 
 // NewMigStrategy creates a new MIG strategy to generate labels with.
-func NewMigStrategy(strategy string, nvml Nvml) (MigStrategy, error) {
+func NewMigStrategy(strategy string, nvml nvml.Nvml) (MigStrategy, error) {
 	switch strategy {
 	case MigStrategyNone:
 		return &migStrategyNone{nvml}, nil
@@ -50,9 +52,9 @@ func NewMigStrategy(strategy string, nvml Nvml) (MigStrategy, error) {
 	return nil, fmt.Errorf("unknown strategy: %v", strategy)
 }
 
-type migStrategyNone struct{ nvml Nvml }
-type migStrategySingle struct{ nvml Nvml }
-type migStrategyMixed struct{ nvml Nvml }
+type migStrategyNone struct{ nvml nvml.Nvml }
+type migStrategySingle struct{ nvml nvml.Nvml }
+type migStrategyMixed struct{ nvml nvml.Nvml }
 
 // migStrategyNone
 func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
@@ -246,7 +248,7 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 }
 
 // getMigDeviceName() returns the canonical name of the MIG device
-func getMigDeviceName(mig NvmlDevice) (string, error) {
+func getMigDeviceName(mig nvml.NvmlDevice) (string, error) {
 	attr, err := mig.GetAttributes()
 	if err != nil {
 		return "", err

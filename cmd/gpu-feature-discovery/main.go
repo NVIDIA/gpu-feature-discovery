@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/urfave/cli/v2"
@@ -136,7 +137,7 @@ func start(ctx *cli.Context, config *spec.Config) error {
 	}
 	log.Printf("\nRunning with config:\n%v", string(configJSON))
 
-	nvml := NvmlLib{}
+	nvml := nvml.NvmlLib{}
 
 	vgpul := vgpu.NewVGPULib(vgpu.NewNvidiaPCILib())
 
@@ -149,7 +150,7 @@ func start(ctx *cli.Context, config *spec.Config) error {
 	return err
 }
 
-func run(nvml Nvml, vgpu vgpu.Interface, config *spec.Config) error {
+func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config) error {
 	defer func() {
 		if !config.Flags.GFD.Oneshot {
 			err := removeOutputFile(config.Flags.GFD.OutputFile)
@@ -181,7 +182,7 @@ L:
 	for {
 		nvmlLabels, err := getNVMLLabels(nvml, config.Flags.MigStrategy)
 		if err != nil {
-			_, isInitError := err.(NvmlInitError)
+			isInitError := nvml.IsInitError(err)
 			if !isInitError || (isInitError && config.Flags.FailOnInitError) {
 				return fmt.Errorf("error generating NVML labels: %v", err)
 			}
@@ -245,9 +246,9 @@ func getvGPULabels(vgpu vgpu.Interface) (map[string]string, error) {
 	return labels, nil
 }
 
-func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
+func getNVMLLabels(nvml nvml.Nvml, MigStrategy string) (map[string]string, error) {
 	if err := nvml.Init(); err != nil {
-		return nil, NvmlInitError{fmt.Errorf("failed to initialize NVML: %v", err)}
+		return nil, nvml.AsInitError(fmt.Errorf("failed to initialize NVML: %v", err))
 	}
 
 	defer func() {
@@ -292,7 +293,7 @@ func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
 	return allLabels, nil
 }
 
-func generateCommonLabels(nvml Nvml) (map[string]string, error) {
+func generateCommonLabels(nvml nvml.Nvml) (map[string]string, error) {
 	driverVersion, err := nvml.GetDriverVersion()
 	if err != nil {
 		return nil, fmt.Errorf("error getting driver version: %v", err)
