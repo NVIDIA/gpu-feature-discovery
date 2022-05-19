@@ -21,6 +21,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/NVIDIA/gpu-feature-discovery/internal/mig"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 )
 
@@ -101,7 +102,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	// Add a new label specifying the MIG strategy
 	labels["nvidia.com/mig.strategy"] = "single"
 
-	devices := NewMIGCapableDevices(s.nvml)
+	devices := mig.NewMIGCapableDevices(s.nvml)
 
 	migEnabledDevices, err := devices.GetDevicesWithMigEnabled()
 	if err != nil {
@@ -198,7 +199,7 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 	// Add a new label specifying the MIG strategy
 	labels["nvidia.com/mig.strategy"] = "mixed"
 
-	devices := NewMIGCapableDevices(s.nvml)
+	devices := mig.NewMIGCapableDevices(s.nvml)
 
 	// Enumerate the MIG devices on this node. In mig.strategy=mixed we ignore devices
 	// configured with migEnabled=true but exposing no MIG devices.

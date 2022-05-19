@@ -14,7 +14,7 @@
 # limitations under the License.
 **/
 
-package main
+package mig
 
 import "github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 
