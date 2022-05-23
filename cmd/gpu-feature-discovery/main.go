@@ -98,6 +98,15 @@ func main() {
 }
 
 func validateFlags(config *spec.Config) error {
+	log.SetPrefix(Bin + ": ")
+
+	if version == "" {
+		log.Print("Be sure to compile with '-ldflags \"-X main.version=${GFD_VERSION}\"' and to set $GFD_VERSION")
+		return fmt.Errorf("version is not set")
+	}
+
+	log.Printf("Running %s in version %s", Bin, version)
+
 	return nil
 }
 
@@ -115,15 +124,6 @@ func loadConfig(c *cli.Context, flags []cli.Flag) (*spec.Config, error) {
 }
 
 func start(c *cli.Context, flags []cli.Flag) error {
-	log.SetPrefix(Bin + ": ")
-
-	if version == "" {
-		log.Print("Version is not set.")
-		log.Fatal("Be sure to compile with '-ldflags \"-X main.version=${GFD_VERSION}\"' and to set $GFD_VERSION")
-	}
-
-	log.Printf("Running %s in version %s", Bin, version)
-
 	// Load the configuration file
 	log.Println("Loading configuration.")
 	config, err := loadConfig(c, flags)
