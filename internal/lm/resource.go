@@ -144,6 +144,9 @@ func (rl resourceLabeler) key(suffix string) string {
 
 // replicationInfo searches the associated config for the resource and returns the replication info
 func (rl resourceLabeler) replicationInfo() *spec.ReplicatedResource {
+	if rl.config == nil {
+		return nil
+	}
 	name := rl.resourceName
 	for _, r := range rl.config.Sharing.TimeSlicing.Resources {
 		if r.Name == spec.ResourceName(name) {
@@ -153,7 +156,7 @@ func (rl resourceLabeler) replicationInfo() *spec.ReplicatedResource {
 	return nil
 }
 
-func newProductLabeler(rl resourceLabeler, parts ...string) Labeler {
+func (rl resourceLabeler) productLabel(parts ...string) Labels {
 	var strippedParts []string
 	for _, p := range parts {
 		if p != "" {
@@ -162,7 +165,7 @@ func newProductLabeler(rl resourceLabeler, parts ...string) Labeler {
 	}
 
 	if len(strippedParts) == 0 {
-		return empty{}
+		return make(Labels)
 	}
 
 	if r := rl.replicationInfo(); r != nil && r.Replicas > 1 && r.Rename == "" {
@@ -170,6 +173,10 @@ func newProductLabeler(rl resourceLabeler, parts ...string) Labeler {
 	}
 
 	return rl.single("product", strings.Join(strippedParts, "-"))
+}
+
+func newProductLabeler(rl resourceLabeler, parts ...string) Labeler {
+	return rl.productLabel(parts...)
 }
 
 func newCountLabeler(rl resourceLabeler, count int) Labeler {

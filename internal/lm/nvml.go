@@ -54,9 +54,9 @@ func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string)
 		nvml: nvml,
 	}
 
-	migStrategyLabler, err := NewMigStrategy(*config.Flags.MigStrategy, nvml)
+	resourceLabeler, err := NewResourceLabeler(nvml, config)
 	if err != nil {
-		return nil, fmt.Errorf("error creating MIG strategy: %v", err)
+		return nil, fmt.Errorf("error creating resource labeler: %v", err)
 	}
 
 	l := nvmlLabeler{
@@ -65,7 +65,7 @@ func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string)
 		labelers: list{
 			machineTypeLabeler,
 			cudaLabeler,
-			migStrategyLabler,
+			resourceLabeler,
 		},
 	}
 

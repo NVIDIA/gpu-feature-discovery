@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,8 +36,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		expectedLabels map[string]string
 	}{
 		{
-			description:   "no devices raises error",
-			expectedError: true,
+			description: "no devices returns empty labels",
 		},
 		{
 			description: "single non-mig device returns non-mig (none) labels",
@@ -84,6 +84,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					MigEnabled:  true,
 					MigDevices: []nvml.MockDevice{
 						{
+							Model: "MOCKMODEL",
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
@@ -117,6 +118,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					MigEnabled:  true,
 					MigDevices: []nvml.MockDevice{
 						{
+							Model: "MOCKMODEL",
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
@@ -137,6 +139,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					MigEnabled:  true,
 					MigDevices: []nvml.MockDevice{
 						{
+							Model: "MOCKMODEL",
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
@@ -192,6 +195,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					MigEnabled:  true,
 					MigDevices: []nvml.MockDevice{
 						{
+							Model: "MOCKMODEL",
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
@@ -199,6 +203,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 							},
 						},
 						{
+							Model: "MOCKMODEL",
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     3,
@@ -224,6 +229,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					MigEnabled:  true,
 					MigDevices: []nvml.MockDevice{
 						{
+							Model: "MOCKMODEL",
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
@@ -254,6 +260,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					MigEnabled:  true,
 					MigDevices: []nvml.MockDevice{
 						{
+							Model: "MOCKMODEL",
 							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
@@ -291,7 +298,15 @@ func TestMigStrategySingleLabels(t *testing.T) {
 				CudaMinor:     1,
 			}
 
-			single, _ := NewMigStrategy(MigStrategySingle, nvmlMock)
+			config := spec.Config{
+				Flags: spec.Flags{
+					CommandLineFlags: spec.CommandLineFlags{
+						MigStrategy: ptr(MigStrategySingle),
+					},
+				},
+			}
+
+			single, _ := NewResourceLabeler(nvmlMock, &config)
 
 			labels, err := single.Labels()
 			if tc.expectedError {
@@ -303,4 +318,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			require.EqualValues(t, tc.expectedLabels, labels)
 		})
 	}
+}
+
+// prt returns a reference to whatever type is passed into it
+func ptr[T any](x T) *T {
+	return &x
 }
