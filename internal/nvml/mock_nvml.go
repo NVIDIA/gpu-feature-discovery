@@ -125,8 +125,3 @@ func (d MockDevice) GetName() (string, error) {
 func (d MockDevice) GetUUID() (string, error) {
 	return d.UUID, nil
 }
-
-// GetArchFamily returns the arch family
-func (d MockDevice) GetArchFamily() (string, error) {
-	return getArchFamily(d.ComputeMajor, d.ComputeMinor), nil
-}

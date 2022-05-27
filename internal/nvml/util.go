@@ -15,26 +15,3 @@
 **/
 
 package nvml
-
-func getArchFamily(computeMajor, computeMinor int) string {
-	switch computeMajor {
-	case 1:
-		return "tesla"
-	case 2:
-		return "fermi"
-	case 3:
-		return "kepler"
-	case 5:
-		return "maxwell"
-	case 6:
-		return "pascal"
-	case 7:
-		if computeMinor < 5 {
-			return "volta"
-		}
-		return "turing"
-	case 8:
-		return "ampere"
-	}
-	return "undefined"
-}
