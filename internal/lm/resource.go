@@ -50,6 +50,11 @@ func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (
 		config:       config,
 	}
 
+	architectureLabeler := architectureLabeler{
+		resourceLabeler: resourceLabeler,
+		device:          device,
+	}
+
 	memoryLabeler := (Labeler)(&empty{})
 	if memoryInfo.Total != 0 {
 		memoryLabeler = resourceLabeler.single("memory", memoryInfo.Total)
@@ -59,6 +64,7 @@ func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (
 		newProductLabeler(resourceLabeler, model),
 		newCountLabeler(resourceLabeler, count),
 		memoryLabeler,
+		architectureLabeler,
 	)
 
 	return labelers, nil
@@ -206,4 +212,54 @@ func (s migAttributeLabeler) Labels() (Labels, error) {
 	})
 
 	return labels, nil
+}
+
+type architectureLabeler struct {
+	resourceLabeler
+	device nvml.Device
+}
+
+func (s architectureLabeler) Labels() (Labels, error) {
+	computeMajor, computeMinor, err := s.device.GetCudaComputeCapability()
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine CUDA compute capability: %v", err)
+	}
+
+	if computeMajor == 0 {
+		return make(Labels), nil
+	}
+
+	family := getArchFamily(computeMajor, computeMinor)
+
+	labels := s.resourceLabeler.labels(map[string]interface{}{
+		"family":        family,
+		"compute.major": computeMajor,
+		"compute.minor": computeMinor,
+	})
+
+	return labels, nil
+}
+
+// TODO: This should a function in go-nvlib
+func getArchFamily(computeMajor, computeMinor int) string {
+	switch computeMajor {
+	case 1:
+		return "tesla"
+	case 2:
+		return "fermi"
+	case 3:
+		return "kepler"
+	case 5:
+		return "maxwell"
+	case 6:
+		return "pascal"
+	case 7:
+		if computeMinor < 5 {
+			return "volta"
+		}
+		return "turing"
+	case 8:
+		return "ampere"
+	}
+	return "undefined"
 }

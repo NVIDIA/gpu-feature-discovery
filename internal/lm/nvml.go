@@ -138,16 +138,6 @@ func (labeler common) Labels() (Labels, error) {
 		return nil, fmt.Errorf("error getting cuda driver version: %v", err)
 	}
 
-	device, err := labeler.nvml.NewDevice(0)
-	if err != nil {
-		return nil, fmt.Errorf("error getting device: %v", err)
-	}
-
-	computeMajor, computeMinor, err := device.GetCudaComputeCapability()
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine CUDA compute capability: %v", err)
-	}
-
 	labels, err := labeler.getMachineTypeLabels()
 	if err != nil {
 		return nil, fmt.Errorf("falied to generate machine type label: %v", err)
@@ -158,12 +148,6 @@ func (labeler common) Labels() (Labels, error) {
 	labels["nvidia.com/cuda.driver.rev"] = driverRev
 	labels["nvidia.com/cuda.runtime.major"] = fmt.Sprintf("%d", *cudaMajor)
 	labels["nvidia.com/cuda.runtime.minor"] = fmt.Sprintf("%d", *cudaMinor)
-	if computeMajor != 0 {
-		family, _ := device.GetArchFamily()
-		labels["nvidia.com/gpu.family"] = family
-		labels["nvidia.com/gpu.compute.major"] = fmt.Sprintf("%d", computeMajor)
-		labels["nvidia.com/gpu.compute.minor"] = fmt.Sprintf("%d", computeMinor)
-	}
 
 	return labels, nil
 }

@@ -28,8 +28,10 @@ func TestGPUResourceLabeler(t *testing.T) {
 	mockMemory := uint64(300)
 
 	device := nvml.MockDevice{
-		Model:       "MOCKMODEL",
-		TotalMemory: mockMemory,
+		Model:        "MOCKMODEL",
+		TotalMemory:  mockMemory,
+		ComputeMajor: 8,
+		ComputeMinor: 0,
 	}
 
 	testCases := []struct {
@@ -45,9 +47,12 @@ func TestGPUResourceLabeler(t *testing.T) {
 			description: "no sharing",
 			count:       1,
 			expectedLabels: Labels{
-				"nvidia.com/gpu.count":   "1",
-				"nvidia.com/gpu.memory":  "300",
-				"nvidia.com/gpu.product": "MOCKMODEL",
+				"nvidia.com/gpu.count":         "1",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
 			},
 		},
 		{
@@ -62,9 +67,12 @@ func TestGPUResourceLabeler(t *testing.T) {
 				},
 			},
 			expectedLabels: Labels{
-				"nvidia.com/gpu.count":   "1",
-				"nvidia.com/gpu.memory":  "300",
-				"nvidia.com/gpu.product": "MOCKMODEL",
+				"nvidia.com/gpu.count":         "1",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
 			},
 		},
 		{
@@ -79,10 +87,13 @@ func TestGPUResourceLabeler(t *testing.T) {
 				},
 			},
 			expectedLabels: Labels{
-				"nvidia.com/gpu.count":    "2",
-				"nvidia.com/gpu.replicas": "2",
-				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  "MOCKMODEL-SHARED",
+				"nvidia.com/gpu.count":         "2",
+				"nvidia.com/gpu.replicas":      "2",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL-SHARED",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
 			},
 		},
 		{
@@ -98,10 +109,13 @@ func TestGPUResourceLabeler(t *testing.T) {
 				},
 			},
 			expectedLabels: Labels{
-				"nvidia.com/gpu.count":    "2",
-				"nvidia.com/gpu.replicas": "2",
-				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  "MOCKMODEL",
+				"nvidia.com/gpu.count":         "2",
+				"nvidia.com/gpu.replicas":      "2",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
 			},
 		},
 	}
