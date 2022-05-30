@@ -14,7 +14,7 @@
 # limitations under the License.
 **/
 
-package main
+package nvml
 
 import (
 	"fmt"
@@ -27,36 +27,41 @@ type Nvml interface {
 	Init() error
 	Shutdown() error
 	GetDeviceCount() (uint, error)
-	NewDevice(id uint) (device NvmlDevice, err error)
+	NewDevice(id uint) (device Device, err error)
 	GetDriverVersion() (string, error)
 	GetCudaDriverVersion() (*uint, *uint, error)
 }
 
-// NvmlDevice : Type to represent interactions with an nvml.Device
-type NvmlDevice interface {
+// Device : Type to represent interactions with an nvml.Device
+type Device interface {
 	IsMigEnabled() (bool, error)
-	GetMigDevices() ([]NvmlDevice, error)
-	GetAttributes() (nvml.DeviceAttributes, error)
+	GetMigDevices() ([]Device, error)
+	GetAttributes() (DeviceAttributes, error)
 	GetCudaComputeCapability() (int, int, error)
 	GetUUID() (string, error)
 	GetName() (string, error)
-	GetMemoryInfo() (nvml.Memory, error)
+	GetMemoryInfo() (Memory, error)
+	// TODO: This can be cleaned up
+	GetArchFamily() (string, error)
 }
 
-// NvmlInitError : Used to signal an error during initialization vs. other errors
-type NvmlInitError struct{ error }
+// Lib : Implementation of Nvml using the NVML lib
+type Lib struct{}
 
-// NvmlLib : Implementation of Nvml using the NVML lib
-type NvmlLib struct{}
-
-// NvmlLibDevice : Implementation of NvmlDevice using a device from the NVML lib
-type NvmlLibDevice struct {
+// LibDevice : Implementation of Device using a device from the NVML lib
+type LibDevice struct {
 	device      *nvml.Device
 	isMigDevice bool
 }
 
+// DeviceAttributes mirrors the nvml Device attributes
+type DeviceAttributes nvml.DeviceAttributes
+
+// Memory mirrors the nvml Memory attributes
+type Memory nvml.Memory
+
 // Init : Init NVML lib
-func (nvmlLib NvmlLib) Init() (err error) {
+func (nvmlLib Lib) Init() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("unexpected failure calling nvml.Init: %v", r)
@@ -72,7 +77,7 @@ func (nvmlLib NvmlLib) Init() (err error) {
 }
 
 // Shutdown : Shutdown NVML lib
-func (nvmlLib NvmlLib) Shutdown() (err error) {
+func (nvmlLib Lib) Shutdown() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("unexpected failure calling nvml.Shutdown: %v", r)
@@ -88,7 +93,7 @@ func (nvmlLib NvmlLib) Shutdown() (err error) {
 }
 
 // GetDeviceCount : Return the number of GPUs using NVML
-func (nvmlLib NvmlLib) GetDeviceCount() (uint, error) {
+func (nvmlLib Lib) GetDeviceCount() (uint, error) {
 	count, ret := nvml.DeviceGetCount()
 	if ret != nvml.SUCCESS {
 		return 0, errorString(ret)
@@ -97,13 +102,13 @@ func (nvmlLib NvmlLib) GetDeviceCount() (uint, error) {
 }
 
 // NewDevice : Get all information about a GPU using NVML
-func (nvmlLib NvmlLib) NewDevice(id uint) (NvmlDevice, error) {
+func (nvmlLib Lib) NewDevice(id uint) (Device, error) {
 	h, ret := nvml.DeviceGetHandleByIndex(int(id))
 	if ret != nvml.SUCCESS {
 		return nil, errorString(ret)
 	}
 
-	d := NvmlLibDevice{
+	d := LibDevice{
 		device:      &h,
 		isMigDevice: false,
 	}
@@ -111,7 +116,7 @@ func (nvmlLib NvmlLib) NewDevice(id uint) (NvmlDevice, error) {
 }
 
 // GetDriverVersion : Return the driver version using NVML
-func (nvmlLib NvmlLib) GetDriverVersion() (string, error) {
+func (nvmlLib Lib) GetDriverVersion() (string, error) {
 	v, ret := nvml.SystemGetDriverVersion()
 	if ret != nvml.SUCCESS {
 		return "", errorString(ret)
@@ -121,7 +126,7 @@ func (nvmlLib NvmlLib) GetDriverVersion() (string, error) {
 }
 
 // GetCudaDriverVersion : Return the cuda v using NVML
-func (nvmlLib NvmlLib) GetCudaDriverVersion() (*uint, *uint, error) {
+func (nvmlLib Lib) GetCudaDriverVersion() (*uint, *uint, error) {
 	v, ret := nvml.SystemGetCudaDriverVersion()
 	if ret != nvml.SUCCESS {
 		return nil, nil, errorString(ret)
@@ -135,7 +140,7 @@ func (nvmlLib NvmlLib) GetCudaDriverVersion() (*uint, *uint, error) {
 
 // IsMigEnabled : Returns whether MIG is enabled on the device or not.
 // Only the current mode is considered and the pending mode is ignored.
-func (d NvmlLibDevice) IsMigEnabled() (bool, error) {
+func (d LibDevice) IsMigEnabled() (bool, error) {
 	cm, _, ret := d.device.GetMigMode()
 	if ret == nvml.ERROR_NOT_SUPPORTED {
 		return false, nil
@@ -148,13 +153,13 @@ func (d NvmlLibDevice) IsMigEnabled() (bool, error) {
 }
 
 // GetMigDevices : Returns the list of MIG devices configured on this device
-func (d NvmlLibDevice) GetMigDevices() ([]NvmlDevice, error) {
+func (d LibDevice) GetMigDevices() ([]Device, error) {
 	n, ret := d.device.GetMaxMigDeviceCount()
 	if ret != nvml.SUCCESS {
 		return nil, errorString(ret)
 	}
 
-	var migs []NvmlDevice
+	var migs []Device
 	for i := 0; i < n; i++ {
 		mig, ret := d.device.GetMigDeviceHandleByIndex(i)
 		if ret != nvml.ERROR_NOT_FOUND {
@@ -164,7 +169,7 @@ func (d NvmlLibDevice) GetMigDevices() ([]NvmlDevice, error) {
 			return nil, errorString(ret)
 		}
 
-		d := NvmlLibDevice{
+		d := LibDevice{
 			device:      &mig,
 			isMigDevice: true,
 		}
@@ -174,18 +179,18 @@ func (d NvmlLibDevice) GetMigDevices() ([]NvmlDevice, error) {
 }
 
 // GetAttributes : Returns the set of of Devices attributes
-func (d NvmlLibDevice) GetAttributes() (nvml.DeviceAttributes, error) {
+func (d LibDevice) GetAttributes() (DeviceAttributes, error) {
 	attributes, ret := d.device.GetAttributes()
 	if ret != nvml.SUCCESS {
-		return nvml.DeviceAttributes{}, errorString(ret)
+		return DeviceAttributes{}, errorString(ret)
 	}
 
-	return attributes, nil
+	return DeviceAttributes(attributes), nil
 }
 
 // GetCudaComputeCapability returns the CUDA Compute Capability major and minor versions.
 // If the device is a MIG device (i.e. a compute instance) these are 0
-func (d NvmlLibDevice) GetCudaComputeCapability() (int, int, error) {
+func (d LibDevice) GetCudaComputeCapability() (int, int, error) {
 	if d.isMigDevice {
 		return 0, 0, nil
 	}
@@ -199,7 +204,7 @@ func (d NvmlLibDevice) GetCudaComputeCapability() (int, int, error) {
 }
 
 // GetUUID returns the UUID of the CUDA device
-func (d NvmlLibDevice) GetUUID() (string, error) {
+func (d LibDevice) GetUUID() (string, error) {
 	uuid, ret := d.device.GetUUID()
 	if ret != nvml.SUCCESS {
 		return "", errorString(ret)
@@ -209,7 +214,7 @@ func (d NvmlLibDevice) GetUUID() (string, error) {
 }
 
 // GetName returns the device name / model.
-func (d NvmlLibDevice) GetName() (string, error) {
+func (d LibDevice) GetName() (string, error) {
 	name, ret := d.device.GetName()
 	if ret != nvml.SUCCESS {
 		return "", errorString(ret)
@@ -219,13 +224,13 @@ func (d NvmlLibDevice) GetName() (string, error) {
 }
 
 // GetMemoryInfo returns the total and available memory for a device
-func (d NvmlLibDevice) GetMemoryInfo() (nvml.Memory, error) {
+func (d LibDevice) GetMemoryInfo() (Memory, error) {
 	info, ret := d.device.GetMemoryInfo()
 	if ret != nvml.SUCCESS {
-		return nvml.Memory{}, errorString(ret)
+		return Memory{}, errorString(ret)
 	}
 
-	return info, nil
+	return Memory(info), nil
 }
 
 func errorString(r nvml.Return) error {
@@ -233,4 +238,13 @@ func errorString(r nvml.Return) error {
 		return nil
 	}
 	return fmt.Errorf("NVML error: %v", nvml.ErrorString(r))
+}
+
+// GetArchFamily returns the architecture family string for the device
+func (d LibDevice) GetArchFamily() (string, error) {
+	computeMajor, computeMinor, err := d.GetCudaComputeCapability()
+	if err != nil {
+		return "", err
+	}
+	return getArchFamily(computeMajor, computeMinor), nil
 }

@@ -3,18 +3,18 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 
+	"github.com/NVIDIA/gpu-feature-discovery/internal/lm"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/urfave/cli/v2"
 	"github.com/urfave/cli/v2/altsrc"
@@ -135,8 +135,9 @@ func start(ctx *cli.Context, config *spec.Config) error {
 	}
 	log.Printf("\nRunning with config:\n%v", string(configJSON))
 
-	nvml := NvmlLib{}
-	vgpul := NewVGPULib(NewNvidiaPCILib())
+	nvml := nvml.Lib{}
+
+	vgpul := vgpu.NewVGPULib(vgpu.NewNvidiaPCILib())
 
 	log.Print("Start running")
 	err = run(nvml, vgpul, config)
@@ -147,7 +148,7 @@ func start(ctx *cli.Context, config *spec.Config) error {
 	return err
 }
 
-func run(nvml Nvml, vgpu VGPU, config *spec.Config) error {
+func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config) error {
 	defer func() {
 		if !config.Flags.GFD.Oneshot {
 			err := removeOutputFile(config.Flags.GFD.OutputFile)
@@ -170,38 +171,25 @@ func run(nvml Nvml, vgpu VGPU, config *spec.Config) error {
 		}
 	}()
 
-	gfdLabels := make(map[string]string)
-	if !config.Flags.GFD.NoTimestamp {
-		gfdLabels["nvidia.com/gfd.timestamp"] = fmt.Sprintf("%d", time.Now().Unix())
+	labelers, err := lm.NewLabelers(nvml, vgpu, config, MachineTypePath)
+	if err != nil {
+		return err
 	}
 
 L:
 	for {
-		nvmlLabels, err := getNVMLLabels(nvml, config.Flags.MigStrategy)
+
+		labels, err := labelers.Labels()
 		if err != nil {
-			_, isInitError := err.(NvmlInitError)
-			if !isInitError || (isInitError && config.Flags.FailOnInitError) {
-				return fmt.Errorf("error generating NVML labels: %v", err)
-			}
-			log.Printf("Warning: Error generating NVML labels: %v", err)
+			return fmt.Errorf("error generating labels: %v", err)
 		}
 
-		vGPULabels, err := getvGPULabels(vgpu)
-		if err != nil {
-			return fmt.Errorf("error generating vGPU labels: %v", err)
-		}
-
-		if len(nvmlLabels) == 0 && len(vGPULabels) == 0 {
+		if len(labels) <= 1 {
 			log.Printf("Warning: no labels generated from any source")
 		}
 
-		allLabels := []map[string]string{
-			gfdLabels,
-			vGPULabels,
-			nvmlLabels,
-		}
 		log.Print("Writing labels to output file")
-		err = writeLabelsToFile(config.Flags.GFD.OutputFile, allLabels...)
+		err = labels.WriteToFile(config.Flags.GFD.OutputFile)
 		if err != nil {
 			return fmt.Errorf("error writing file '%s': %v", config.Flags.GFD.OutputFile, err)
 		}
@@ -218,222 +206,6 @@ L:
 		case <-time.After(config.Flags.GFD.SleepInterval):
 			break
 		}
-	}
-
-	return nil
-}
-
-func getvGPULabels(vgpu VGPU) (map[string]string, error) {
-	devices, err := vgpu.Devices()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get vGPU devices: %v", err)
-	}
-	labels := make(map[string]string)
-	if len(devices) > 0 {
-		labels["nvidia.com/vgpu.present"] = "true"
-	}
-	for _, device := range devices {
-		info, err := device.GetInfo()
-		if err != nil {
-			return nil, fmt.Errorf("error getting vGPU device info: %v", err)
-		}
-		labels["nvidia.com/vgpu.host-driver-version"] = info.HostDriverVersion
-		labels["nvidia.com/vgpu.host-driver-branch"] = info.HostDriverBranch
-	}
-	return labels, nil
-}
-
-func getNVMLLabels(nvml Nvml, MigStrategy string) (map[string]string, error) {
-	if err := nvml.Init(); err != nil {
-		return nil, NvmlInitError{fmt.Errorf("failed to initialize NVML: %v", err)}
-	}
-
-	defer func() {
-		err := nvml.Shutdown()
-		if err != nil {
-			fmt.Printf("Warning: Shutdown of NVML returned: %v", err)
-		}
-	}()
-
-	count, err := nvml.GetDeviceCount()
-	if err != nil {
-		return nil, fmt.Errorf("error getting device count: %v", err)
-	}
-
-	if count == 0 {
-		return nil, nil
-	}
-
-	commonLabels, err := generateCommonLabels(nvml)
-	if err != nil {
-		return nil, fmt.Errorf("error generating common labels: %v", err)
-	}
-
-	migStrategy, err := NewMigStrategy(MigStrategy, nvml)
-	if err != nil {
-		return nil, fmt.Errorf("error creating MIG strategy: %v", err)
-	}
-
-	migStrategyLabels, err := migStrategy.GenerateLabels()
-	if err != nil {
-		return nil, fmt.Errorf("error generating labels from MIG strategy: %v", err)
-	}
-
-	allLabels := make(map[string]string)
-	for k, v := range commonLabels {
-		allLabels[k] = v
-	}
-	for k, v := range migStrategyLabels {
-		allLabels[k] = v
-	}
-
-	return allLabels, nil
-}
-
-func generateCommonLabels(nvml Nvml) (map[string]string, error) {
-	driverVersion, err := nvml.GetDriverVersion()
-	if err != nil {
-		return nil, fmt.Errorf("error getting driver version: %v", err)
-	}
-
-	driverVersionSplit := strings.Split(driverVersion, ".")
-	if len(driverVersionSplit) > 3 || len(driverVersionSplit) < 2 {
-		return nil, fmt.Errorf("error getting driver version: Version \"%s\" does not match format \"X.Y[.Z]\"", driverVersion)
-	}
-
-	driverMajor := driverVersionSplit[0]
-	driverMinor := driverVersionSplit[1]
-	driverRev := ""
-	if len(driverVersionSplit) > 2 {
-		driverRev = driverVersionSplit[2]
-	}
-
-	cudaMajor, cudaMinor, err := nvml.GetCudaDriverVersion()
-	if err != nil {
-		return nil, fmt.Errorf("error getting cuda driver version: %v", err)
-	}
-
-	machineType, err := getMachineType(MachineTypePath)
-	if err != nil {
-		return nil, fmt.Errorf("error getting machine type: %v", err)
-	}
-
-	device, err := nvml.NewDevice(0)
-	if err != nil {
-		return nil, fmt.Errorf("error getting device: %v", err)
-	}
-
-	computeMajor, computeMinor, err := device.GetCudaComputeCapability()
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine CUDA compute capability: %v", err)
-	}
-
-	labels := make(map[string]string)
-	labels["nvidia.com/cuda.driver.major"] = driverMajor
-	labels["nvidia.com/cuda.driver.minor"] = driverMinor
-	labels["nvidia.com/cuda.driver.rev"] = driverRev
-	labels["nvidia.com/cuda.runtime.major"] = fmt.Sprintf("%d", *cudaMajor)
-	labels["nvidia.com/cuda.runtime.minor"] = fmt.Sprintf("%d", *cudaMinor)
-	labels["nvidia.com/gpu.machine"] = strings.Replace(machineType, " ", "-", -1)
-	if computeMajor != 0 {
-		family := getArchFamily(computeMajor, computeMinor)
-		labels["nvidia.com/gpu.family"] = family
-		labels["nvidia.com/gpu.compute.major"] = fmt.Sprintf("%d", computeMajor)
-		labels["nvidia.com/gpu.compute.minor"] = fmt.Sprintf("%d", computeMinor)
-	}
-
-	return labels, nil
-}
-
-func getMachineType(path string) (string, error) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(data)), nil
-}
-
-func getArchFamily(computeMajor, computeMinor int) string {
-	switch computeMajor {
-	case 1:
-		return "tesla"
-	case 2:
-		return "fermi"
-	case 3:
-		return "kepler"
-	case 5:
-		return "maxwell"
-	case 6:
-		return "pascal"
-	case 7:
-		if computeMinor < 5 {
-			return "volta"
-		}
-		return "turing"
-	case 8:
-		return "ampere"
-	}
-	return "undefined"
-}
-
-// writeLabelsToFile writes a set of labels to the specified path. The file is written atomocally
-func writeLabelsToFile(path string, labelSets ...map[string]string) error {
-	output := new(bytes.Buffer)
-	for _, labels := range labelSets {
-		for k, v := range labels {
-			fmt.Fprintf(output, "%s=%s\n", k, v)
-		}
-	}
-	err := writeFileAtomically(path, output.Bytes(), 0644)
-	if err != nil {
-		return fmt.Errorf("error atomically writing file '%s': %v", path, err)
-	}
-	return nil
-}
-
-func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve absolute path of output file: %v", err)
-	}
-
-	absDir := filepath.Dir(absPath)
-	tmpDir := filepath.Join(absDir, "gfd-tmp")
-
-	err = os.Mkdir(tmpDir, os.ModePerm)
-	if err != nil && !os.IsExist(err) {
-		return fmt.Errorf("failed to create temporary directory: %v", err)
-	}
-	defer func() {
-		if err != nil {
-			os.RemoveAll(tmpDir)
-		}
-	}()
-
-	tmpFile, err := ioutil.TempFile(tmpDir, "gfd-")
-	if err != nil {
-		return fmt.Errorf("fail to create temporary output file: %v", err)
-	}
-	defer func() {
-		if err != nil {
-			tmpFile.Close()
-			os.Remove(tmpFile.Name())
-		}
-	}()
-
-	err = ioutil.WriteFile(tmpFile.Name(), contents, perm)
-	if err != nil {
-		return fmt.Errorf("error writing temporary file '%v': %v", tmpFile.Name(), err)
-	}
-
-	err = os.Rename(tmpFile.Name(), path)
-	if err != nil {
-		return fmt.Errorf("error moving temporary file to '%v': %v", path, err)
-	}
-
-	err = os.Chmod(path, perm)
-	if err != nil {
-		return fmt.Errorf("error setting permissions on '%v': %v", path, err)
 	}
 
 	return nil

@@ -1,11 +1,25 @@
-// Copyright (c) 2021, NVIDIA CORPORATION. All rights reserved.
+/**
+# Copyright (c) 2021-2022, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+**/
 
-package main
+package lm
 
 import (
 	"testing"
 
-	"github.com/NVIDIA/go-nvml/pkg/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,7 +30,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 
 	testCases := []struct {
 		description    string
-		devices        []NvmlMockDevice
+		devices        []nvml.MockDevice
 		expectedError  bool
 		expectedLabels map[string]string
 	}{
@@ -26,11 +40,11 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "single non-mig device returns non-mig (none) labels",
-			devices: []NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  false,
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
 				},
 			},
 			expectedLabels: map[string]string{
@@ -42,16 +56,16 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "multiple non-mig device returns non-mig (none) labels",
-			devices: []NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  false,
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
 				},
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  false,
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
 				},
 			},
 			expectedLabels: map[string]string{
@@ -63,14 +77,14 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "single mig-enabled device returns mig labels",
-			devices: []NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  true,
-					migDevices: []NvmlMockDevice{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+					MigDevices: []nvml.MockDevice{
 						{
-							attributes: &nvml.DeviceAttributes{
+							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
 								ComputeInstanceSliceCount: 2,
@@ -96,14 +110,14 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "multiple mig-enabled devices returns mig labels",
-			devices: []NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  true,
-					migDevices: []NvmlMockDevice{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+					MigDevices: []nvml.MockDevice{
 						{
-							attributes: &nvml.DeviceAttributes{
+							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
 								ComputeInstanceSliceCount: 2,
@@ -118,12 +132,12 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					},
 				},
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  true,
-					migDevices: []NvmlMockDevice{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+					MigDevices: []nvml.MockDevice{
 						{
-							attributes: &nvml.DeviceAttributes{
+							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
 								ComputeInstanceSliceCount: 2,
@@ -155,11 +169,11 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "empty mig devices returns MIG invalid label",
-			devices: []NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  true,
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
 				},
 			},
 			expectedLabels: map[string]string{
@@ -171,21 +185,21 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "mixed mig config returns MIG invalid label",
-			devices: []NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  true,
-					migDevices: []NvmlMockDevice{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+					MigDevices: []nvml.MockDevice{
 						{
-							attributes: &nvml.DeviceAttributes{
+							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
 								ComputeInstanceSliceCount: 2,
 							},
 						},
 						{
-							attributes: &nvml.DeviceAttributes{
+							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     3,
 								ComputeInstanceSliceCount: 4,
@@ -203,14 +217,14 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "mixed mig enabled and disabled returns invalid config",
-			devices: []NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  true,
-					migDevices: []NvmlMockDevice{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+					MigDevices: []nvml.MockDevice{
 						{
-							attributes: &nvml.DeviceAttributes{
+							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
 								ComputeInstanceSliceCount: 2,
@@ -219,9 +233,9 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					},
 				},
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  false,
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
 				},
 			},
 			expectedLabels: map[string]string{
@@ -233,14 +247,14 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "enabled, disabled, and empty returns invalid config",
-			devices: []NvmlMockDevice{
+			devices: []nvml.MockDevice{
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  true,
-					migDevices: []NvmlMockDevice{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+					MigDevices: []nvml.MockDevice{
 						{
-							attributes: &nvml.DeviceAttributes{
+							Attributes: &nvml.DeviceAttributes{
 								MemorySizeMB:              mockMigMemory,
 								GpuInstanceSliceCount:     1,
 								ComputeInstanceSliceCount: 2,
@@ -249,14 +263,14 @@ func TestMigStrategySingleLabels(t *testing.T) {
 					},
 				},
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  false,
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
 				},
 				{
-					model:       "MOCKMODEL",
-					totalMemory: mockMemory,
-					migEnabled:  true,
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
 				},
 			},
 			expectedLabels: map[string]string{
@@ -270,16 +284,16 @@ func TestMigStrategySingleLabels(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			nvmlMock := &NvmlMock{
-				devices:       tc.devices,
-				driverVersion: "400.300",
-				cudaMajor:     1,
-				cudaMinor:     1,
+			nvmlMock := &nvml.Mock{
+				Devices:       tc.devices,
+				DriverVersion: "400.300",
+				CudaMajor:     1,
+				CudaMinor:     1,
 			}
 
 			single, _ := NewMigStrategy(MigStrategySingle, nvmlMock)
 
-			labels, err := single.GenerateLabels()
+			labels, err := single.Labels()
 			if tc.expectedError {
 				require.Error(t, err)
 			} else {

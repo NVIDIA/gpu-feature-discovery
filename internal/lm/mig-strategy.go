@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2020-2022, NVIDIA CORPORATION.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package main
+package lm
 
 import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/NVIDIA/gpu-feature-discovery/internal/mig"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 )
 
 // Constants representing different MIG strategies.
@@ -29,16 +32,11 @@ const (
 	MigStrategyMixed  = "mixed"
 )
 
-// MigStrategy defines the strategy to use for setting labels on MIG devices.
-type MigStrategy interface {
-	GenerateLabels() (map[string]string, error)
-}
-
 // MigDeviceCounts maintains a count of unique MIG device types across all GPUs on a node
 type MigDeviceCounts map[string]int
 
 // NewMigStrategy creates a new MIG strategy to generate labels with.
-func NewMigStrategy(strategy string, nvml Nvml) (MigStrategy, error) {
+func NewMigStrategy(strategy string, nvml nvml.Nvml) (Labeler, error) {
 	switch strategy {
 	case MigStrategyNone:
 		return &migStrategyNone{nvml}, nil
@@ -50,12 +48,12 @@ func NewMigStrategy(strategy string, nvml Nvml) (MigStrategy, error) {
 	return nil, fmt.Errorf("unknown strategy: %v", strategy)
 }
 
-type migStrategyNone struct{ nvml Nvml }
-type migStrategySingle struct{ nvml Nvml }
-type migStrategyMixed struct{ nvml Nvml }
+type migStrategyNone struct{ nvml nvml.Nvml }
+type migStrategySingle struct{ nvml nvml.Nvml }
+type migStrategyMixed struct{ nvml nvml.Nvml }
 
 // migStrategyNone
-func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
+func (s *migStrategyNone) Labels() (Labels, error) {
 	count, err := s.nvml.GetDeviceCount()
 	if err != nil {
 		return nil, fmt.Errorf("error getting device count: %v", err)
@@ -75,7 +73,7 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 		return nil, fmt.Errorf("failed to get memory info for device: %v", err)
 	}
 
-	labels := make(map[string]string)
+	labels := make(Labels)
 	labels["nvidia.com/gpu.count"] = fmt.Sprintf("%d", count)
 	if model != "" {
 		labels["nvidia.com/gpu.product"] = strings.Replace(model, " ", "-", -1)
@@ -88,10 +86,10 @@ func (s *migStrategyNone) GenerateLabels() (map[string]string, error) {
 }
 
 // migStrategySingle
-func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
+func (s *migStrategySingle) Labels() (Labels, error) {
 	// Generate the same "base" labels as the none strategy
 	none, _ := NewMigStrategy(MigStrategyNone, s.nvml)
-	labels, err := none.GenerateLabels()
+	labels, err := none.Labels()
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate base labels: %v", err)
 	}
@@ -99,9 +97,9 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	// Add a new label specifying the MIG strategy
 	labels["nvidia.com/mig.strategy"] = "single"
 
-	devices := NewMIGCapableDevices(s.nvml)
+	deviceInfo := mig.NewDeviceInfo(s.nvml)
 
-	migEnabledDevices, err := devices.GetDevicesWithMigEnabled()
+	migEnabledDevices, err := deviceInfo.GetDevicesWithMigEnabled()
 	if err != nil {
 		return nil, fmt.Errorf("unabled to retrieve list of MIG-enabled devices: %v", err)
 	}
@@ -111,7 +109,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	}
 
 	// If any migEnabled=true device is empty, we return all labels except for the gpu.count.
-	hasEmpty, err := devices.AnyMigEnabledDeviceIsEmpty()
+	hasEmpty, err := deviceInfo.AnyMigEnabledDeviceIsEmpty()
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for empty MIG-enabled devices: %v", err)
 	}
@@ -120,7 +118,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 		return labels, nil
 	}
 
-	migDisabledDevices, err := devices.GetDevicesWithMigDisabled()
+	migDisabledDevices, err := deviceInfo.GetDevicesWithMigDisabled()
 	if err != nil {
 		return nil, fmt.Errorf("unabled to retrieve list of non-MIG-enabled devices: %v", err)
 	}
@@ -133,7 +131,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 	name := ""
 	counts := make(MigDeviceCounts)
 
-	migs, err := devices.GetAllMigDevices()
+	migs, err := deviceInfo.GetAllMigDevices()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve list of MIG devices: %v", err)
 	}
@@ -176,7 +174,7 @@ func (s *migStrategySingle) GenerateLabels() (map[string]string, error) {
 
 // setInvalidMigStrategyLabels modifies the labels in-place; indicating that the device configuration is invalid for
 // the 'single' MIG strategy
-func (s *migStrategySingle) setInvalidMigStrategyLabels(labels map[string]string, reason string) {
+func (s *migStrategySingle) setInvalidMigStrategyLabels(labels Labels, reason string) {
 	log.Printf("WARNING: Invalid configuration detected for mig-strategy=single: %v", reason)
 
 	labels["nvidia.com/gpu.count"] = "0"
@@ -185,10 +183,10 @@ func (s *migStrategySingle) setInvalidMigStrategyLabels(labels map[string]string
 }
 
 // migStrategyMixed
-func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
+func (s *migStrategyMixed) Labels() (Labels, error) {
 	// Generate the same "base" labels as the none strategy
 	none, _ := NewMigStrategy(MigStrategyNone, s.nvml)
-	labels, err := none.GenerateLabels()
+	labels, err := none.Labels()
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate base labels: %v", err)
 	}
@@ -196,11 +194,11 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 	// Add a new label specifying the MIG strategy
 	labels["nvidia.com/mig.strategy"] = "mixed"
 
-	devices := NewMIGCapableDevices(s.nvml)
+	deviceInfo := mig.NewDeviceInfo(s.nvml)
 
 	// Enumerate the MIG devices on this node. In mig.strategy=mixed we ignore devices
 	// configured with migEnabled=true but exposing no MIG devices.
-	migs, err := devices.GetAllMigDevices()
+	migs, err := deviceInfo.GetAllMigDevices()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve list of MIG devices: %v", err)
 	}
@@ -246,7 +244,7 @@ func (s *migStrategyMixed) GenerateLabels() (map[string]string, error) {
 }
 
 // getMigDeviceName() returns the canonical name of the MIG device
-func getMigDeviceName(mig NvmlDevice) (string, error) {
+func getMigDeviceName(mig nvml.Device) (string, error) {
 	attr, err := mig.GetAttributes()
 	if err != nil {
 		return "", err

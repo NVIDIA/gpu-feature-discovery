@@ -1,4 +1,20 @@
-package main
+/**
+# Copyright (c) 2021-2022, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+**/
+
+package vgpu
 
 import (
 	"fmt"
@@ -9,21 +25,16 @@ import (
 
 // MockVGPU represents mock of VGPU interface
 type MockVGPU struct {
-	devices []*VGPUDevice
+	devices []*Device
 }
 
 // Devices returns VGPU devices with mocked data
-func (p *MockVGPU) Devices() ([]*VGPUDevice, error) {
+func (p *MockVGPU) Devices() ([]*Device, error) {
 	return p.devices, nil
 }
 
-// NewMockVGPU initializes and returns mock VGPU interface type
-func NewMockVGPU() VGPU {
-	return NewVGPULib(NewMockNvidiaPCI())
-}
-
 func TestIsVGPUDevice(t *testing.T) {
-	mockVGPU := NewMockVGPU().(*VGPULib)
+	mockVGPU := NewMockVGPU().(*Lib)
 	devices, _ := mockVGPU.pci.Devices()
 	for _, device := range devices {
 		// check for vendor id

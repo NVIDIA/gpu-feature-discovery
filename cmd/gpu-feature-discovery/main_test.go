@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
 	config "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
 )
@@ -67,26 +69,26 @@ func (t testConfig) Path(path string) string {
 	return filepath.Join(t.root, path)
 }
 
-func NewTestNvmlMock() *NvmlMock {
-	device := NvmlMockDevice{
-		model:        "MOCKMODEL",
-		computeMajor: 1,
-		computeMinor: 1,
-		totalMemory:  uint64(128),
+func NewTestNvmlMock() *nvml.Mock {
+	device := nvml.MockDevice{
+		Model:        "MOCKMODEL",
+		ComputeMajor: 1,
+		ComputeMinor: 1,
+		TotalMemory:  uint64(128),
 	}
 
-	return &NvmlMock{
-		devices: []NvmlMockDevice{
+	return &nvml.Mock{
+		Devices: []nvml.MockDevice{
 			device,
 		},
-		driverVersion: "400.300",
-		cudaMajor:     1,
-		cudaMinor:     1,
+		DriverVersion: "400.300",
+		CudaMajor:     1,
+		CudaMinor:     1,
 	}
 }
 
-func NewTestVGPUMock() VGPU {
-	return NewMockVGPU()
+func NewTestVGPUMock() vgpu.Interface {
+	return vgpu.NewMockVGPU()
 }
 
 func TestRunOneshot(t *testing.T) {
@@ -314,56 +316,56 @@ func TestFailOnNVMLInitError(t *testing.T) {
 	}()
 
 	// Test for case (errorOnInit = true, failOnInitError = true, no other errors)
-	nvmlMock.errorOnInit = true
+	nvmlMock.ErrorOnInit = true
 	conf.Flags.FailOnInitError = true
 	conf.Flags.MigStrategy = "none"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.Error(t, err, "Expected error from NVML Init")
 
 	// Test for case (errorOnInit = true, failOnInitError = true, some other error)
-	nvmlMock.errorOnInit = true
+	nvmlMock.ErrorOnInit = true
 	conf.Flags.FailOnInitError = true
 	conf.Flags.MigStrategy = "bogus"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.Error(t, err, "Expected error from NVML Init")
 
 	// Test for case (errorOnInit = true, failOnInitError = false, no other errors)
-	nvmlMock.errorOnInit = true
+	nvmlMock.ErrorOnInit = true
 	conf.Flags.FailOnInitError = false
 	conf.Flags.MigStrategy = "none"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected to skip error from NVML Init")
 
 	// Test for case (errorOnInit = true, failOnInitError = false, some other error)
-	nvmlMock.errorOnInit = true
+	nvmlMock.ErrorOnInit = true
 	conf.Flags.FailOnInitError = false
 	conf.Flags.MigStrategy = "bogus"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected to skip error from NVML Init")
 
 	// Test for case (errorOnInit = false, failOnInitError = true, no other errors)
-	nvmlMock.errorOnInit = false
+	nvmlMock.ErrorOnInit = false
 	conf.Flags.FailOnInitError = true
 	conf.Flags.MigStrategy = "none"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected no errors")
 
 	// Test for case (errorOnInit = false, failOnInitError = true, some other error)
-	nvmlMock.errorOnInit = false
+	nvmlMock.ErrorOnInit = false
 	conf.Flags.FailOnInitError = true
 	conf.Flags.MigStrategy = "bogus"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.Error(t, err, "Expected error since MIGStrategy is 'bogus'")
 
 	// Test for case (errorOnInit = false, failOnInitError = false, no other errors)
-	nvmlMock.errorOnInit = false
+	nvmlMock.ErrorOnInit = false
 	conf.Flags.FailOnInitError = false
 	conf.Flags.MigStrategy = "none"
 	err = run(nvmlMock, vgpuMock, conf)
 	require.NoError(t, err, "Expected no errors")
 
 	// Test for case (errorOnInit = false, failOnInitError = false, some other error)
-	nvmlMock.errorOnInit = false
+	nvmlMock.ErrorOnInit = false
 	conf.Flags.FailOnInitError = false
 	conf.Flags.MigStrategy = "bogus"
 	err = run(nvmlMock, vgpuMock, conf)
