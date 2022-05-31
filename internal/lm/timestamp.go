@@ -23,11 +23,6 @@ import (
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 )
 
-// timestamp represenst a single label storing a timestamp
-type timestamp struct {
-	ts string
-}
-
 // NewTimestampLabeler creates a new label manager for generating timestamp
 // labels from the specified config. If the noTimestamp option is set an empty
 // label manager is returned.
@@ -36,16 +31,7 @@ func NewTimestampLabeler(config *spec.Config) Labeler {
 		return empty{}
 	}
 
-	return timestamp{
-		ts: fmt.Sprintf("%d", time.Now().Unix()),
+	return Labels{
+		"nvidia.com/gfd.timestamp": fmt.Sprintf("%d", time.Now().Unix()),
 	}
-}
-
-// Labels returns a single label with the spefified timestamp
-func (manager timestamp) Labels() (Labels, error) {
-	l := Labels{
-		"nvidia.com/gfd.timestamp": manager.ts,
-	}
-
-	return l, nil
 }
