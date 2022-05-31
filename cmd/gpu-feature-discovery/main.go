@@ -171,11 +171,17 @@ func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config, sigs chan os.
 		}
 	}()
 
+	timestampLabeler := lm.NewTimestampLabeler(config)
 rerun:
-	labelers, err := lm.NewLabelers(nvml, vgpu, config, MachineTypePath)
+	loopLabelers, err := lm.NewLabelers(nvml, vgpu, config, MachineTypePath)
 	if err != nil {
 		return false, err
 	}
+
+	labelers := lm.Merge(
+		timestampLabeler,
+		loopLabelers,
+	)
 
 	labels, err := labelers.Labels()
 	if err != nil {
