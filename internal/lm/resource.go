@@ -267,6 +267,8 @@ func getArchFamily(computeMajor, computeMinor int) string {
 		return "turing"
 	case 8:
 		return "ampere"
+	case 9:
+		return "hopper"
 	}
 	return "undefined"
 }
