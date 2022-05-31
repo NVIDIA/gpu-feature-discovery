@@ -32,7 +32,7 @@ type timestamp struct {
 // labels from the specified config. If the noTimestamp option is set an empty
 // label manager is returned.
 func NewTimestampLabeler(config *spec.Config) Labeler {
-	if config.Flags.GFD.NoTimestamp {
+	if *config.Flags.GFD.NoTimestamp {
 		return empty{}
 	}
 

@@ -4,13 +4,12 @@ go 1.18
 
 require (
 	github.com/NVIDIA/go-nvml v0.11.6-0
-	github.com/NVIDIA/k8s-device-plugin v0.11.1-0.20220513123710-ace9787b1542
+	github.com/NVIDIA/k8s-device-plugin v0.11.1-0.20220527150409-ea0a422e01d3
 	github.com/stretchr/testify v1.5.1
-	github.com/urfave/cli/v2 v2.6.0
+	github.com/urfave/cli/v2 v2.8.1
 )
 
 require (
-	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -21,11 +20,12 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
+	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	golang.org/x/net v0.0.0-20220526153639-5463443f8c37 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apimachinery v0.24.0 // indirect
+	k8s.io/apimachinery v0.24.1 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v3 v3.0.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
@@ -54,3 +54,5 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.18.2
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.2
 )
+
+replace github.com/NVIDIA/k8s-device-plugin => /Users/elezar/src/device-plugin

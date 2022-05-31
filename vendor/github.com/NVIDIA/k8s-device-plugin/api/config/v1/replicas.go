@@ -27,7 +27,8 @@ import (
 
 // TimeSlicing defines the set of replicas to be made for timeSlicing available resources.
 type TimeSlicing struct {
-	Resources []ReplicatedResource `json:"resources,omitempty" yaml:"resources,omitempty"`
+	RenameByDefault bool                 `json:"renameByDefault,omitempty" yaml:"renameByDefault,omitempty"`
+	Resources       []ReplicatedResource `json:"resources,omitempty"       yaml:"resources,omitempty"`
 }
 
 // ReplicatedResource represents a resource to be replicated.
@@ -123,6 +124,16 @@ func (s *TimeSlicing) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	renameByDefault, exists := ts["renameByDefault"]
+	if !exists {
+		renameByDefault = []byte(`false`)
+	}
+
+	err = json.Unmarshal(renameByDefault, &s.RenameByDefault)
+	if err != nil {
+		return err
+	}
+
 	resources, exists := ts["resources"]
 	if !exists {
 		return fmt.Errorf("no resources specified")
@@ -135,6 +146,12 @@ func (s *TimeSlicing) UnmarshalJSON(b []byte) error {
 
 	if len(s.Resources) == 0 {
 		return fmt.Errorf("no resources specified")
+	}
+
+	for i, r := range s.Resources {
+		if s.RenameByDefault && r.Rename == "" {
+			s.Resources[i].Rename = r.Name.DefaultSharedRename()
+		}
 	}
 
 	return nil
@@ -178,8 +195,8 @@ func (s *ReplicatedResource) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	if s.Replicas <= 0 {
-		return fmt.Errorf("number of replicas must be >= 0")
+	if s.Replicas < 2 {
+		return fmt.Errorf("number of replicas must be >= 2")
 	}
 
 	rename, exists := rr["rename"]
