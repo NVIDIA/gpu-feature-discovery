@@ -219,6 +219,7 @@ func (s *migStrategyMixed) Labels() (Labels, error) {
 			}
 
 			prefix := fmt.Sprintf("nvidia.com/mig-%s", name)
+			labels[prefix+".product"] = fmt.Sprintf("%s-MIG-%s", labels["nvidia.com/gpu.product"], name)
 			labels[prefix+".memory"] = fmt.Sprintf("%d", attributes.MemorySizeMB)
 			labels[prefix+".multiprocessors"] = fmt.Sprintf("%d", attributes.MultiprocessorCount)
 			labels[prefix+".slices.gi"] = fmt.Sprintf("%d", attributes.GpuInstanceSliceCount)
