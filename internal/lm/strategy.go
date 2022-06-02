@@ -14,4 +14,15 @@
 # limitations under the License.
 **/
 
-package nvml
+package lm
+
+// migStrategyLabeler creates a labler for setting the mig strategy label
+func migStrategyLabeler(strategy string) Labeler {
+	if strategy == MigStrategyNone {
+		return empty{}
+	}
+
+	return Labels{
+		"nvidia.com/mig.strategy": strategy,
+	}
+}

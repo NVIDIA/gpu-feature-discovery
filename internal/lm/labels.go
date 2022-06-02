@@ -27,6 +27,11 @@ import (
 // Labels defines a type for labels
 type Labels map[string]string
 
+// Labels also implements the Labeler interface
+func (labels Labels) Labels() (Labels, error) {
+	return labels, nil
+}
+
 // WriteToFile writes labels to the specified path. The file is written atomocally
 func (labels Labels) WriteToFile(path string) error {
 	output := new(bytes.Buffer)

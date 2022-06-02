@@ -302,12 +302,14 @@ func TestMigStrategyMixed(t *testing.T) {
 	nvmlMock.Devices[0].MigEnabled = true
 	nvmlMock.Devices[0].MigDevices = []nvml.MockDevice{
 		{
+			Model: "MOCKMODEL",
 			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 3,
 				MemorySizeMB:          20000,
 			},
 		},
 		{
+			Model: "MOCKMODEL",
 			Attributes: &nvml.DeviceAttributes{
 				GpuInstanceSliceCount: 1,
 				MemorySizeMB:          5000,

@@ -14,4 +14,23 @@
 # limitations under the License.
 **/
 
-package nvml
+package lm
+
+import (
+	"fmt"
+	"os"
+	"strings"
+)
+
+func newMachineTypeLabeler(machineTypePath string) (Labeler, error) {
+	data, err := os.ReadFile(machineTypePath)
+	if err != nil {
+		return nil, fmt.Errorf("error getting machine type: %v", err)
+	}
+	machineType := strings.TrimSpace(string(data))
+
+	l := Labels{
+		"nvidia.com/gpu.machine": strings.Replace(machineType, " ", "-", -1),
+	}
+	return l, nil
+}

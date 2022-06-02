@@ -18,7 +18,6 @@ package lm
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"strings"
 
@@ -27,43 +26,56 @@ import (
 )
 
 type nvmlLabeler struct {
-	nvml            nvml.Nvml
-	failOnInitError bool
-	migStrategy     string
-	common          Labeler
+	nvml     nvml.Nvml
+	config   *spec.Config
+	labelers list
 }
 
-type common struct {
-	nvml            nvml.Nvml
-	machineTypePath string
+type cudaLabeler struct {
+	nvml nvml.Nvml
 }
 
 // NewNVMLLabeler creates a new NVML-based labeler using the provided NVML library and config.
 func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string) (Labeler, error) {
+	if err := nvml.Init(); err != nil {
+		if *config.Flags.FailOnInitError {
+			return nil, fmt.Errorf("failed to initialize NVML: %v", err)
+		}
+		log.Printf("Warning: Error generating NVML labels: %v", err)
+		return empty{}, nil
+	}
+
+	machineTypeLabeler, err := newMachineTypeLabeler(machineTypePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct machine type labeler: %v", err)
+	}
+
+	cudaLabeler := cudaLabeler{
+		nvml: nvml,
+	}
+
+	resourceLabeler, err := NewResourceLabeler(nvml, config)
+	if err != nil {
+		return nil, fmt.Errorf("error creating resource labeler: %v", err)
+	}
+
 	l := nvmlLabeler{
-		nvml:            nvml,
-		failOnInitError: *config.Flags.FailOnInitError,
-		migStrategy:     *config.Flags.MigStrategy,
-		common:          NewCommonLabeler(nvml, machineTypePath),
+		nvml:   nvml,
+		config: config,
+		labelers: list{
+			machineTypeLabeler,
+			cudaLabeler,
+			resourceLabeler,
+		},
 	}
 
 	return l, nil
 }
 
-// NewCommonLabeler creates a labeler for generating common NVML-based labels
-func NewCommonLabeler(nvml nvml.Nvml, machineTypePath string) Labeler {
-	l := common{
-		nvml:            nvml,
-		machineTypePath: machineTypePath,
-	}
-
-	return l
-}
-
 // Labels generates NVML-based labels
 func (labeler nvmlLabeler) Labels() (Labels, error) {
 	if err := labeler.nvml.Init(); err != nil {
-		if labeler.failOnInitError {
+		if *labeler.config.Flags.FailOnInitError {
 			return nil, fmt.Errorf("failed to initialize NVML: %v", err)
 		}
 		log.Printf("Warning: Error generating NVML labels: %v", err)
@@ -86,36 +98,11 @@ func (labeler nvmlLabeler) Labels() (Labels, error) {
 		return nil, nil
 	}
 
-	commonLabels, err := labeler.common.Labels()
-	if err != nil {
-		return nil, fmt.Errorf("error generating common labels: %v", err)
-	}
-
-	migStrategyLabler, err := NewMigStrategy(labeler.migStrategy, labeler.nvml)
-	if err != nil {
-		return nil, fmt.Errorf("error creating MIG strategy: %v", err)
-	}
-
-	migStrategyLabels, err := migStrategyLabler.Labels()
-	if err != nil {
-		return nil, fmt.Errorf("error generating labels from MIG strategy: %v", err)
-	}
-
-	allLabels := make(map[string]string)
-	for k, v := range commonLabels {
-		allLabels[k] = v
-	}
-	for k, v := range migStrategyLabels {
-		allLabels[k] = v
-	}
-
-	return allLabels, nil
+	return labeler.labelers.Labels()
 }
 
 // Labels generates common (non-MIG) NVML-based labels
-// TODO: We should call nvml.Init here and also return an empty list if no devices
-// are present.
-func (labeler common) Labels() (Labels, error) {
+func (labeler cudaLabeler) Labels() (Labels, error) {
 	driverVersion, err := labeler.nvml.GetDriverVersion()
 	if err != nil {
 		return nil, fmt.Errorf("error getting driver version: %v", err)
@@ -138,45 +125,12 @@ func (labeler common) Labels() (Labels, error) {
 		return nil, fmt.Errorf("error getting cuda driver version: %v", err)
 	}
 
-	device, err := labeler.nvml.NewDevice(0)
-	if err != nil {
-		return nil, fmt.Errorf("error getting device: %v", err)
+	labels := Labels{
+		"nvidia.com/cuda.driver.major":  driverMajor,
+		"nvidia.com/cuda.driver.minor":  driverMinor,
+		"nvidia.com/cuda.driver.rev":    driverRev,
+		"nvidia.com/cuda.runtime.major": fmt.Sprintf("%d", *cudaMajor),
+		"nvidia.com/cuda.runtime.minor": fmt.Sprintf("%d", *cudaMinor),
 	}
-
-	computeMajor, computeMinor, err := device.GetCudaComputeCapability()
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine CUDA compute capability: %v", err)
-	}
-
-	labels, err := labeler.getMachineTypeLabels()
-	if err != nil {
-		return nil, fmt.Errorf("falied to generate machine type label: %v", err)
-	}
-
-	labels["nvidia.com/cuda.driver.major"] = driverMajor
-	labels["nvidia.com/cuda.driver.minor"] = driverMinor
-	labels["nvidia.com/cuda.driver.rev"] = driverRev
-	labels["nvidia.com/cuda.runtime.major"] = fmt.Sprintf("%d", *cudaMajor)
-	labels["nvidia.com/cuda.runtime.minor"] = fmt.Sprintf("%d", *cudaMinor)
-	if computeMajor != 0 {
-		family, _ := device.GetArchFamily()
-		labels["nvidia.com/gpu.family"] = family
-		labels["nvidia.com/gpu.compute.major"] = fmt.Sprintf("%d", computeMajor)
-		labels["nvidia.com/gpu.compute.minor"] = fmt.Sprintf("%d", computeMinor)
-	}
-
-	return labels, nil
-}
-
-func (labeler common) getMachineTypeLabels() (Labels, error) {
-	data, err := ioutil.ReadFile(labeler.machineTypePath)
-	if err != nil {
-		return nil, fmt.Errorf("error getting machine type: %v", err)
-	}
-	machineType := strings.TrimSpace(string(data))
-
-	labels := make(map[string]string)
-	labels["nvidia.com/gpu.machine"] = strings.Replace(machineType, " ", "-", -1)
-
 	return labels, nil
 }
