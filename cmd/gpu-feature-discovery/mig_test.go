@@ -61,8 +61,9 @@ func TestMigStrategyNone(t *testing.T) {
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
 
-	err = run(nvmlMock, vgpuMock, conf)
+	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
+	require.False(t, restart)
 
 	outFile, err := os.Open(*conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
@@ -117,8 +118,9 @@ func TestMigStrategySingleForNoMigDevices(t *testing.T) {
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
 
-	err = run(nvmlMock, vgpuMock, conf)
+	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
+	require.False(t, restart)
 
 	outFile, err := os.Open(*conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
@@ -191,8 +193,9 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
 
-	err = run(nvmlMock, vgpuMock, conf)
+	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
+	require.False(t, restart)
 
 	outFile, err := os.Open(*conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
@@ -266,8 +269,9 @@ func TestMigStrategySingle(t *testing.T) {
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
 
-	err = run(nvmlMock, vgpuMock, conf)
+	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
+	require.False(t, restart)
 
 	outFile, err := os.Open(*conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")
@@ -342,8 +346,9 @@ func TestMigStrategyMixed(t *testing.T) {
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
 
-	err = run(nvmlMock, vgpuMock, conf)
+	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
+	require.False(t, restart)
 
 	outFile, err := os.Open(*conf.Flags.GFD.OutputFile)
 	require.NoError(t, err, "Opening output file")

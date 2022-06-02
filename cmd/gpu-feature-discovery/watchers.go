@@ -14,24 +14,18 @@
 # limitations under the License.
 **/
 
-package lm
+package main
 
 import (
-	"fmt"
-	"time"
-
-	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
+	"os"
+	"os/signal"
 )
 
-// NewTimestampLabeler creates a new label manager for generating timestamp
-// labels from the specified config. If the noTimestamp option is set an empty
-// label manager is returned.
-func NewTimestampLabeler(config *spec.Config) Labeler {
-	if *config.Flags.GFD.NoTimestamp {
-		return empty{}
-	}
+// newOSWatcher creates a channel for recieving OS signals.
+// TODO: This is currently duplicated from device-plugin
+func newOSWatcher(sigs ...os.Signal) chan os.Signal {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, sigs...)
 
-	return Labels{
-		"nvidia.com/gfd.timestamp": fmt.Sprintf("%d", time.Now().Unix()),
-	}
+	return sigChan
 }

@@ -37,7 +37,6 @@ func NewLabelers(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config, machi
 	}
 
 	l := Merge(
-		NewTimestampLabeler(config),
 		nvmlLabeler,
 		NewVGPULabeler(vgpu),
 	)

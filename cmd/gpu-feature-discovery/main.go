@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"syscall"
 	"time"
@@ -124,34 +123,45 @@ func loadConfig(c *cli.Context, flags []cli.Flag) (*spec.Config, error) {
 }
 
 func start(c *cli.Context, flags []cli.Flag) error {
-	// Load the configuration file
-	log.Println("Loading configuration.")
-	config, err := loadConfig(c, flags)
-	if err != nil {
-		return fmt.Errorf("unable to load config: %v", err)
-	}
-	disableResourceRenamingInConfig(config)
+	defer func() {
+		log.Print("Exiting")
+	}()
 
-	// Print the config to the output.
-	configJSON, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal config to JSON: %v", err)
-	}
-	log.Printf("\nRunning with config:\n%v", string(configJSON))
+	log.Println("Starting OS watcher.")
+	sigs := newOSWatcher(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
-	nvml := nvml.Lib{}
-	vgpul := vgpu.NewVGPULib(vgpu.NewNvidiaPCILib())
+	for {
+		// Load the configuration file
+		log.Println("Loading configuration.")
+		config, err := loadConfig(c, flags)
+		if err != nil {
+			return fmt.Errorf("unable to load config: %v", err)
+		}
+		disableResourceRenamingInConfig(config)
 
-	log.Print("Start running")
-	err = run(nvml, vgpul, config)
-	if err != nil {
-		log.Printf("Unexpected error: %v", err)
+		// Print the config to the output.
+		configJSON, err := json.MarshalIndent(config, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal config to JSON: %v", err)
+		}
+		log.Printf("\nRunning with config:\n%v", string(configJSON))
+
+		nvml := nvml.Lib{}
+		vgpul := vgpu.NewVGPULib(vgpu.NewNvidiaPCILib())
+
+		log.Print("Start running")
+		restart, err := run(nvml, vgpul, config, sigs)
+		if err != nil {
+			return err
+		}
+
+		if !restart {
+			return nil
+		}
 	}
-	log.Print("Exiting")
-	return err
 }
 
-func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config) error {
+func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config, sigs chan os.Signal) (bool, error) {
 	defer func() {
 		if !*config.Flags.GFD.Oneshot {
 			err := removeOutputFile(*config.Flags.GFD.OutputFile)
@@ -161,57 +171,58 @@ func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config) error {
 		}
 	}()
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-
-	exitChan := make(chan bool)
-
-	go func() {
-		select {
-		case s := <-sigChan:
-			log.Printf("Received signal \"%v\", shutting down.", s)
-			exitChan <- true
-		}
-	}()
-
-	labelers, err := lm.NewLabelers(nvml, vgpu, config, MachineTypePath)
+	timestampLabeler := lm.NewTimestampLabeler(config)
+rerun:
+	loopLabelers, err := lm.NewLabelers(nvml, vgpu, config, MachineTypePath)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-L:
+	labelers := lm.Merge(
+		timestampLabeler,
+		loopLabelers,
+	)
+
+	labels, err := labelers.Labels()
+	if err != nil {
+		return false, fmt.Errorf("error generating labels: %v", err)
+	}
+
+	if len(labels) <= 1 {
+		log.Printf("Warning: no labels generated from any source")
+	}
+
+	log.Print("Writing labels to output file")
+	err = labels.WriteToFile(*config.Flags.GFD.OutputFile)
+	if err != nil {
+		return false, fmt.Errorf("error writing file '%s': %v", *config.Flags.GFD.OutputFile, err)
+	}
+
+	if *config.Flags.GFD.Oneshot {
+		return false, nil
+	}
+
+	log.Print("Sleeping for ", *config.Flags.GFD.SleepInterval)
+	rerunTimeout := time.After(time.Duration(*config.Flags.GFD.SleepInterval))
+
 	for {
-
-		labels, err := labelers.Labels()
-		if err != nil {
-			return fmt.Errorf("error generating labels: %v", err)
-		}
-
-		if len(labels) <= 1 {
-			log.Printf("Warning: no labels generated from any source")
-		}
-
-		log.Print("Writing labels to output file")
-		err = labels.WriteToFile(*config.Flags.GFD.OutputFile)
-		if err != nil {
-			return fmt.Errorf("error writing file '%s': %v", *config.Flags.GFD.OutputFile, err)
-		}
-
-		if *config.Flags.GFD.Oneshot {
-			break
-		}
-
-		log.Print("Sleeping for ", *config.Flags.GFD.SleepInterval)
-
 		select {
-		case <-exitChan:
-			break L
-		case <-time.After(time.Duration(*config.Flags.GFD.SleepInterval)):
-			break
+		case <-rerunTimeout:
+			goto rerun
+
+		// Watch for any signals from the OS. On SIGHUP trigger a reload of the config.
+		// On all other signals, exit the loop and exit the program.
+		case s := <-sigs:
+			switch s {
+			case syscall.SIGHUP:
+				log.Println("Received SIGHUP, restarting.")
+				return true, nil
+			default:
+				log.Printf("Received signal \"%v\", shutting down.", s)
+				return false, nil
+			}
 		}
 	}
-
-	return nil
 }
 
 func removeOutputFile(path string) error {
