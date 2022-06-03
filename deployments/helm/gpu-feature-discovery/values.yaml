@@ -28,9 +28,10 @@ nodeSelector:
 runtimeClassName: null
 
 nfd:
-  deploy: true
-
-node-feature-discovery:
+  nameOverride: node-feature-discovery
+  master:
+    extraLabelNs:
+      - nvidia.com
   worker:
     tolerations:
     - key: "node-role.kubernetes.io/master"
@@ -41,7 +42,6 @@ node-feature-discovery:
       operator: "Equal"
       value: "present"
       effect: "NoSchedule"
-
     config:
       sources:
         pci:
@@ -53,10 +53,5 @@ node-feature-discovery:
           - "0302"
           deviceLabelFields:
           - vendor
-
-  master:
-    extraLabelNs:
-      - nvidia.com
-
   serviceAccount:
     name: node-feature-discovery
