@@ -5,8 +5,9 @@ sleepInterval: 60s
 
 nameOverride: ""
 fullnameOverride: ""
+selectorLabelsOverride: {}
 
-namespace: node-feature-discovery
+allowDefaultNamespace: false
 
 imagePullSecrets: []
 image:
@@ -15,22 +16,34 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
+updateStrategy:
+  type: RollingUpdate
+
+podAnnotations: {}
 podSecurityContext: {}
 securityContext:
   privileged: true
 
 resources: {}
 affinity: {}
-tolerations: {}
 nodeSelector:
   feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
+tolerations:
+  # This toleration is deprecated. Kept here for backward compatibility
+  # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+  - key: CriticalAddonsOnly
+    operator: Exists
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
 
 runtimeClassName: null
 
 nfd:
-  deploy: true
-
-node-feature-discovery:
+  nameOverride: node-feature-discovery
+  master:
+    extraLabelNs:
+      - nvidia.com
   worker:
     tolerations:
     - key: "node-role.kubernetes.io/master"
@@ -41,7 +54,6 @@ node-feature-discovery:
       operator: "Equal"
       value: "present"
       effect: "NoSchedule"
-
     config:
       sources:
         pci:
@@ -53,10 +65,5 @@ node-feature-discovery:
           - "0302"
           deviceLabelFields:
           - vendor
-
-  master:
-    extraLabelNs:
-      - nvidia.com
-
   serviceAccount:
     name: node-feature-discovery

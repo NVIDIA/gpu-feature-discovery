@@ -16,19 +16,22 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ include "gpu-feature-discovery.fullname" . }}
-  namespace: {{ .Values.namespace }}
   labels:
     {{- include "gpu-feature-discovery.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
       {{- include "gpu-feature-discovery.selectorLabels" . | nindent 6 }}
+  {{- with .Values.updateStrategy }}
   updateStrategy:
-    type: RollingUpdate
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   template:
     metadata:
       labels:
-        {{- include "gpu-feature-discovery.selectorLabels" . | nindent 8 }}
+        {{- include "gpu-feature-discovery.templateLabels" . | nindent 8 }}
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
       {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
@@ -51,27 +54,39 @@ spec:
       containers:
         - image: {{ include "gpu-feature-discovery.fullimage" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          name: gpu-feature-discovery
+          name: gpu-feature-discovery-ctr
           env:
+          {{- if typeIs "bool" .Values.failOnInitError }}
             - name: FAIL_ON_INIT_ERROR
               value: "{{ .Values.failOnInitError }}"
+          {{- end }}
+          {{- if typeIs "string" .Values.migStrategy }}
             - name: MIG_STRATEGY
               value: "{{ .Values.migStrategy }}"
+          {{- end }}
+          {{- if typeIs "bool" .Values.noTimestamp }}
             - name: GFD_NO_TIMESTAMP
               value: "{{ .Values.noTimestamp}}"
+          {{- end }}
+          {{- if or (typeIs "string" .Values.sleepInterval) (typeIs "int" .Values.sleepInterval) }}
             - name: GFD_SLEEP_INTERVAL
               value: "{{ .Values.sleepInterval }}"
+          {{- end }}
           {{- if ne .Values.migStrategy "none" }}
             - name: NVIDIA_MIG_MONITOR_DEVICES
               value: all
           {{- end }}
           securityContext:
-          {{- if and (ne .Values.migStrategy "none") (eq (len .Values.securityContext) 0) }}
+          {{- if ne (len .Values.securityContext) 0 }}
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- else if ne .Values.migStrategy "none" }}
             capabilities:
               add:
                 - SYS_ADMIN
           {{- else }}
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           {{- end }}
           volumeMounts:
             - name: output-dir
