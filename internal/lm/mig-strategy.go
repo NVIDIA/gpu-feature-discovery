@@ -221,6 +221,7 @@ func newInvalidMigStrategyLabeler(nvml nvml.Nvml, reason string) (Labeler, error
 	labels := rl.productLabel(model, "MIG", "INVALID")
 
 	rl.updateLabel(labels, "count", 0)
+	rl.updateLabel(labels, "replicas", 0)
 	rl.updateLabel(labels, "memory", 0)
 
 	return labels, nil

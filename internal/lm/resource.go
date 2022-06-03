@@ -185,12 +185,10 @@ func newCountLabeler(rl resourceLabeler, count int) Labeler {
 		replicas = r.Replicas
 	}
 
-	labels := make(Labels)
-	rl.updateLabel(labels, "count", count)
-
-	if replicas > 1 {
-		rl.updateLabel(labels, "replicas", replicas)
-	}
+	labels := rl.labels(map[string]interface{}{
+		"count":    count,
+		"replicas": replicas,
+	})
 
 	return labels
 }
