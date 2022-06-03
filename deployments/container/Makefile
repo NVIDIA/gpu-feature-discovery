@@ -24,7 +24,7 @@ MKDIR    ?= mkdir
 include $(CURDIR)/versions.mk
 
 ifeq ($(IMAGE_NAME),)
-REGISTRY ?= nvidia
+REGISTRY ?= nvcr.io/nvidia
 IMAGE_NAME := $(REGISTRY)/gpu-feature-discovery
 endif
 
