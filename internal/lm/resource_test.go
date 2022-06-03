@@ -48,6 +48,7 @@ func TestGPUResourceLabeler(t *testing.T) {
 			count:       1,
 			expectedLabels: Labels{
 				"nvidia.com/gpu.count":         "1",
+				"nvidia.com/gpu.replicas":      "1",
 				"nvidia.com/gpu.memory":        "300",
 				"nvidia.com/gpu.product":       "MOCKMODEL",
 				"nvidia.com/gpu.family":        "ampere",
@@ -68,6 +69,7 @@ func TestGPUResourceLabeler(t *testing.T) {
 			},
 			expectedLabels: Labels{
 				"nvidia.com/gpu.count":         "1",
+				"nvidia.com/gpu.replicas":      "1",
 				"nvidia.com/gpu.memory":        "300",
 				"nvidia.com/gpu.product":       "MOCKMODEL",
 				"nvidia.com/gpu.family":        "ampere",
@@ -167,6 +169,7 @@ func TestMigResourceLabeler(t *testing.T) {
 			count:        1,
 			expectedLabels: Labels{
 				"nvidia.com/gpu.count":           "1",
+				"nvidia.com/gpu.replicas":        "1",
 				"nvidia.com/gpu.memory":          "300",
 				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb",
 				"nvidia.com/gpu.multiprocessors": "0",
