@@ -5,8 +5,9 @@ sleepInterval: 60s
 
 nameOverride: ""
 fullnameOverride: ""
+selectorLabelsOverride: {}
 
-namespace: node-feature-discovery
+allowDefaultNamespace: false
 
 imagePullSecrets: []
 image:
@@ -15,15 +16,26 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
+updateStrategy:
+  type: RollingUpdate
+
+podAnnotations: {}
 podSecurityContext: {}
 securityContext:
   privileged: true
 
 resources: {}
 affinity: {}
-tolerations: {}
 nodeSelector:
   feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA vendor ID
+tolerations:
+  # This toleration is deprecated. Kept here for backward compatibility
+  # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+  - key: CriticalAddonsOnly
+    operator: Exists
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
 
 runtimeClassName: null
 

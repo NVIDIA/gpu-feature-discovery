@@ -28,7 +28,8 @@ If release name contains chart name it will be used as a full name.
 Create chart name and version as used by the chart label.
 */}}
 {{- define "gpu-feature-discovery.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- printf "%s-%s" $name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -44,11 +45,25 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+Template labels
+*/}}
+{{- define "gpu-feature-discovery.templateLabels" -}}
+app.kubernetes.io/name: {{ include "gpu-feature-discovery.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- if .Values.selectorLabelsOverride }}
+{{ toYaml .Values.selectorLabelsOverride }}
+{{- end }}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "gpu-feature-discovery.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "gpu-feature-discovery.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{- if .Values.selectorLabelsOverride -}}
+{{ toYaml .Values.selectorLabelsOverride }}
+{{- else -}}
+{{ include "gpu-feature-discovery.templateLabels" . }}
+{{- end }}
 {{- end }}
 
 {{/*
