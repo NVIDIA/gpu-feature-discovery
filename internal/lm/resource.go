@@ -61,8 +61,7 @@ func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (
 	}
 
 	labelers := Merge(
-		newProductLabeler(resourceLabeler, model),
-		newCountLabeler(resourceLabeler, count),
+		resourceLabeler.baseLabeler(count, model),
 		memoryLabeler,
 		architectureLabeler,
 	)
@@ -97,8 +96,7 @@ func NewMIGResourceLabeler(resourceName spec.ResourceName, config *spec.Config, 
 	}
 
 	labelers := Merge(
-		newProductLabeler(resourceLabeler, model, "MIG", migProfile),
-		newCountLabeler(resourceLabeler, int(count)),
+		resourceLabeler.baseLabeler(count, model, "MIG", migProfile),
 		attributeLabeler,
 	)
 
@@ -156,6 +154,15 @@ func (rl resourceLabeler) replicationInfo() *spec.ReplicatedResource {
 	return nil
 }
 
+// baseLabeler generates the product, count, and replicas labels for the resource
+func (rl resourceLabeler) baseLabeler(count int, parts ...string) Labeler {
+	return Merge(
+		rl.productLabel(parts...),
+		rl.countLabel(count),
+		rl.replicasLabel(),
+	)
+}
+
 func (rl resourceLabeler) productLabel(parts ...string) Labels {
 	var strippedParts []string
 	for _, p := range parts {
@@ -175,24 +182,17 @@ func (rl resourceLabeler) productLabel(parts ...string) Labels {
 	return rl.single("product", strings.Join(strippedParts, "-"))
 }
 
-func newProductLabeler(rl resourceLabeler, parts ...string) Labeler {
-	return rl.productLabel(parts...)
+func (rl resourceLabeler) countLabel(count int) Labeler {
+	return rl.single("count", count)
 }
 
-func newCountLabeler(rl resourceLabeler, count int) Labeler {
+func (rl resourceLabeler) replicasLabel() Labeler {
 	replicas := 1
 	if r := rl.replicationInfo(); r != nil && r.Replicas > 1 {
 		replicas = r.Replicas
 	}
 
-	labels := make(Labels)
-	rl.updateLabel(labels, "count", count*replicas)
-
-	if replicas > 1 {
-		rl.updateLabel(labels, "replicas", replicas)
-	}
-
-	return labels
+	return rl.single("replicas", replicas)
 }
 
 type migAttributeLabeler struct {

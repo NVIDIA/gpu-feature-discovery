@@ -49,6 +49,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":    "1",
+				"nvidia.com/gpu.replicas": "1",
 				"nvidia.com/gpu.memory":   "300",
 				"nvidia.com/gpu.product":  mockModel,
 				"nvidia.com/mig.strategy": "single",
@@ -70,6 +71,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":    "2",
+				"nvidia.com/gpu.replicas": "1",
 				"nvidia.com/gpu.memory":   "300",
 				"nvidia.com/gpu.product":  mockModel,
 				"nvidia.com/mig.strategy": "single",
@@ -96,6 +98,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":           "1",
+				"nvidia.com/gpu.replicas":        "1",
 				"nvidia.com/gpu.memory":          "100",
 				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb",
 				"nvidia.com/mig.strategy":        "single",
@@ -157,6 +160,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":           "2",
+				"nvidia.com/gpu.replicas":        "1",
 				"nvidia.com/gpu.memory":          "100",
 				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb",
 				"nvidia.com/mig.strategy":        "single",
@@ -181,6 +185,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":    "0",
+				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "0",
 				"nvidia.com/gpu.product":  "MOCKMODEL-MIG-INVALID",
 				"nvidia.com/mig.strategy": "single",
@@ -215,6 +220,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":    "0",
+				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "0",
 				"nvidia.com/gpu.product":  "MOCKMODEL-MIG-INVALID",
 				"nvidia.com/mig.strategy": "single",
@@ -246,6 +252,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":    "0",
+				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "0",
 				"nvidia.com/gpu.product":  "MOCKMODEL-MIG-INVALID",
 				"nvidia.com/mig.strategy": "single",
@@ -282,6 +289,7 @@ func TestMigStrategySingleLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":    "0",
+				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "0",
 				"nvidia.com/gpu.product":  "MOCKMODEL-MIG-INVALID",
 				"nvidia.com/mig.strategy": "single",
