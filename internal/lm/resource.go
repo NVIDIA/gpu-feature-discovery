@@ -63,6 +63,7 @@ func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (
 	labelers := Merge(
 		newProductLabeler(resourceLabeler, model),
 		newCountLabeler(resourceLabeler, count),
+		newReplicaLabeler(resourceLabeler),
 		memoryLabeler,
 		architectureLabeler,
 	)
@@ -98,7 +99,8 @@ func NewMIGResourceLabeler(resourceName spec.ResourceName, config *spec.Config, 
 
 	labelers := Merge(
 		newProductLabeler(resourceLabeler, model, "MIG", migProfile),
-		newCountLabeler(resourceLabeler, int(count)),
+		newCountLabeler(resourceLabeler, count),
+		newReplicaLabeler(resourceLabeler),
 		attributeLabeler,
 	)
 
@@ -180,17 +182,16 @@ func newProductLabeler(rl resourceLabeler, parts ...string) Labeler {
 }
 
 func newCountLabeler(rl resourceLabeler, count int) Labeler {
+	return rl.single("count", count)
+}
+
+func newReplicaLabeler(rl resourceLabeler) Labeler {
 	replicas := 1
 	if r := rl.replicationInfo(); r != nil && r.Replicas > 1 {
 		replicas = r.Replicas
 	}
 
-	labels := rl.labels(map[string]interface{}{
-		"count":    count,
-		"replicas": replicas,
-	})
-
-	return labels
+	return rl.single("replicas", replicas)
 }
 
 type migAttributeLabeler struct {
