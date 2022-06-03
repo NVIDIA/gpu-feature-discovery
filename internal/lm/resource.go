@@ -186,7 +186,7 @@ func newCountLabeler(rl resourceLabeler, count int) Labeler {
 	}
 
 	labels := make(Labels)
-	rl.updateLabel(labels, "count", count*replicas)
+	rl.updateLabel(labels, "count", count)
 
 	if replicas > 1 {
 		rl.updateLabel(labels, "replicas", replicas)

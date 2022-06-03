@@ -87,7 +87,7 @@ func TestGPUResourceLabeler(t *testing.T) {
 				},
 			},
 			expectedLabels: Labels{
-				"nvidia.com/gpu.count":         "2",
+				"nvidia.com/gpu.count":         "1",
 				"nvidia.com/gpu.replicas":      "2",
 				"nvidia.com/gpu.memory":        "300",
 				"nvidia.com/gpu.product":       "MOCKMODEL-SHARED",
@@ -109,7 +109,7 @@ func TestGPUResourceLabeler(t *testing.T) {
 				},
 			},
 			expectedLabels: Labels{
-				"nvidia.com/gpu.count":         "2",
+				"nvidia.com/gpu.count":         "1",
 				"nvidia.com/gpu.replicas":      "2",
 				"nvidia.com/gpu.memory":        "300",
 				"nvidia.com/gpu.product":       "MOCKMODEL",
@@ -192,7 +192,7 @@ func TestMigResourceLabeler(t *testing.T) {
 				},
 			},
 			expectedLabels: Labels{
-				"nvidia.com/gpu.count":           "2",
+				"nvidia.com/gpu.count":           "1",
 				"nvidia.com/gpu.replicas":        "2",
 				"nvidia.com/gpu.memory":          "300",
 				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb-SHARED",
@@ -220,7 +220,7 @@ func TestMigResourceLabeler(t *testing.T) {
 				},
 			},
 			expectedLabels: Labels{
-				"nvidia.com/gpu.count":           "2",
+				"nvidia.com/gpu.count":           "1",
 				"nvidia.com/gpu.replicas":        "2",
 				"nvidia.com/gpu.memory":          "300",
 				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb",
@@ -252,7 +252,7 @@ func TestMigResourceLabeler(t *testing.T) {
 				},
 			},
 			expectedLabels: Labels{
-				"nvidia.com/mig-1g.1gb.count":           "2",
+				"nvidia.com/mig-1g.1gb.count":           "1",
 				"nvidia.com/mig-1g.1gb.replicas":        "2",
 				"nvidia.com/mig-1g.1gb.memory":          "300",
 				"nvidia.com/mig-1g.1gb.product":         "MOCKMODEL-MIG-1g.1gb-SHARED",
@@ -280,7 +280,7 @@ func TestMigResourceLabeler(t *testing.T) {
 				},
 			},
 			expectedLabels: Labels{
-				"nvidia.com/mig-1g.1gb.count":           "2",
+				"nvidia.com/mig-1g.1gb.count":           "1",
 				"nvidia.com/mig-1g.1gb.replicas":        "2",
 				"nvidia.com/mig-1g.1gb.memory":          "300",
 				"nvidia.com/mig-1g.1gb.product":         "MOCKMODEL-MIG-1g.1gb",
