@@ -15,5 +15,4 @@ Publishing the helm chart is currently manual, and we should move to an automate
 - [ ] Run the `./build-index.sh` script to rebuild the indices for each repo
 - [ ] Commit and push the `gh-pages` branch to GitHub
 - [ ] Wait for the [CI job associated with your tag] (https://gitlab.com/nvidia/kubernetes/gpu-feature-discovery/-/pipelines) to complete
-- [ ] Update the [README on dockerhub](https://hub.docker.com/r/nvidia/gpu-feature-discovery)  with the latest tag information 
 - [ ] Create a [new release](https://github.com/NVIDIA/gpu-feature-discovery/releases) on Github with the changelog 

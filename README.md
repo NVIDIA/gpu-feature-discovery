@@ -5,26 +5,27 @@
 
 ## Table of Contents
 
-- [NVIDIA GPU feature discovery](#nvidia-gpu-feature-discovery)
-  * [Overview](#overview)
-  * [Beta Version](#beta-version)
-  * [Prerequisites](#prerequisites)
-  * [Quick Start](#quick-start)
-    + [Node Feature Discovery (NFD)](#node-feature-discovery-nfd)
-    + [Preparing your GPU Nodes](#preparing-your-gpu-nodes)
-    + [Deploy NVIDIA GPU Feature Discovery (GFD)](#deploy-nvidia-gpu-feature-discovery-gfd)
-      - [Daemonset](#daemonset)
-      - [Job](#job)
-    + [Verifying Everything Works](#verifying-everything-works)
-  * [The GFD Command line interface](#the-gfd-command-line-interface)
-  * [Generated Labels](#generated-labels)
-    + [MIG 'single' strategy](#mig-single-strategy)
-    + [MIG 'mixed' strategy](#mig-mixed-strategy)
-  * [Deployment via `helm`](#deployment-via-helm)
-    + [Installing via `helm install`from the `gpu-feature-discovery` `helm` repository](#installing-via-helm-install-from-the-gpu-feature-discovery-helm-repository)
+- [Overview](#overview)
+- [Beta Version](#beta-version)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+  * [Node Feature Discovery (NFD)](#node-feature-discovery-nfd)
+  * [Preparing your GPU Nodes](#preparing-your-gpu-nodes)
+  * [Deploy NVIDIA GPU Feature Discovery (GFD)](#deploy-nvidia-gpu-feature-discovery-gfd)
+    + [Daemonset](#daemonset)
+    + [Job](#job)
+  * [Verifying Everything Works](#verifying-everything-works)
+- [The GFD Command line interface](#the-gfd-command-line-interface)
+- [Generated Labels](#generated-labels)
+  * [MIG 'single' strategy](#mig-single-strategy)
+  * [MIG 'mixed' strategy](#mig-mixed-strategy)
+- [Deployment via `helm`](#deployment-via-helm)
+    + [Installing via `helm install`](#installing-via-helm-install)
+      - [Deploying Standalone](#deploying-standalone)
+      - [Deploying as a subchart of the NVIDIA device plugin](#deploying-as-a-subchart-of-the-nvidia-device-plugin)
     + [Deploying via `helm install` with a direct URL to the `helm` package](#deploying-via-helm-install-with-a-direct-url-to-the-helm-package)
-  * [Building and running locally with Docker](#building-and-running-locally-with-docker)
-  * [Building and running locally on your native machine](#building-and-running-locally-on-your-native-machine)
+- [Building and running locally with Docker](#building-and-running-locally-with-docker)
+- [Building and running locally on your native machine](#building-and-running-locally-on-your-native-machine)
 
 ## Overview
 
@@ -278,7 +279,7 @@ of customizable values. The most commonly overridden ones are:
   migStrategy:
       pass the desired strategy for labeling MIG devices on GPUs that support it
       [none | single | mixed] (default "none)
-  nfd.deploy:
+  nfd.deploy, nfd.enabled:
       When set to true, deploy NFD as a subchart with all of the proper
       parameters set for it (default "true")
   runtimeClassName:
@@ -296,45 +297,82 @@ the `node-feature-discovery` subchart.
 * https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.6.0-rc.1/deployments/helm/gpu-feature-discovery/values.yaml
 * https://github.com/NVIDIA/gpu-feature-discovery/blob/v0.6.0-rc.1/deployments/helm/gpu-feature-discovery/charts/node-feature-discovery/values.yaml
 
-#### Installing via `helm install` from the `gpu-feature-discovery` `helm` repository
+#### Installing via `helm install`
 
-The preferred method of deployment is with `helm install` via the
-`gpu-feature-discovery` `helm` repository.
+Starting with `v0.6.0` there are two ways to deploy `gpu-feature-discovery` via
+`helm`:
+  1. As a standalone chart _without_ configuration file or GPU sharing support
+  1. As a subchart of the NVIDIA device plugin _with_ configuration file and GPU sharing support
 
-This repository can be installed as follows:
+##### Deploying Standalone
+
+When deploying standalone, begin by setting up GFD's `helm` repository and
+updating it at follows:
 ```shell
 $ helm repo add nvgfd https://nvidia.github.io/gpu-feature-discovery
 $ helm repo update
 ```
 
-Once this repo is updated, you can begin installing packages from it to depoloy
-the `gpu-feature-discovery` daemonset and (optionally) the
-`node-feature-discovery` daemonset. Below are some examples of deploying these
-components with the various flags from above.
+Then verify that the latest release (`v0.6.0-rc.1`) of the plugin is available:
+```
+$ helm search repo nvgfd --devel
+NAME                       	  CHART VERSION  APP VERSION    DESCRIPTION
+nvgfd/gpu-feature-discovery	  0.6.0-rc.1   	 0.6.0-rc.1     A Helm chart for ...
+```
 
-**Note:** Since this is a pre-release version, you will need to pass the
-`--devel` flag to `helm search repo` in order to see this release listed.
+Once this repo is updated, you can begin installing packages from it to deploy
+the `gpu-feature-discovery` helm chart.
 
-Using the default values for all flags:
-```shell
-$ helm install \
-    --version=0.6.0-rc.1 \
-    --generate-name \
-    --set allowDefaultNamespace=true \
-    nvgfd/gpu-feature-discovery
+The most basic installation command without any options is then:
+```
+$ helm upgrade -i nvgfd nvgfd/gpu-feature-discovery \
+  --version 0.6.0-rc.1 \
+  --namespace gpu-feature-discovery \
+  --create-namespace
 ```
 
 Disabling auto-deployment of NFD and running with a MIG strategy of 'mixed' in
 the default namespace.
 ```shell
-$ helm install \
+$ helm upgrade -i nvgfd nvgfd/gpu-feature-discovery \
     --version=0.6.0-rc.1 \
-    --generate-name \
-    --set nfd.deploy=false \
-    --set migStrategy=mixed
     --set allowDefaultNamespace=true \
-    nvgfd/gpu-feature-discovery
+    --set nfd.enabled=false \
+    --set migStrategy=mixed
 ```
+
+**Note:** You only need the to pass the `--devel` flag to `helm search repo`
+and the `--version` flag to `helm upgrade -i` if this is a pre-release
+version (e.g. `<version>-rc.1`). Full releases will be listed without this.
+
+##### Deploying as a subchart of the NVIDIA device plugin
+
+Starting with `v0.12.0` of the NVIDIA device plugin, a configuration file can
+now be used to configure the plugin. This same configuration file can also be
+used to configure GFD. The GFD specific sections of the configuration file are
+specified in the `gfd` section as seen below:
+```
+version: v1
+flags:
+  migStrategy: "none"
+  failOnInitError: true
+  nvidiaDriverRoot: "/"
+  plugin:
+    passDeviceSpecs: false
+    deviceListStrategy: "envvar"
+    deviceIDStrategy: "uuid"
+  gfd:
+    oneshot: false
+    noTimestamp: false
+    outputFile: /etc/kubernetes/node-feature-discovery/features.d/gfd
+    sleepInterval: 60s
+```
+
+The fields in this section map to the command line flags and environment
+variables available for configuring GFD.
+
+For details on how to deploy GFD as part of the plugin please refer to:
+* https://github.com/NVIDIA/k8s-device-plugin/tree/v0.12.0/#deploying-with-gpu-feature-discovery-for-automatic-node-labels
 
 #### Deploying via `helm install` with a direct URL to the `helm` package
 
@@ -345,21 +383,19 @@ they use direct URLs to the `helm` package instead of the `helm` repo.
 
 Using the default values for the flags:
 ```shell
-$ helm install \
-    --generate-name \
+$ helm upgrade -i nvgfd \
     --set allowDefaultNamespace=true \
-    https://nvidia.github.com/gpu-feature-discovery/stable/gpu-feature-discovery-0.6.0-rc.1.tgz
+    https://nvidia.github.io/gpu-feature-discovery/stable/gpu-feature-discovery-0.6.0-rc.1.tgz
 ```
 
 Disabling auto-deployment of NFD and running with a MIG strategy of 'mixed' in
 the default namespace.
 ```shell
-$ helm install \
-    --generate-name \
+$ helm upgrade -i nvgfd \
     --set nfd.deploy=false \
-    --set migStrategy=mixed
+    --set migStrategy=mixed \
     --set allowDefaultNamespace=true \
-    https://nvidia.github.com/gpu-feature-discovery/stable/gpu-feature-discovery-0.6.0-rc.1.tgz
+    https://nvidia.github.io/gpu-feature-discovery/stable/gpu-feature-discovery-0.6.0-rc.1.tgz
 ```
 
 ## Building and running locally with Docker
