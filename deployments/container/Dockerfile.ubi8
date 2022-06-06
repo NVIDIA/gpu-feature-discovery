@@ -49,7 +49,7 @@ LABEL version="${VERSION}"
 LABEL release="N/A"
 LABEL summary="GPU plugin to the node feature discovery for Kubernetes"
 LABEL description="GPU plugin to the node feature discovery for Kubernetes"
-COPY ./LICENSE /licenses/LICENSE
+RUN mkdir /licenses && mv /NGC-DL-CONTAINER-LICENSE /licenses/NGC-DL-CONTAINER-LICENSE
 
 # Install / upgrade packages here that are required to resolve CVEs
 ARG CVE_UPDATES
