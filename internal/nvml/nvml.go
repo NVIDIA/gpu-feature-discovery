@@ -140,6 +140,11 @@ func (nvmlLib Lib) GetCudaDriverVersion() (*uint, *uint, error) {
 // IsMigEnabled : Returns whether MIG is enabled on the device or not.
 // Only the current mode is considered and the pending mode is ignored.
 func (d LibDevice) IsMigEnabled() (bool, error) {
+	err := nvmlLookupSymbol("nvmlDeviceGetMigMode")
+	if err != nil {
+		return false, nil
+	}
+
 	cm, _, ret := d.device.GetMigMode()
 	if ret == nvml.ERROR_NOT_SUPPORTED {
 		return false, nil
