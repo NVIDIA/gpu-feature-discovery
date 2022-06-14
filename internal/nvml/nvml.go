@@ -41,6 +41,7 @@ type Device interface {
 	GetUUID() (string, error)
 	GetName() (string, error)
 	GetMemoryInfo() (Memory, error)
+	GetDeviceHandleFromMigDeviceHandle() (Device, error)
 }
 
 // Lib : Implementation of Nvml using the NVML lib
@@ -160,7 +161,7 @@ func (d LibDevice) GetMigDevices() ([]Device, error) {
 	var migs []Device
 	for i := 0; i < n; i++ {
 		mig, ret := d.device.GetMigDeviceHandleByIndex(i)
-		if ret != nvml.ERROR_NOT_FOUND {
+		if ret == nvml.ERROR_NOT_FOUND {
 			continue
 		}
 		if ret != nvml.SUCCESS {
@@ -236,4 +237,19 @@ func errorString(r nvml.Return) error {
 		return nil
 	}
 	return fmt.Errorf("NVML error: %v", nvml.ErrorString(r))
+}
+
+// GetDeviceHandleFromMigDeviceHandle returns the device handle of the parent device
+func (d LibDevice) GetDeviceHandleFromMigDeviceHandle() (Device, error) {
+	nvmlDevice, ret := d.device.GetDeviceHandleFromMigDeviceHandle()
+	if ret != nvml.SUCCESS {
+		return nil, errorString(ret)
+	}
+
+	parent := LibDevice{
+		device:      &nvmlDevice,
+		isMigDevice: false,
+	}
+
+	return parent, nil
 }

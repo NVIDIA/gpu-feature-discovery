@@ -1,4 +1,4 @@
-# github.com/NVIDIA/go-nvml v0.11.6-0
+# github.com/NVIDIA/go-nvml v0.11.6-0.0.20220614115128-31f8b89eb740
 ## explicit; go 1.15
 github.com/NVIDIA/go-nvml/pkg/dl
 github.com/NVIDIA/go-nvml/pkg/nvml
