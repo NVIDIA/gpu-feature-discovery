@@ -142,6 +142,14 @@ func newGPULabelers(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
 		counts[name]++
 	}
 
+	if len(counts) > 1 {
+		var names []string
+		for n := range counts {
+			names = append(names, n)
+		}
+		log.Printf("WARNING: Multiple device types detected: %v", names)
+	}
+
 	var labelers list
 	// We construct labelers for the MIG-enabled resources.
 	// These do not include sharing information.
