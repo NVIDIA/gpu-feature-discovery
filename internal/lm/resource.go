@@ -75,7 +75,11 @@ func NewMIGResourceLabeler(resourceName spec.ResourceName, config *spec.Config, 
 		return empty{}, nil
 	}
 
-	model, err := device.GetName()
+	parent, err := device.GetDeviceHandleFromMigDeviceHandle()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get parent of MIG device: %v", err)
+	}
+	model, err := parent.GetName()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get device model: %v", err)
 	}
