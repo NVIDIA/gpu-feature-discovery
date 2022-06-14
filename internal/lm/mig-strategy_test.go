@@ -109,7 +109,7 @@ func TestMigStrategyNoneLabels(t *testing.T) {
 			},
 		},
 		{
-			description: "sharing is not applied to single MIG device",
+			description: "sharing is not applied to single MIG device; replicas is zero",
 			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
@@ -127,13 +127,13 @@ func TestMigStrategyNoneLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":    "1",
-				"nvidia.com/gpu.replicas": "1",
+				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "300",
 				"nvidia.com/gpu.product":  mockModel,
 			},
 		},
 		{
-			description: "sharing is not applied to muliple MIG device",
+			description: "sharing is not applied to muliple MIG device; replicas is zero",
 			devices: []nvml.MockDevice{
 				{
 					Model:       "MOCKMODEL",
@@ -156,7 +156,7 @@ func TestMigStrategyNoneLabels(t *testing.T) {
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/gpu.count":    "2",
-				"nvidia.com/gpu.replicas": "1",
+				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "300",
 				"nvidia.com/gpu.product":  mockModel,
 			},
