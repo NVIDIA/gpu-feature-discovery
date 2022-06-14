@@ -125,3 +125,8 @@ func (d MockDevice) GetName() (string, error) {
 func (d MockDevice) GetUUID() (string, error) {
 	return d.UUID, nil
 }
+
+// GetDeviceHandleFromMigDeviceHandle returns the device handle of the parent device
+func (d MockDevice) GetDeviceHandleFromMigDeviceHandle() (Device, error) {
+	return d, nil
+}
