@@ -3,7 +3,7 @@ module github.com/NVIDIA/gpu-feature-discovery
 go 1.18
 
 require (
-	github.com/NVIDIA/go-nvml v0.11.6-0
+	github.com/NVIDIA/go-nvml v0.11.6-0.0.20220614115128-31f8b89eb740
 	github.com/NVIDIA/k8s-device-plugin v0.11.1-0.20220527150409-ea0a422e01d3
 	github.com/stretchr/testify v1.5.1
 	github.com/urfave/cli/v2 v2.8.1
