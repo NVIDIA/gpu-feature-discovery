@@ -34,7 +34,9 @@ func NewDeviceInfo(nvml nvml.Nvml) *DeviceInfo {
 	}
 }
 
-func (devices *DeviceInfo) getDevicesMap() (map[bool][]nvml.Device, error) {
+// GetDevicesMap returns the list of devices separated by whether they have MIG enabled.
+// The first call will construct the map.
+func (devices *DeviceInfo) GetDevicesMap() (map[bool][]nvml.Device, error) {
 	if devices.devicesMap == nil {
 		n, err := devices.nvml.GetDeviceCount()
 		if err != nil {
@@ -63,7 +65,7 @@ func (devices *DeviceInfo) getDevicesMap() (map[bool][]nvml.Device, error) {
 
 // GetDevicesWithMigEnabled returns a list of devices with migEnabled=true
 func (devices *DeviceInfo) GetDevicesWithMigEnabled() ([]nvml.Device, error) {
-	devicesMap, err := devices.getDevicesMap()
+	devicesMap, err := devices.GetDevicesMap()
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +74,7 @@ func (devices *DeviceInfo) GetDevicesWithMigEnabled() ([]nvml.Device, error) {
 
 // GetDevicesWithMigDisabled returns a list of devices with migEnabled=false
 func (devices *DeviceInfo) GetDevicesWithMigDisabled() ([]nvml.Device, error) {
-	devicesMap, err := devices.getDevicesMap()
+	devicesMap, err := devices.GetDevicesMap()
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +83,7 @@ func (devices *DeviceInfo) GetDevicesWithMigDisabled() ([]nvml.Device, error) {
 
 // AnyMigEnabledDeviceIsEmpty checks whether at least one MIG device has no MIG devices configured
 func (devices *DeviceInfo) AnyMigEnabledDeviceIsEmpty() (bool, error) {
-	devicesMap, err := devices.getDevicesMap()
+	devicesMap, err := devices.GetDevicesMap()
 	if err != nil {
 		return false, err
 	}
@@ -105,7 +107,7 @@ func (devices *DeviceInfo) AnyMigEnabledDeviceIsEmpty() (bool, error) {
 
 // GetAllMigDevices returns a list of all MIG devices.
 func (devices *DeviceInfo) GetAllMigDevices() ([]nvml.Device, error) {
-	devicesMap, err := devices.getDevicesMap()
+	devicesMap, err := devices.GetDevicesMap()
 	if err != nil {
 		return nil, err
 	}

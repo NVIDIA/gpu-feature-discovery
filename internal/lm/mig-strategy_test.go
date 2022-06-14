@@ -24,6 +24,208 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMigStrategyNoneLabels(t *testing.T) {
+	mockModel := "MOCKMODEL"
+	mockMemory := uint64(300)
+	// mockMigMemory := uint64(100)
+
+	testCases := []struct {
+		description    string
+		devices        []nvml.MockDevice
+		timeSlicing    spec.TimeSlicing
+		expectedError  bool
+		expectedLabels map[string]string
+	}{
+		{
+			description: "no devices returns empty labels",
+		},
+		{
+			description: "single non-mig device returns non-mig (none) labels",
+			devices: []nvml.MockDevice{
+				{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
+				},
+			},
+			expectedLabels: map[string]string{
+				"nvidia.com/gpu.count":    "1",
+				"nvidia.com/gpu.replicas": "1",
+				"nvidia.com/gpu.memory":   "300",
+				"nvidia.com/gpu.product":  mockModel,
+			},
+		},
+		{
+			description: "sharing is applied to single device",
+			devices: []nvml.MockDevice{
+				{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
+				},
+			},
+			timeSlicing: spec.TimeSlicing{
+				Resources: []spec.ReplicatedResource{
+					{
+						Name:     "nvidia.com/gpu",
+						Replicas: 2,
+					},
+				},
+			},
+			expectedLabels: map[string]string{
+				"nvidia.com/gpu.count":    "1",
+				"nvidia.com/gpu.replicas": "2",
+				"nvidia.com/gpu.memory":   "300",
+				"nvidia.com/gpu.product":  "MOCKMODEL-SHARED",
+			},
+		},
+		{
+			description: "sharing is applied to multiple devices",
+			devices: []nvml.MockDevice{
+				{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
+				},
+				{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
+				},
+			},
+			timeSlicing: spec.TimeSlicing{
+				Resources: []spec.ReplicatedResource{
+					{
+						Name:     "nvidia.com/gpu",
+						Replicas: 2,
+					},
+				},
+			},
+			expectedLabels: map[string]string{
+				"nvidia.com/gpu.count":    "2",
+				"nvidia.com/gpu.replicas": "2",
+				"nvidia.com/gpu.memory":   "300",
+				"nvidia.com/gpu.product":  "MOCKMODEL-SHARED",
+			},
+		},
+		{
+			description: "sharing is not applied to single MIG device",
+			devices: []nvml.MockDevice{
+				{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+				},
+			},
+			timeSlicing: spec.TimeSlicing{
+				Resources: []spec.ReplicatedResource{
+					{
+						Name:     "nvidia.com/gpu",
+						Replicas: 2,
+					},
+				},
+			},
+			expectedLabels: map[string]string{
+				"nvidia.com/gpu.count":    "1",
+				"nvidia.com/gpu.replicas": "1",
+				"nvidia.com/gpu.memory":   "300",
+				"nvidia.com/gpu.product":  mockModel,
+			},
+		},
+		{
+			description: "sharing is not applied to muliple MIG device",
+			devices: []nvml.MockDevice{
+				{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+				},
+				{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+				},
+			},
+			timeSlicing: spec.TimeSlicing{
+				Resources: []spec.ReplicatedResource{
+					{
+						Name:     "nvidia.com/gpu",
+						Replicas: 2,
+					},
+				},
+			},
+			expectedLabels: map[string]string{
+				"nvidia.com/gpu.count":    "2",
+				"nvidia.com/gpu.replicas": "1",
+				"nvidia.com/gpu.memory":   "300",
+				"nvidia.com/gpu.product":  mockModel,
+			},
+		},
+		{
+			description: "sharing is applied to MIG device and non-MIG device",
+			devices: []nvml.MockDevice{
+				{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  true,
+				},
+				{
+					Model:       "MOCKMODEL",
+					TotalMemory: mockMemory,
+					MigEnabled:  false,
+				},
+			},
+			timeSlicing: spec.TimeSlicing{
+				Resources: []spec.ReplicatedResource{
+					{
+						Name:     "nvidia.com/gpu",
+						Replicas: 2,
+					},
+				},
+			},
+			expectedLabels: map[string]string{
+				"nvidia.com/gpu.count":    "2",
+				"nvidia.com/gpu.replicas": "2",
+				"nvidia.com/gpu.memory":   "300",
+				"nvidia.com/gpu.product":  "MOCKMODEL-SHARED",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			nvmlMock := &nvml.Mock{
+				Devices:       tc.devices,
+				DriverVersion: "400.300",
+				CudaMajor:     1,
+				CudaMinor:     1,
+			}
+
+			config := spec.Config{
+				Flags: spec.Flags{
+					CommandLineFlags: spec.CommandLineFlags{
+						MigStrategy: ptr(MigStrategyNone),
+					},
+				},
+				Sharing: spec.Sharing{
+					TimeSlicing: tc.timeSlicing,
+				},
+			}
+
+			none, _ := NewResourceLabeler(nvmlMock, &config)
+
+			labels, err := none.Labels()
+			if tc.expectedError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.EqualValues(t, tc.expectedLabels, labels)
+		})
+	}
+}
+
 func TestMigStrategySingleLabels(t *testing.T) {
 	mockModel := "MOCKMODEL"
 	mockMemory := uint64(300)

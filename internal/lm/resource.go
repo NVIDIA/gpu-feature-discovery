@@ -24,6 +24,11 @@ import (
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 )
 
+// NewGPUResourceLabelerWithoutSharing creates a resource labeler for the specified device that does not apply sharing labels.
+func NewGPUResourceLabelerWithoutSharing(device nvml.Device, count int) (Labeler, error) {
+	return NewGPUResourceLabeler(nil, device, count)
+}
+
 // NewGPUResourceLabeler creates a resource labeler for the specified full GPU device with the specified count
 func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (Labeler, error) {
 	if count == 0 {
