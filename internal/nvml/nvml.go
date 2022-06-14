@@ -160,7 +160,7 @@ func (d LibDevice) GetMigDevices() ([]Device, error) {
 	var migs []Device
 	for i := 0; i < n; i++ {
 		mig, ret := d.device.GetMigDeviceHandleByIndex(i)
-		if ret != nvml.ERROR_NOT_FOUND {
+		if ret == nvml.ERROR_NOT_FOUND {
 			continue
 		}
 		if ret != nvml.SUCCESS {
