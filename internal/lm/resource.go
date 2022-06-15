@@ -24,6 +24,14 @@ import (
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 )
 
+const fullGPUResourceName = "nvidia.com/gpu"
+
+// NewGPUResourceLabelerWithoutSharing creates a resource labeler for the specified device that does not apply sharing labels.
+func NewGPUResourceLabelerWithoutSharing(device nvml.Device, count int) (Labeler, error) {
+	// NOTE: We use a nil config to signal that sharing is disabled.
+	return NewGPUResourceLabeler(nil, device, count)
+}
+
 // NewGPUResourceLabeler creates a resource labeler for the specified full GPU device with the specified count
 func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (Labeler, error) {
 	if count == 0 {
@@ -38,11 +46,6 @@ func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (
 	memoryInfo, err := device.GetMemoryInfo()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get memory info for device: %v", err)
-	}
-
-	fullGPUResourceName, err := spec.NewResourceName("gpu")
-	if err != nil {
-		return nil, fmt.Errorf("failed to construct resource name: %v", err)
 	}
 
 	resourceLabeler := resourceLabeler{
@@ -144,20 +147,6 @@ func (rl resourceLabeler) key(suffix string) string {
 	return string(rl.resourceName) + "." + suffix
 }
 
-// replicationInfo searches the associated config for the resource and returns the replication info
-func (rl resourceLabeler) replicationInfo() *spec.ReplicatedResource {
-	if rl.config == nil {
-		return nil
-	}
-	name := rl.resourceName
-	for _, r := range rl.config.Sharing.TimeSlicing.Resources {
-		if r.Name == spec.ResourceName(name) {
-			return &r
-		}
-	}
-	return nil
-}
-
 // baseLabeler generates the product, count, and replicas labels for the resource
 func (rl resourceLabeler) baseLabeler(count int, parts ...string) Labeler {
 	return Merge(
@@ -179,7 +168,7 @@ func (rl resourceLabeler) productLabel(parts ...string) Labels {
 		return make(Labels)
 	}
 
-	if r := rl.replicationInfo(); r != nil && r.Replicas > 1 && r.Rename == "" {
+	if rl.isShared() && !rl.isRenamed() {
 		strippedParts = append(strippedParts, "SHARED")
 	}
 
@@ -192,11 +181,48 @@ func (rl resourceLabeler) countLabel(count int) Labeler {
 
 func (rl resourceLabeler) replicasLabel() Labeler {
 	replicas := 1
-	if r := rl.replicationInfo(); r != nil && r.Replicas > 1 {
+	if rl.sharingDisabled() {
+		replicas = 0
+	} else if r := rl.replicationInfo(); r != nil && r.Replicas > 1 {
 		replicas = r.Replicas
 	}
 
 	return rl.single("replicas", replicas)
+}
+
+// sharingDisabled checks whether the resourceLabeler has sharing disabled
+func (rl resourceLabeler) sharingDisabled() bool {
+	return rl.config == nil
+}
+
+// isShared checks whether the resource is shared.
+func (rl resourceLabeler) isShared() bool {
+	if r := rl.replicationInfo(); r != nil && r.Replicas > 1 {
+		return true
+	}
+	return false
+}
+
+// isRenamed checks whether the resource is renamed.
+func (rl resourceLabeler) isRenamed() bool {
+	if r := rl.replicationInfo(); r != nil && r.Rename != "" {
+		return true
+	}
+	return false
+}
+
+// replicationInfo searches the associated config for the resource and returns the replication info
+func (rl resourceLabeler) replicationInfo() *spec.ReplicatedResource {
+	if rl.config == nil {
+		return nil
+	}
+	name := rl.resourceName
+	for _, r := range rl.config.Sharing.TimeSlicing.Resources {
+		if r.Name == spec.ResourceName(name) {
+			return &r
+		}
+	}
+	return nil
 }
 
 type migAttributeLabeler struct {

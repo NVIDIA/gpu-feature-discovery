@@ -110,29 +110,68 @@ func newMigLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
 
 // newGPULabelers creates a set of labelers for full GPUs
 func newGPULabelers(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
-	count, err := nvmlLib.GetDeviceCount()
+	deviceInfo := mig.NewDeviceInfo(nvmlLib)
+
+	devicesByMigEnabled, err := deviceInfo.GetDevicesMap()
 	if err != nil {
-		return nil, fmt.Errorf("error getting device count: %v", err)
+		return nil, fmt.Errorf("error getting map of devices: %v", err)
 	}
 
-	if count == 0 {
+	if len(devicesByMigEnabled) == 0 {
 		return nil, fmt.Errorf("no GPU devices detected")
 	}
 
-	var labelers list
-	for i := uint(0); i < count; i++ {
-		device, err := nvmlLib.NewDevice(i)
+	counts := make(map[string]int)
+	migEnabledDevices := make(map[string]nvml.Device)
+	for _, device := range devicesByMigEnabled[true] {
+		name, err := device.GetName()
 		if err != nil {
-			return nil, fmt.Errorf("error getting device: %v", err)
+			return nil, fmt.Errorf("error getting device name: %v", err)
 		}
-		l, err := NewGPUResourceLabeler(config, device, int(count))
+		migEnabledDevices[name] = device
+		counts[name]++
+	}
+
+	fullGPUs := make(map[string]nvml.Device)
+	for _, device := range devicesByMigEnabled[false] {
+		name, err := device.GetName()
+		if err != nil {
+			return nil, fmt.Errorf("error getting device name: %v", err)
+		}
+		fullGPUs[name] = device
+		counts[name]++
+	}
+
+	if len(counts) > 1 {
+		var names []string
+		for n := range counts {
+			names = append(names, n)
+		}
+		log.Printf("WARNING: Multiple device types detected: %v", names)
+	}
+
+	var labelers list
+	// We construct labelers for the MIG-enabled resources.
+	// These do not include sharing information.
+	for name, migEnabledDevice := range migEnabledDevices {
+		// We generate a resource label with no sharing modifications
+		l, err := NewGPUResourceLabelerWithoutSharing(migEnabledDevice, counts[name])
 		if err != nil {
 			return nil, fmt.Errorf("failed to construct labeler: %v", err)
 		}
 
 		labelers = append(labelers, l)
-		// TODO: We only process one device
-		break
+	}
+
+	// We construct labelers for the full GPUs.
+	// These override any resources with the same name that have MIG enabled.
+	for name, fullGPU := range fullGPUs {
+		l, err := NewGPUResourceLabeler(config, fullGPU, counts[name])
+		if err != nil {
+			return nil, fmt.Errorf("failed to construct labeler: %v", err)
+		}
+
+		labelers = append(labelers, l)
 	}
 
 	return labelers.Labels()
@@ -173,7 +212,6 @@ func newMigStrategySingleLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labele
 	}
 
 	// Add new MIG related labels on each individual MIG type
-	fullGPUResourceName := spec.ResourceName("nvidia.com/gpu")
 	resources := make(map[string]migResource)
 	for _, mig := range migs {
 		name, err := getMigDeviceName(mig)
@@ -227,7 +265,6 @@ func newInvalidMigStrategyLabeler(nvml nvml.Nvml, reason string) (Labeler, error
 	return labels, nil
 }
 
-// migStrategyMixed
 func newMigStrategyMixedLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
 	deviceInfo := mig.NewDeviceInfo(nvmlLib)
 

@@ -15,3 +15,23 @@
 **/
 
 package nvml
+
+import (
+	"fmt"
+
+	"github.com/NVIDIA/go-nvml/pkg/dl"
+)
+
+// nvmlLookupSymbol checks to see if the given symbol is present in the NVMl library.
+func nvmlLookupSymbol(symbol string) error {
+	lib := dl.New("libnvidia-ml.so.1", dl.RTLD_LAZY|dl.RTLD_GLOBAL)
+	if lib == nil {
+		return fmt.Errorf("error instantiating DynamicLibrary for NVML")
+	}
+	err := lib.Open()
+	if err != nil {
+		return fmt.Errorf("error opening DynamicLibrary for NVML: %v", err)
+	}
+	defer lib.Close()
+	return lib.Lookup(symbol)
+}
