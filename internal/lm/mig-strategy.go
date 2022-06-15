@@ -204,7 +204,6 @@ func newMigStrategySingleLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labele
 	}
 
 	// Add new MIG related labels on each individual MIG type
-	fullGPUResourceName := spec.ResourceName("nvidia.com/gpu")
 	resources := make(map[string]migResource)
 	for _, mig := range migs {
 		name, err := getMigDeviceName(mig)

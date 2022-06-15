@@ -24,6 +24,8 @@ import (
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 )
 
+const fullGPUResourceName = "nvidia.com/gpu"
+
 // NewGPUResourceLabelerWithoutSharing creates a resource labeler for the specified device that does not apply sharing labels.
 func NewGPUResourceLabelerWithoutSharing(device nvml.Device, count int) (Labeler, error) {
 	// NOTE: We use a nil config to signal that sharing is disabled.
@@ -44,11 +46,6 @@ func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (
 	memoryInfo, err := device.GetMemoryInfo()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get memory info for device: %v", err)
-	}
-
-	fullGPUResourceName, err := spec.NewResourceName("gpu")
-	if err != nil {
-		return nil, fmt.Errorf("failed to construct resource name: %v", err)
 	}
 
 	resourceLabeler := resourceLabeler{
