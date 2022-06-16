@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/NVIDIA/go-nvml v0.11.6-0.0.20220614115128-31f8b89eb740
-	github.com/NVIDIA/k8s-device-plugin v0.11.1-0.20220527150409-ea0a422e01d3
+	github.com/NVIDIA/k8s-device-plugin v0.12.2-0.20220616130832-ff7dc6faca9d
 	github.com/stretchr/testify v1.5.1
 	github.com/urfave/cli/v2 v2.8.1
 )
@@ -21,7 +21,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/net v0.0.0-20220526153639-5463443f8c37 // indirect
+	golang.org/x/net v0.0.0-20220615171555-694bf12d69de // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -54,5 +54,3 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.18.2
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.2
 )
-
-replace github.com/NVIDIA/k8s-device-plugin => /Users/elezar/src/device-plugin
