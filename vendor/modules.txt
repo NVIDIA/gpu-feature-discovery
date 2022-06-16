@@ -2,7 +2,7 @@
 ## explicit; go 1.15
 github.com/NVIDIA/go-nvml/pkg/dl
 github.com/NVIDIA/go-nvml/pkg/nvml
-# github.com/NVIDIA/k8s-device-plugin v0.11.1-0.20220527150409-ea0a422e01d3 => /Users/elezar/src/device-plugin
+# github.com/NVIDIA/k8s-device-plugin v0.12.2-0.20220616130832-ff7dc6faca9d
 ## explicit; go 1.18
 github.com/NVIDIA/k8s-device-plugin/api/config/v1
 # github.com/cpuguy83/go-md2man/v2 v2.0.2
@@ -47,7 +47,7 @@ github.com/urfave/cli/v2
 # github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673
 ## explicit
 github.com/xrash/smetrics
-# golang.org/x/net v0.0.0-20220526153639-5463443f8c37
+# golang.org/x/net v0.0.0-20220615171555-694bf12d69de
 ## explicit; go 1.17
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -122,4 +122,3 @@ sigs.k8s.io/yaml
 # k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.18.2
 # k8s.io/metrics => k8s.io/metrics v0.18.2
 # k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.2
-# github.com/NVIDIA/k8s-device-plugin => /Users/elezar/src/device-plugin
