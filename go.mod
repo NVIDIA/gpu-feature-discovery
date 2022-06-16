@@ -54,5 +54,3 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.18.2
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.2
 )
-
-replace github.com/NVIDIA/k8s-device-plugin => /Users/elezar/src/device-plugin
