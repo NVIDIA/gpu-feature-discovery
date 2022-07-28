@@ -19,6 +19,7 @@ package lm
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
@@ -32,6 +33,10 @@ type nvmlLabeler struct {
 }
 
 type cudaLabeler struct {
+	nvml nvml.Nvml
+}
+
+type migCapabilityLabeler struct {
 	nvml nvml.Nvml
 }
 
@@ -54,6 +59,11 @@ func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string)
 		nvml: nvml,
 	}
 
+	migCapabilityLabeler, err := NewMigCapabilityLabeler(nvml)
+	if err != nil {
+		return nil, fmt.Errorf("error creating mig capability labeler: %v", err)
+	}
+
 	resourceLabeler, err := NewResourceLabeler(nvml, config)
 	if err != nil {
 		return nil, fmt.Errorf("error creating resource labeler: %v", err)
@@ -65,6 +75,7 @@ func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string)
 		labelers: list{
 			machineTypeLabeler,
 			cudaLabeler,
+			migCapabilityLabeler,
 			resourceLabeler,
 		},
 	}
@@ -131,6 +142,47 @@ func (labeler cudaLabeler) Labels() (Labels, error) {
 		"nvidia.com/cuda.driver.rev":    driverRev,
 		"nvidia.com/cuda.runtime.major": fmt.Sprintf("%d", *cudaMajor),
 		"nvidia.com/cuda.runtime.minor": fmt.Sprintf("%d", *cudaMinor),
+	}
+	return labels, nil
+}
+
+// NewMigCapabilityLabeler creates a new MIG capability labeler using the provided NVML library
+func NewMigCapabilityLabeler(nvml nvml.Nvml) (Labeler, error) {
+	l := migCapabilityLabeler{
+		nvml: nvml,
+	}
+	return l, nil
+}
+
+// Labels generates MIG capability label by checking all GPUs on the node
+func (labeler migCapabilityLabeler) Labels() (Labels, error) {
+	isMigCapable := false
+	n, err := labeler.nvml.GetDeviceCount()
+	if err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		// no devices, return empty labels
+		return nil, err
+	}
+
+	for i := uint(0); i < n; i++ {
+		d, err := labeler.nvml.NewDevice(i)
+		if err != nil {
+			return nil, err
+		}
+
+		isMigCapable, err = d.IsMigCapable()
+		if err != nil {
+			return nil, fmt.Errorf("error getting mig capability: %v", err)
+		}
+		if isMigCapable {
+			break
+		}
+	}
+
+	labels := Labels{
+		"nvidia.com/mig.capable": strconv.FormatBool(isMigCapable),
 	}
 	return labels, nil
 }
