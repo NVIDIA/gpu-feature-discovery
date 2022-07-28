@@ -163,9 +163,10 @@ func (labeler migCapabilityLabeler) Labels() (Labels, error) {
 	}
 	if n == 0 {
 		// no devices, return empty labels
-		return nil, err
+		return nil, nil
 	}
 
+	// loop through all devices to check if any one of them is MIG capable
 	for i := uint(0); i < n; i++ {
 		d, err := labeler.nvml.NewDevice(i)
 		if err != nil {
