@@ -35,6 +35,7 @@ type Nvml interface {
 // Device : Type to represent interactions with an nvml.Device
 type Device interface {
 	IsMigEnabled() (bool, error)
+	IsMigCapable() (bool, error)
 	GetMigDevices() ([]Device, error)
 	GetAttributes() (DeviceAttributes, error)
 	GetCudaComputeCapability() (int, int, error)
@@ -135,6 +136,24 @@ func (nvmlLib Lib) GetCudaDriverVersion() (*uint, *uint, error) {
 	minor := uint(v % 1000 / 10)
 
 	return &major, &minor, nil
+}
+
+// IsMigCapable : Returns whether the device is MIG capable or not.
+func (d LibDevice) IsMigCapable() (bool, error) {
+	err := nvmlLookupSymbol("nvmlDeviceGetMigMode")
+	if err != nil {
+		return false, nil
+	}
+
+	_, _, ret := d.device.GetMigMode()
+	if ret == nvml.ERROR_NOT_SUPPORTED {
+		return false, nil
+	}
+	if ret != nvml.SUCCESS {
+		return false, errorString(ret)
+	}
+
+	return true, nil
 }
 
 // IsMigEnabled : Returns whether MIG is enabled on the device or not.

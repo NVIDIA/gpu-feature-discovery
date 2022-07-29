@@ -36,6 +36,7 @@ type MockDevice struct {
 	Handle       *nvml.Device
 	Attributes   *DeviceAttributes
 	MigEnabled   bool
+	MigCapable   bool
 	MigDevices   []MockDevice
 	Model        string
 	ComputeMajor int
@@ -90,6 +91,11 @@ func (d MockDevice) Instance() *nvml.Device {
 // IsMigEnabled : Returns whether MIG is enabled on the device or not
 func (d MockDevice) IsMigEnabled() (bool, error) {
 	return d.MigEnabled, nil
+}
+
+// IsMigCapable : Returns whether the device is MIG capable or not
+func (d MockDevice) IsMigCapable() (bool, error) {
+	return d.MigCapable, nil
 }
 
 // GetMigDevices : Returns the list of MIG devices configured on this device
