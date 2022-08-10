@@ -17,13 +17,21 @@
 package resource
 
 import (
+	"fmt"
+	"log"
+
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
+	"gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvlib/info"
 )
 
 // NewManager is a factory method that creates a resource Manager based on the specified config.
-func NewManager(config *spec.Config) Manager {
-	manager := NewNVMLManager()
-	return WithConfig(manager, config)
+func NewManager(config *spec.Config) (Manager, error) {
+	manager, err := getManager()
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct manager: %v", err)
+	}
+
+	return WithConfig(manager, config), nil
 }
 
 // WithConfig modifies a manager depending on the specified config.
@@ -37,6 +45,37 @@ func WithConfig(manager Manager, config *spec.Config) Manager {
 }
 
 // getManager returns the resource manager depending on the system configuration.
-func getManager() Manager {
-	return NewNVMLManager()
+func getManager() (Manager, error) {
+	// logWithReason logs the output of the has* / is* checks from the info.Interface
+	logWithReason := func(f func() (bool, string), tag string) bool {
+		is, reason := f()
+		if !is {
+			tag = "non-" + tag
+		}
+		log.Printf("Detected %v platform: %v", tag, reason)
+		return is
+	}
+
+	infolib := info.New()
+
+	hasNVML := logWithReason(infolib.HasNvml, "NVML")
+	isTegra := logWithReason(infolib.IsTegraSystem, "Tegra")
+
+	// The NVIDIA container stack does not yet support the use of integrated AND discrete GPUs on the same node.
+	if hasNVML && isTegra {
+		log.Printf("WARNING: Disabling Tegra-based resources on NVML system")
+		isTegra = false
+	}
+
+	if hasNVML {
+		log.Printf("Using NVML manager")
+		return NewNVMLManager(), nil
+	} else if isTegra {
+		log.Printf("Using CUDA manager")
+		return NewCudaManager(), nil
+	}
+
+	// TODO: If we wanted to only generate vgpu labels we could continue here
+	log.Printf("ERROR: Neither NVML nor Tegra detected")
+	return nil, fmt.Errorf("no valid GPU resources detected")
 }

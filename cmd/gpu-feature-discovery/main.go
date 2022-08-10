@@ -130,7 +130,10 @@ func start(c *cli.Context, flags []cli.Flag) error {
 		}
 		log.Printf("\nRunning with config:\n%v", string(configJSON))
 
-		manager := resource.NewManager(config)
+		manager, err := resource.NewManager(config)
+		if err != nil {
+			return fmt.Errorf("failed to construct resource manager: %v", err)
+		}
 		vgpul := vgpu.NewVGPULib(vgpu.NewNvidiaPCILib())
 
 		log.Print("Start running")
