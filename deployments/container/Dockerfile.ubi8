@@ -33,6 +33,9 @@ RUN make PREFIX=/artifacts cmds
 
 FROM nvidia/cuda:${CUDA_VERSION}-base-${BASE_DIST}
 
+# Remove CUDA libs(compat etc) in favor of libs installed by the NVIDIA driver
+RUN dnf remove -y cuda-*
+
 # disable all constraints on the configurations required by NVIDIA container toolkit
 ENV NVIDIA_DISABLE_REQUIRE="true"
 ENV NVIDIA_VISIBLE_DEVICES=all
