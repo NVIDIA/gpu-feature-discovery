@@ -18,7 +18,6 @@ package lm
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -43,12 +42,9 @@ type migCapabilityLabeler struct {
 // NewNVMLLabeler creates a new NVML-based labeler using the provided NVML library and config.
 func NewNVMLLabeler(manager resource.Manager, config *spec.Config, machineTypePath string) (Labeler, error) {
 	if err := manager.Init(); err != nil {
-		if *config.Flags.FailOnInitError {
-			return nil, fmt.Errorf("failed to initialize NVML: %v", err)
-		}
-		log.Printf("Warning: Error generating NVML labels: %v", err)
-		return empty{}, nil
+		return nil, fmt.Errorf("failed to initialize NVML: %v", err)
 	}
+	defer manager.Shutdown()
 
 	machineTypeLabeler, err := newMachineTypeLabeler(machineTypePath)
 	if err != nil {
@@ -86,13 +82,8 @@ func NewNVMLLabeler(manager resource.Manager, config *spec.Config, machineTypePa
 // Labels generates NVML-based labels
 func (labeler nvmlLabeler) Labels() (Labels, error) {
 	if err := labeler.manager.Init(); err != nil {
-		if *labeler.config.Flags.FailOnInitError {
-			return nil, fmt.Errorf("failed to initialize NVML: %v", err)
-		}
-		log.Printf("Warning: Error generating NVML labels: %v", err)
-		return nil, nil
+		return nil, fmt.Errorf("failed to initialize NVML: %v", err)
 	}
-
 	defer func() {
 		err := labeler.manager.Shutdown()
 		if err != nil {
