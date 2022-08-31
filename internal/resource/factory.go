@@ -21,14 +21,19 @@ import (
 )
 
 // NewManager is a factory method that creates a resource Manager based on the specified config.
-func NewManager(config *spec.Config) (Manager, error) {
-	return WithConfig(getManager(), config), nil
+func NewManager(config *spec.Config) Manager {
+	manager := NewNVMLManager()
+	return WithConfig(manager, config)
 }
 
 // WithConfig modifies a manager depending on the specified config.
 // If failure on a call to init is allowed, the manager is wrapped to allow fallback to a Null manager.
 func WithConfig(manager Manager, config *spec.Config) Manager {
-	return manager
+	if *config.Flags.FailOnInitError {
+		return manager
+	}
+
+	return NewFallbackToNullOnInitError(manager)
 }
 
 // getManager returns the resource manager depending on the system configuration.
