@@ -43,7 +43,7 @@ func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (
 		return nil, fmt.Errorf("failed to get device model: %v", err)
 	}
 
-	memoryInfo, err := device.GetMemoryInfo()
+	totalMemoryMB, err := device.GetTotalMemoryMB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get memory info for device: %v", err)
 	}
@@ -59,8 +59,8 @@ func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (
 	}
 
 	memoryLabeler := (Labeler)(&empty{})
-	if memoryInfo.Total != 0 {
-		memoryLabeler = resourceLabeler.single("memory", memoryInfo.Total)
+	if totalMemoryMB != 0 {
+		memoryLabeler = resourceLabeler.single("memory", totalMemoryMB)
 	}
 
 	labelers := Merge(
