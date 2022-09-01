@@ -117,9 +117,9 @@ func (d MockDevice) GetCudaComputeCapability() (int, int, error) {
 	return d.ComputeMajor, d.ComputeMinor, nil
 }
 
-// GetMemoryInfo returns the mocked memory info
-func (d MockDevice) GetMemoryInfo() (Memory, error) {
-	return Memory{Total: d.TotalMemory}, nil
+// GetTotalMemoryMB returns the mocked memory info
+func (d MockDevice) GetTotalMemoryMB() (uint64, error) {
+	return d.TotalMemory, nil
 }
 
 // GetName returns the mocked device name
