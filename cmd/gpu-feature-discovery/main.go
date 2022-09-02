@@ -18,11 +18,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const (
-	// Bin : Name of the binary
-	Bin = "gpu-feature-discovery"
-)
-
 var (
 	// Version : Version of the binary
 	// This will be set using ldflags at compile time
@@ -97,15 +92,6 @@ func main() {
 }
 
 func validateFlags(config *spec.Config) error {
-	log.SetPrefix(Bin + ": ")
-
-	if version == "" {
-		log.Print("Be sure to compile with '-ldflags \"-X main.version=${GFD_VERSION}\"' and to set $GFD_VERSION")
-		return fmt.Errorf("version is not set")
-	}
-
-	log.Printf("Running %s in version %s", Bin, version)
-
 	return nil
 }
 
