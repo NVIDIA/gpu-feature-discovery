@@ -3,10 +3,11 @@ module github.com/NVIDIA/gpu-feature-discovery
 go 1.18
 
 require (
-	github.com/NVIDIA/go-nvml v0.11.6-0.0.20220614115128-31f8b89eb740
+	github.com/NVIDIA/go-nvml v0.11.6-0.0.20220823120812-7e2082095e82
 	github.com/NVIDIA/k8s-device-plugin v0.12.2-0.20220616130832-ff7dc6faca9d
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.8.1
+	gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20220922133427-1049a7fa76a9
 )
 
 require (
@@ -25,6 +26,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 	k8s.io/apimachinery v0.24.1 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v3 v3.0.1 // indirect

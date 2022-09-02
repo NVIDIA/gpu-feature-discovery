@@ -1,4 +1,4 @@
-# github.com/NVIDIA/go-nvml v0.11.6-0.0.20220614115128-31f8b89eb740
+# github.com/NVIDIA/go-nvml v0.11.6-0.0.20220823120812-7e2082095e82
 ## explicit; go 1.15
 github.com/NVIDIA/go-nvml/pkg/dl
 github.com/NVIDIA/go-nvml/pkg/nvml
@@ -37,7 +37,7 @@ github.com/pmezard/go-difflib/difflib
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
 github.com/russross/blackfriday/v2
-# github.com/stretchr/testify v1.5.1
+# github.com/stretchr/testify v1.7.0
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
@@ -47,6 +47,10 @@ github.com/urfave/cli/v2
 # github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673
 ## explicit
 github.com/xrash/smetrics
+# gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20220922133427-1049a7fa76a9
+## explicit; go 1.16
+gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvlib/device
+gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvml
 # golang.org/x/net v0.0.0-20220615171555-694bf12d69de
 ## explicit; go 1.17
 golang.org/x/net/http/httpguts
@@ -65,6 +69,9 @@ gopkg.in/inf.v0
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit; go 1.15
 gopkg.in/yaml.v2
+# gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+## explicit
+gopkg.in/yaml.v3
 # k8s.io/apimachinery v0.24.1 => k8s.io/apimachinery v0.18.2
 ## explicit; go 1.13
 k8s.io/apimachinery/pkg/api/equality
