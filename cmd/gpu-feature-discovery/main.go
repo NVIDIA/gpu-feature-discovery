@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NVIDIA/gpu-feature-discovery/internal/info"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/lm"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
@@ -19,9 +20,6 @@ import (
 )
 
 var (
-	// Version : Version of the binary
-	// This will be set using ldflags at compile time
-	version = ""
 	// MachineTypePath : Path to the file describing the machine type
 	// This will be override during unit testing
 	MachineTypePath = "/sys/class/dmi/id/product_name"
@@ -33,7 +31,7 @@ func main() {
 	c := cli.NewApp()
 	c.Name = "GPU Feature Discovery"
 	c.Usage = "generate labels for NVIDIA devices"
-	c.Version = version
+	c.Version = info.GetVersionString()
 	c.Action = func(ctx *cli.Context) error {
 		return start(ctx, c.Flags)
 	}
