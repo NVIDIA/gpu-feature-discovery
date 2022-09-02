@@ -29,6 +29,7 @@ RUN go test ./...
 
 RUN mkdir -p /artifacts
 ARG VERSION
+ARG GIT_COMMIT="unknown"
 RUN make PREFIX=/artifacts cmds
 
 FROM nvidia/cuda:${CUDA_VERSION}-base-${BASE_DIST}
@@ -44,11 +45,13 @@ ENV NVIDIA_DRIVER_CAPABILITIES=utility,compute
 COPY --from=build /artifacts/gpu-feature-discovery /usr/bin/gpu-feature-discovery
 
 ARG VERSION=unset
+ARG GIT_COMMIT="unknown"
 
 LABEL io.k8s.display-name="NVIDIA GPU Feature Discovery Plugin"
 LABEL name="NVIDIA GPU Feature Discovery Plugin"
 LABEL vendor="NVIDIA"
 LABEL version="${VERSION}"
+LABEL com.nvidia.git-commit="${GIT_COMMIT}"
 LABEL release="N/A"
 LABEL summary="GPU plugin to the node feature discovery for Kubernetes"
 LABEL description="GPU plugin to the node feature discovery for Kubernetes"
