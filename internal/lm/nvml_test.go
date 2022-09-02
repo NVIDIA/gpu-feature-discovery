@@ -3,14 +3,15 @@ package lm
 import (
 	"testing"
 
-	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
+	rt "github.com/NVIDIA/gpu-feature-discovery/internal/resource/testing"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMigCapabilityLabeler(t *testing.T) {
 	testCases := []struct {
 		description    string
-		devices        []nvml.MockDevice
+		devices        []resource.Device
 		expectedError  bool
 		expectedLabels map[string]string
 	}{
@@ -19,11 +20,8 @@ func TestMigCapabilityLabeler(t *testing.T) {
 		},
 		{
 			description: "single non-mig capable device returns mig.capable as false",
-			devices: []nvml.MockDevice{
-				{
-					Model:      "MOCKMODEL",
-					MigCapable: false,
-				},
+			devices: []resource.Device{
+				rt.NewFullGPU(),
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/mig.capable": "false",
@@ -31,15 +29,9 @@ func TestMigCapabilityLabeler(t *testing.T) {
 		},
 		{
 			description: "multiple non-mig capable devices returns mig.capable as false",
-			devices: []nvml.MockDevice{
-				{
-					Model:      "MOCKMODEL",
-					MigCapable: false,
-				},
-				{
-					Model:      "MOCKMODEL",
-					MigCapable: false,
-				},
+			devices: []resource.Device{
+				rt.NewFullGPU(),
+				rt.NewFullGPU(),
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/mig.capable": "false",
@@ -47,11 +39,8 @@ func TestMigCapabilityLabeler(t *testing.T) {
 		},
 		{
 			description: "single mig capable device returns mig.capable as true",
-			devices: []nvml.MockDevice{
-				{
-					Model:      "MOCKMODEL",
-					MigCapable: true,
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(),
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/mig.capable": "true",
@@ -59,15 +48,9 @@ func TestMigCapabilityLabeler(t *testing.T) {
 		},
 		{
 			description: "one mig capable device among multiple returns mig.capable as true",
-			devices: []nvml.MockDevice{
-				{
-					Model:      "MOCKMODEL",
-					MigCapable: false,
-				},
-				{
-					Model:      "MOCKMODEL",
-					MigCapable: true,
-				},
+			devices: []resource.Device{
+				rt.NewFullGPU(),
+				rt.NewMigEnabledDevice(),
 			},
 			expectedLabels: map[string]string{
 				"nvidia.com/mig.capable": "true",
@@ -77,12 +60,7 @@ func TestMigCapabilityLabeler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			nvmlMock := &nvml.Mock{
-				Devices:       tc.devices,
-				DriverVersion: "510.73",
-				CudaMajor:     11,
-				CudaMinor:     6,
-			}
+			nvmlMock := rt.NewManagerMockWithDevices(tc.devices...)
 
 			migCapabilityLabeler, _ := NewMigCapabilityLabeler(nvmlMock)
 

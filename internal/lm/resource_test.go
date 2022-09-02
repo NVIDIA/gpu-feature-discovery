@@ -19,20 +19,13 @@ package lm
 import (
 	"testing"
 
-	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	rt "github.com/NVIDIA/gpu-feature-discovery/internal/resource/testing"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGPUResourceLabeler(t *testing.T) {
-	mockMemory := uint64(300)
-
-	device := nvml.MockDevice{
-		Model:        "MOCKMODEL",
-		TotalMemory:  mockMemory,
-		ComputeMajor: 8,
-		ComputeMinor: 0,
-	}
+	device := rt.NewFullGPU()
 
 	testCases := []struct {
 		description    string
@@ -142,16 +135,9 @@ func TestGPUResourceLabeler(t *testing.T) {
 }
 
 func TestMigResourceLabeler(t *testing.T) {
-	mockMemory := uint64(300)
 
-	device := nvml.MockDevice{
-		Model: "MOCKMODEL",
-		Attributes: &nvml.DeviceAttributes{
-			MemorySizeMB:              mockMemory,
-			GpuInstanceSliceCount:     1,
-			ComputeInstanceSliceCount: 2,
-		},
-	}
+	device := rt.NewMigDevice(1, 2, 300)
+	rt.NewMigEnabledDevice(device)
 
 	testCases := []struct {
 		description    string
@@ -171,7 +157,7 @@ func TestMigResourceLabeler(t *testing.T) {
 				"nvidia.com/gpu.count":           "1",
 				"nvidia.com/gpu.replicas":        "1",
 				"nvidia.com/gpu.memory":          "300",
-				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb",
+				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.300gb",
 				"nvidia.com/gpu.multiprocessors": "0",
 				"nvidia.com/gpu.slices.gi":       "1",
 				"nvidia.com/gpu.slices.ci":       "2",
@@ -198,7 +184,7 @@ func TestMigResourceLabeler(t *testing.T) {
 				"nvidia.com/gpu.count":           "1",
 				"nvidia.com/gpu.replicas":        "2",
 				"nvidia.com/gpu.memory":          "300",
-				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb-SHARED",
+				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.300gb-SHARED",
 				"nvidia.com/gpu.multiprocessors": "0",
 				"nvidia.com/gpu.slices.gi":       "1",
 				"nvidia.com/gpu.slices.ci":       "2",
@@ -226,7 +212,7 @@ func TestMigResourceLabeler(t *testing.T) {
 				"nvidia.com/gpu.count":           "1",
 				"nvidia.com/gpu.replicas":        "2",
 				"nvidia.com/gpu.memory":          "300",
-				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb",
+				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.300gb",
 				"nvidia.com/gpu.multiprocessors": "0",
 				"nvidia.com/gpu.slices.gi":       "1",
 				"nvidia.com/gpu.slices.ci":       "2",
@@ -258,7 +244,7 @@ func TestMigResourceLabeler(t *testing.T) {
 				"nvidia.com/mig-1g.1gb.count":           "1",
 				"nvidia.com/mig-1g.1gb.replicas":        "2",
 				"nvidia.com/mig-1g.1gb.memory":          "300",
-				"nvidia.com/mig-1g.1gb.product":         "MOCKMODEL-MIG-1g.1gb-SHARED",
+				"nvidia.com/mig-1g.1gb.product":         "MOCKMODEL-MIG-1g.300gb-SHARED",
 				"nvidia.com/mig-1g.1gb.multiprocessors": "0",
 				"nvidia.com/mig-1g.1gb.slices.gi":       "1",
 				"nvidia.com/mig-1g.1gb.slices.ci":       "2",
@@ -286,7 +272,7 @@ func TestMigResourceLabeler(t *testing.T) {
 				"nvidia.com/mig-1g.1gb.count":           "1",
 				"nvidia.com/mig-1g.1gb.replicas":        "2",
 				"nvidia.com/mig-1g.1gb.memory":          "300",
-				"nvidia.com/mig-1g.1gb.product":         "MOCKMODEL-MIG-1g.1gb",
+				"nvidia.com/mig-1g.1gb.product":         "MOCKMODEL-MIG-1g.300gb",
 				"nvidia.com/mig-1g.1gb.multiprocessors": "0",
 				"nvidia.com/mig-1g.1gb.slices.gi":       "1",
 				"nvidia.com/mig-1g.1gb.slices.ci":       "2",

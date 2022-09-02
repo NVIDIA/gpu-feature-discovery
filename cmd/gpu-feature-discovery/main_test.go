@@ -15,7 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
+	rt "github.com/NVIDIA/gpu-feature-discovery/internal/resource/testing"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
@@ -75,22 +76,8 @@ func (t testConfig) Path(path string) string {
 	return filepath.Join(t.root, path)
 }
 
-func NewTestNvmlMock() *nvml.Mock {
-	device := nvml.MockDevice{
-		Model:        "MOCKMODEL",
-		ComputeMajor: 1,
-		ComputeMinor: 1,
-		TotalMemory:  uint64(128),
-	}
-
-	return &nvml.Mock{
-		Devices: []nvml.MockDevice{
-			device,
-		},
-		DriverVersion: "400.300",
-		CudaMajor:     1,
-		CudaMinor:     1,
-	}
+func NewTestNvmlMock() resource.Manager {
+	return rt.NewManagerMockWithDevices(rt.NewFullGPU())
 }
 
 func NewTestVGPUMock() vgpu.Interface {
@@ -295,102 +282,116 @@ func TestRunSleep(t *testing.T) {
 }
 
 func TestFailOnNVMLInitError(t *testing.T) {
-	nvmlMock := NewTestNvmlMock()
+	const outputFile = "./gfd-test-fail-on-nvml-init"
 	vgpuMock := NewTestVGPUMock()
-	conf := &spec.Config{
-		Flags: spec.Flags{
-			CommandLineFlags: spec.CommandLineFlags{
-				MigStrategy:     ptr("none"),
-				FailOnInitError: ptr(true),
-				GFD: &spec.GFDCommandLineFlags{
-					Oneshot:       ptr(true),
-					OutputFile:    ptr("./gfd-test-fail-on-nvml-init"),
-					SleepInterval: ptr(spec.Duration(500 * time.Millisecond)),
-					NoTimestamp:   ptr(false),
-				},
-			},
-		},
-	}
 
 	MachineTypePath = "/tmp/machine-type"
 	machineType := []byte("product-name\n")
 	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
 	require.NoError(t, err, "Write machine type mock file")
-
 	defer func() {
 		err = os.Remove(MachineTypePath)
 		require.NoError(t, err, "Removing machine type mock file")
 	}()
-
 	defer func() {
 		// Remove the output file created by any "success" cases below
-		err = os.Remove(*conf.Flags.GFD.OutputFile)
+		err = os.Remove(outputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
-	// Test for case (errorOnInit = true, failOnInitError = true, no other errors)
-	nvmlMock.ErrorOnInit = true
-	*conf.Flags.FailOnInitError = true
-	*conf.Flags.MigStrategy = "none"
-	restart, err := run(nvmlMock, vgpuMock, conf, nil)
-	require.Error(t, err, "Expected error from NVML Init")
-	require.False(t, restart)
+	testCases := []struct {
+		description     string
+		errorOnInit     error
+		failOnInitError bool
+		migStrategy     string
+		expectError     bool
+	}{
+		{
+			description:     "errorOnInit = true, failOnInitError = true, no other errors",
+			errorOnInit:     fmt.Errorf("manager.Init error"),
+			failOnInitError: true,
+			migStrategy:     "none",
+			expectError:     true,
+		},
+		{
+			description:     "errorOnInit = true, failOnInitError = true, some other error",
+			errorOnInit:     fmt.Errorf("manager.Init error"),
+			failOnInitError: true,
+			migStrategy:     "bogus",
+			expectError:     true,
+		},
+		{
+			description:     "errorOnInit = true, failOnInitError = false, no other errors",
+			errorOnInit:     fmt.Errorf("manager.Init error"),
+			failOnInitError: false,
+			migStrategy:     "bogus",
+			expectError:     false,
+		},
+		{
+			description:     "errorOnInit = true, failOnInitError = false, some other error",
+			errorOnInit:     fmt.Errorf("manager.Init error"),
+			failOnInitError: false,
+			migStrategy:     "bogus",
+			expectError:     false,
+		},
+		{
+			description:     "errorOnInit = false, failOnInitError = true, no other errors",
+			errorOnInit:     nil,
+			failOnInitError: true,
+			migStrategy:     "none",
+			expectError:     false,
+		},
+		{
+			description:     "errorOnInit = false, failOnInitError = true, some other error",
+			errorOnInit:     nil,
+			failOnInitError: true,
+			migStrategy:     "bogus",
+			expectError:     true,
+		},
+		{
+			description:     "errorOnInit = false, failOnInitError = false, no other errors",
+			errorOnInit:     nil,
+			failOnInitError: false,
+			migStrategy:     "none",
+			expectError:     false,
+		},
+		{
+			description:     "errorOnInit = false, failOnInitError = false, some other error",
+			errorOnInit:     nil,
+			failOnInitError: false,
+			migStrategy:     "bogus",
+			expectError:     true,
+		},
+	}
 
-	// Test for case (errorOnInit = true, failOnInitError = true, some other error)
-	nvmlMock.ErrorOnInit = true
-	*conf.Flags.FailOnInitError = true
-	*conf.Flags.MigStrategy = "bogus"
-	restart, err = run(nvmlMock, vgpuMock, conf, nil)
-	require.Error(t, err, "Expected error from NVML Init")
-	require.False(t, restart)
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			conf := &spec.Config{
+				Flags: spec.Flags{
+					CommandLineFlags: spec.CommandLineFlags{
+						MigStrategy:     ptr(tc.migStrategy),
+						FailOnInitError: ptr(tc.failOnInitError),
+						GFD: &spec.GFDCommandLineFlags{
+							Oneshot:       ptr(true),
+							OutputFile:    ptr(outputFile),
+							SleepInterval: ptr(spec.Duration(500 * time.Millisecond)),
+							NoTimestamp:   ptr(false),
+						},
+					},
+				},
+			}
 
-	// Test for case (errorOnInit = true, failOnInitError = false, no other errors)
-	nvmlMock.ErrorOnInit = true
-	*conf.Flags.FailOnInitError = false
-	*conf.Flags.MigStrategy = "none"
-	restart, err = run(nvmlMock, vgpuMock, conf, nil)
-	require.NoError(t, err, "Expected to skip error from NVML Init")
-	require.False(t, restart)
+			nvmlMock := rt.NewManagerMockWithDevices(rt.NewFullGPU()).WithErrorOnInit(tc.errorOnInit)
 
-	// Test for case (errorOnInit = true, failOnInitError = false, some other error)
-	nvmlMock.ErrorOnInit = true
-	*conf.Flags.FailOnInitError = false
-	*conf.Flags.MigStrategy = "bogus"
-	restart, err = run(nvmlMock, vgpuMock, conf, nil)
-	require.NoError(t, err, "Expected to skip error from NVML Init")
-	require.False(t, restart)
-
-	// Test for case (errorOnInit = false, failOnInitError = true, no other errors)
-	nvmlMock.ErrorOnInit = false
-	*conf.Flags.FailOnInitError = true
-	*conf.Flags.MigStrategy = "none"
-	restart, err = run(nvmlMock, vgpuMock, conf, nil)
-	require.NoError(t, err, "Expected no errors")
-	require.False(t, restart)
-
-	// Test for case (errorOnInit = false, failOnInitError = true, some other error)
-	nvmlMock.ErrorOnInit = false
-	*conf.Flags.FailOnInitError = true
-	*conf.Flags.MigStrategy = "bogus"
-	restart, err = run(nvmlMock, vgpuMock, conf, nil)
-	require.Error(t, err, "Expected error since MIGStrategy is 'bogus'")
-	require.False(t, restart)
-
-	// Test for case (errorOnInit = false, failOnInitError = false, no other errors)
-	nvmlMock.ErrorOnInit = false
-	*conf.Flags.FailOnInitError = false
-	*conf.Flags.MigStrategy = "none"
-	restart, err = run(nvmlMock, vgpuMock, conf, nil)
-	require.NoError(t, err, "Expected no errors")
-	require.False(t, restart)
-
-	// Test for case (errorOnInit = false, failOnInitError = false, some other error)
-	nvmlMock.ErrorOnInit = false
-	*conf.Flags.FailOnInitError = false
-	*conf.Flags.MigStrategy = "bogus"
-	restart, err = run(nvmlMock, vgpuMock, conf, nil)
-	require.Error(t, err, "Expected error since MIGStrategy is 'bogus'")
-	require.False(t, restart)
+			restart, err := run(resource.WithConfig(nvmlMock, conf), vgpuMock, conf, nil)
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			require.False(t, restart)
+		})
+	}
 }
 
 func buildLabelMapFromOutput(output []byte) (map[string]string, error) {
