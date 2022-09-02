@@ -22,27 +22,27 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 )
 
 type nvmlLabeler struct {
-	nvml     nvml.Nvml
+	manager  resource.Manager
 	config   *spec.Config
 	labelers list
 }
 
 type cudaLabeler struct {
-	nvml nvml.Nvml
+	manager resource.Manager
 }
 
 type migCapabilityLabeler struct {
-	nvml nvml.Nvml
+	manager resource.Manager
 }
 
 // NewNVMLLabeler creates a new NVML-based labeler using the provided NVML library and config.
-func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string) (Labeler, error) {
-	if err := nvml.Init(); err != nil {
+func NewNVMLLabeler(manager resource.Manager, config *spec.Config, machineTypePath string) (Labeler, error) {
+	if err := manager.Init(); err != nil {
 		if *config.Flags.FailOnInitError {
 			return nil, fmt.Errorf("failed to initialize NVML: %v", err)
 		}
@@ -56,22 +56,22 @@ func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string)
 	}
 
 	cudaLabeler := cudaLabeler{
-		nvml: nvml,
+		manager: manager,
 	}
 
-	migCapabilityLabeler, err := NewMigCapabilityLabeler(nvml)
+	migCapabilityLabeler, err := NewMigCapabilityLabeler(manager)
 	if err != nil {
 		return nil, fmt.Errorf("error creating mig capability labeler: %v", err)
 	}
 
-	resourceLabeler, err := NewResourceLabeler(nvml, config)
+	resourceLabeler, err := NewResourceLabeler(manager, config)
 	if err != nil {
 		return nil, fmt.Errorf("error creating resource labeler: %v", err)
 	}
 
 	l := nvmlLabeler{
-		nvml:   nvml,
-		config: config,
+		manager: manager,
+		config:  config,
 		labelers: list{
 			machineTypeLabeler,
 			cudaLabeler,
@@ -85,7 +85,7 @@ func NewNVMLLabeler(nvml nvml.Nvml, config *spec.Config, machineTypePath string)
 
 // Labels generates NVML-based labels
 func (labeler nvmlLabeler) Labels() (Labels, error) {
-	if err := labeler.nvml.Init(); err != nil {
+	if err := labeler.manager.Init(); err != nil {
 		if *labeler.config.Flags.FailOnInitError {
 			return nil, fmt.Errorf("failed to initialize NVML: %v", err)
 		}
@@ -94,13 +94,13 @@ func (labeler nvmlLabeler) Labels() (Labels, error) {
 	}
 
 	defer func() {
-		err := labeler.nvml.Shutdown()
+		err := labeler.manager.Shutdown()
 		if err != nil {
 			fmt.Printf("Warning: Shutdown of NVML returned: %v", err)
 		}
 	}()
 
-	count, err := labeler.nvml.GetDeviceCount()
+	count, err := labeler.manager.GetDeviceCount()
 	if err != nil {
 		return nil, fmt.Errorf("error getting device count: %v", err)
 	}
@@ -114,7 +114,7 @@ func (labeler nvmlLabeler) Labels() (Labels, error) {
 
 // Labels generates common (non-MIG) NVML-based labels
 func (labeler cudaLabeler) Labels() (Labels, error) {
-	driverVersion, err := labeler.nvml.GetDriverVersion()
+	driverVersion, err := labeler.manager.GetDriverVersion()
 	if err != nil {
 		return nil, fmt.Errorf("error getting driver version: %v", err)
 	}
@@ -131,7 +131,7 @@ func (labeler cudaLabeler) Labels() (Labels, error) {
 		driverRev = driverVersionSplit[2]
 	}
 
-	cudaMajor, cudaMinor, err := labeler.nvml.GetCudaDriverVersion()
+	cudaMajor, cudaMinor, err := labeler.manager.GetCudaDriverVersion()
 	if err != nil {
 		return nil, fmt.Errorf("error getting cuda driver version: %v", err)
 	}
@@ -147,9 +147,9 @@ func (labeler cudaLabeler) Labels() (Labels, error) {
 }
 
 // NewMigCapabilityLabeler creates a new MIG capability labeler using the provided NVML library
-func NewMigCapabilityLabeler(nvml nvml.Nvml) (Labeler, error) {
+func NewMigCapabilityLabeler(manager resource.Manager) (Labeler, error) {
 	l := migCapabilityLabeler{
-		nvml: nvml,
+		manager: manager,
 	}
 	return l, nil
 }
@@ -157,7 +157,7 @@ func NewMigCapabilityLabeler(nvml nvml.Nvml) (Labeler, error) {
 // Labels generates MIG capability label by checking all GPUs on the node
 func (labeler migCapabilityLabeler) Labels() (Labels, error) {
 	isMigCapable := false
-	n, err := labeler.nvml.GetDeviceCount()
+	n, err := labeler.manager.GetDeviceCount()
 	if err != nil {
 		return nil, err
 	}
@@ -167,8 +167,8 @@ func (labeler migCapabilityLabeler) Labels() (Labels, error) {
 	}
 
 	// loop through all devices to check if any one of them is MIG capable
-	for i := uint(0); i < n; i++ {
-		d, err := labeler.nvml.NewDevice(i)
+	for i := 0; i < n; i++ {
+		d, err := labeler.manager.GetDeviceByIndex(i)
 		if err != nil {
 			return nil, err
 		}
