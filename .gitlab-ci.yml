@@ -16,7 +16,7 @@ include:
   - local: '.common-ci.yml'
   - project: nvidia/container-infrastructure/aws-kube-ci
     file: aws-kube-ci.yml
-    ref: 21.12.16
+    ref: 23.09.12
 
 
 build-dev-image:
