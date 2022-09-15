@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NVIDIA/gpu-feature-discovery/internal/info"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/lm"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
@@ -18,15 +19,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const (
-	// Bin : Name of the binary
-	Bin = "gpu-feature-discovery"
-)
-
 var (
-	// Version : Version of the binary
-	// This will be set using ldflags at compile time
-	version = ""
 	// MachineTypePath : Path to the file describing the machine type
 	// This will be override during unit testing
 	MachineTypePath = "/sys/class/dmi/id/product_name"
@@ -38,7 +31,7 @@ func main() {
 	c := cli.NewApp()
 	c.Name = "GPU Feature Discovery"
 	c.Usage = "generate labels for NVIDIA devices"
-	c.Version = version
+	c.Version = info.GetVersionString()
 	c.Action = func(ctx *cli.Context) error {
 		return start(ctx, c.Flags)
 	}
@@ -97,15 +90,6 @@ func main() {
 }
 
 func validateFlags(config *spec.Config) error {
-	log.SetPrefix(Bin + ": ")
-
-	if version == "" {
-		log.Print("Be sure to compile with '-ldflags \"-X main.version=${GFD_VERSION}\"' and to set $GFD_VERSION")
-		return fmt.Errorf("version is not set")
-	}
-
-	log.Printf("Running %s in version %s", Bin, version)
-
 	return nil
 }
 
