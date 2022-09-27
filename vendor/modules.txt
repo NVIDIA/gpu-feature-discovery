@@ -50,6 +50,7 @@ github.com/xrash/smetrics
 # gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20220922133427-1049a7fa76a9
 ## explicit; go 1.16
 gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvlib/device
+gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvlib/info
 gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvml
 # golang.org/x/net v0.0.0-20220615171555-694bf12d69de
 ## explicit; go 1.17
