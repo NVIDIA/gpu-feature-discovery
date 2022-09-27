@@ -23,14 +23,23 @@ import (
 )
 
 func newMachineTypeLabeler(machineTypePath string) (Labeler, error) {
-	data, err := os.ReadFile(machineTypePath)
+	machineType, err := getMachineType(machineTypePath)
 	if err != nil {
 		return nil, fmt.Errorf("error getting machine type: %v", err)
 	}
-	machineType := strings.TrimSpace(string(data))
-
 	l := Labels{
 		"nvidia.com/gpu.machine": strings.Replace(machineType, " ", "-", -1),
 	}
 	return l, nil
+}
+
+func getMachineType(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return "unknown", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("could not open machine type file: %v", err)
+	}
+	return strings.TrimSpace(string(data)), nil
 }
