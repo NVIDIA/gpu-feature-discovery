@@ -21,7 +21,7 @@ import (
 	"log"
 
 	"github.com/NVIDIA/gpu-feature-discovery/internal/mig"
-	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 )
 
@@ -33,17 +33,17 @@ const (
 )
 
 // migResource is used to track MIG devices for labelling under the single and mixed strategies.
-// This allows a particular resource name to be associated with an nvml.Device and count.
+// This allows a particular resource name to be associated with an resource.Device and count.
 type migResource struct {
 	name   spec.ResourceName
-	device nvml.Device
+	device resource.Device
 	count  int
 }
 
 // NewResourceLabeler creates a labeler for available GPU resources.
 // These include full GPU labels as well as labels specific to the mig-strategy specified.
-func NewResourceLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
-	count, err := nvmlLib.GetDeviceCount()
+func NewResourceLabeler(manager resource.Manager, config *spec.Config) (Labeler, error) {
+	count, err := manager.GetDeviceCount()
 	if err != nil {
 		return nil, fmt.Errorf("error getting device count: %v", err)
 	}
@@ -52,7 +52,7 @@ func NewResourceLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error)
 		return empty{}, nil
 	}
 
-	fullGPULabeler, err := newGPULabelers(nvmlLib, config)
+	fullGPULabeler, err := newGPULabelers(manager, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct GPU labeler: %v", err)
 	}
@@ -61,7 +61,7 @@ func NewResourceLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error)
 		return fullGPULabeler, nil
 	}
 
-	migLabeler, err := newMigLabeler(nvmlLib, config)
+	migLabeler, err := newMigLabeler(manager, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct MIG resource labeler: %v", err)
 	}
@@ -80,19 +80,19 @@ type MigDeviceCounts map[string]int
 
 // newMigLabeler creates a labeler for MIG devices.
 // The labeler created depends on the migStrategy.
-func newMigLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
+func newMigLabeler(manager resource.Manager, config *spec.Config) (Labeler, error) {
 	var err error
 	var labeler Labeler
 	switch *config.Flags.MigStrategy {
 	case MigStrategyNone:
 		labeler = empty{}
 	case MigStrategySingle:
-		labeler, err = newMigStrategySingleLabeler(nvmlLib, config)
+		labeler, err = newMigStrategySingleLabeler(manager, config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create labeler for mig-strategy=single: %v", err)
 		}
 	case MigStrategyMixed:
-		labeler, err = newMigStrategyMixedLabeler(nvmlLib, config)
+		labeler, err = newMigStrategyMixedLabeler(manager, config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create labeler for mig-strategy=mixed: %v", err)
 		}
@@ -109,8 +109,8 @@ func newMigLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
 }
 
 // newGPULabelers creates a set of labelers for full GPUs
-func newGPULabelers(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
-	deviceInfo := mig.NewDeviceInfo(nvmlLib)
+func newGPULabelers(manager resource.Manager, config *spec.Config) (Labeler, error) {
+	deviceInfo := mig.NewDeviceInfo(manager)
 
 	devicesByMigEnabled, err := deviceInfo.GetDevicesMap()
 	if err != nil {
@@ -122,7 +122,7 @@ func newGPULabelers(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
 	}
 
 	counts := make(map[string]int)
-	migEnabledDevices := make(map[string]nvml.Device)
+	migEnabledDevices := make(map[string]resource.Device)
 	for _, device := range devicesByMigEnabled[true] {
 		name, err := device.GetName()
 		if err != nil {
@@ -132,7 +132,7 @@ func newGPULabelers(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
 		counts[name]++
 	}
 
-	fullGPUs := make(map[string]nvml.Device)
+	fullGPUs := make(map[string]resource.Device)
 	for _, device := range devicesByMigEnabled[false] {
 		name, err := device.GetName()
 		if err != nil {
@@ -177,8 +177,8 @@ func newGPULabelers(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
 	return labelers.Labels()
 }
 
-func newMigStrategySingleLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
-	deviceInfo := mig.NewDeviceInfo(nvmlLib)
+func newMigStrategySingleLabeler(manager resource.Manager, config *spec.Config) (Labeler, error) {
+	deviceInfo := mig.NewDeviceInfo(manager)
 	migEnabledDevices, err := deviceInfo.GetDevicesWithMigEnabled()
 	if err != nil {
 		return nil, fmt.Errorf("unabled to retrieve list of MIG-enabled devices: %v", err)
@@ -194,7 +194,7 @@ func newMigStrategySingleLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labele
 	}
 	// If any migEnabled=true device is empty, we return the set of mig-strategy-invalid labels.
 	if hasEmpty {
-		return newInvalidMigStrategyLabeler(nvmlLib, "at least one MIG device is enabled but empty")
+		return newInvalidMigStrategyLabeler(manager, "at least one MIG device is enabled but empty")
 	}
 
 	migDisabledDevices, err := deviceInfo.GetDevicesWithMigDisabled()
@@ -203,7 +203,7 @@ func newMigStrategySingleLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labele
 	}
 	// If we have a mix of mig-enabled and mig-disabled device we return the set of mig-strategy-invalid labels
 	if len(migDisabledDevices) != 0 {
-		return newInvalidMigStrategyLabeler(nvmlLib, "devices with MIG enabled and disable detected")
+		return newInvalidMigStrategyLabeler(manager, "devices with MIG enabled and disable detected")
 	}
 
 	migs, err := deviceInfo.GetAllMigDevices()
@@ -214,9 +214,9 @@ func newMigStrategySingleLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labele
 	// Add new MIG related labels on each individual MIG type
 	resources := make(map[string]migResource)
 	for _, mig := range migs {
-		name, err := getMigDeviceName(mig)
+		name, err := mig.GetName()
 		if err != nil {
-			return nil, fmt.Errorf("unable to parse MIG device name: %v", err)
+			return nil, fmt.Errorf("unable to get MIG device name: %v", err)
 		}
 
 		resource, exists := resources[name]
@@ -233,16 +233,16 @@ func newMigStrategySingleLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labele
 
 	// Multiple resources mean that we have more than one MIG profile defined. Return the set of mig-strategy-invalid labels.
 	if len(resources) != 1 {
-		return newInvalidMigStrategyLabeler(nvmlLib, "more than one MIG device type present on node")
+		return newInvalidMigStrategyLabeler(manager, "more than one MIG device type present on node")
 	}
 
 	return newMIGDeviceLabelers(resources, config)
 }
 
-func newInvalidMigStrategyLabeler(nvml nvml.Nvml, reason string) (Labeler, error) {
+func newInvalidMigStrategyLabeler(manager resource.Manager, reason string) (Labeler, error) {
 	log.Printf("WARNING: Invalid configuration detected for mig-strategy=single: %v", reason)
 
-	device, err := nvml.NewDevice(0)
+	device, err := manager.GetDeviceByIndex(0)
 	if err != nil {
 		return nil, fmt.Errorf("error getting device: %v", err)
 	}
@@ -265,8 +265,8 @@ func newInvalidMigStrategyLabeler(nvml nvml.Nvml, reason string) (Labeler, error
 	return labels, nil
 }
 
-func newMigStrategyMixedLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler, error) {
-	deviceInfo := mig.NewDeviceInfo(nvmlLib)
+func newMigStrategyMixedLabeler(manager resource.Manager, config *spec.Config) (Labeler, error) {
+	deviceInfo := mig.NewDeviceInfo(manager)
 
 	// Enumerate the MIG devices on this node. In mig.strategy=mixed we ignore devices
 	// configured with migEnabled=true but exposing no MIG devices.
@@ -278,9 +278,9 @@ func newMigStrategyMixedLabeler(nvmlLib nvml.Nvml, config *spec.Config) (Labeler
 	// Add new MIG related labels on each individual MIG type
 	resources := make(map[string]migResource)
 	for _, mig := range migs {
-		name, err := getMigDeviceName(mig)
+		name, err := mig.GetName()
 		if err != nil {
-			return nil, fmt.Errorf("unable to parse MIG device name: %v", err)
+			return nil, fmt.Errorf("unable to get MIG device name: %v", err)
 		}
 
 		resource, exists := resources[name]
@@ -310,18 +310,4 @@ func newMIGDeviceLabelers(resources map[string]migResource, config *spec.Config)
 	}
 
 	return labelers, nil
-}
-
-// getMigDeviceName() returns the canonical name of the MIG device
-func getMigDeviceName(mig nvml.Device) (string, error) {
-	attr, err := mig.GetAttributes()
-	if err != nil {
-		return "", err
-	}
-
-	g := attr.GpuInstanceSliceCount
-	gb := ((attr.MemorySizeMB + 1024 - 1) / 1024)
-	r := fmt.Sprintf("%dg.%dgb", g, gb)
-
-	return r, nil
 }

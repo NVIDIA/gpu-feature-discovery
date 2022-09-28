@@ -20,20 +20,20 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 )
 
 const fullGPUResourceName = "nvidia.com/gpu"
 
 // NewGPUResourceLabelerWithoutSharing creates a resource labeler for the specified device that does not apply sharing labels.
-func NewGPUResourceLabelerWithoutSharing(device nvml.Device, count int) (Labeler, error) {
+func NewGPUResourceLabelerWithoutSharing(device resource.Device, count int) (Labeler, error) {
 	// NOTE: We use a nil config to signal that sharing is disabled.
 	return NewGPUResourceLabeler(nil, device, count)
 }
 
 // NewGPUResourceLabeler creates a resource labeler for the specified full GPU device with the specified count
-func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (Labeler, error) {
+func NewGPUResourceLabeler(config *spec.Config, device resource.Device, count int) (Labeler, error) {
 	if count == 0 {
 		return empty{}, nil
 	}
@@ -73,7 +73,7 @@ func NewGPUResourceLabeler(config *spec.Config, device nvml.Device, count int) (
 }
 
 // NewMIGResourceLabeler creates a resource labeler for the specified full GPU device with the specified resource name.
-func NewMIGResourceLabeler(resourceName spec.ResourceName, config *spec.Config, device nvml.Device, count int) (Labeler, error) {
+func NewMIGResourceLabeler(resourceName spec.ResourceName, config *spec.Config, device resource.Device, count int) (Labeler, error) {
 	if count == 0 {
 		return empty{}, nil
 	}
@@ -87,7 +87,7 @@ func NewMIGResourceLabeler(resourceName spec.ResourceName, config *spec.Config, 
 		return nil, fmt.Errorf("failed to get device model: %v", err)
 	}
 
-	migProfile, err := getMigDeviceName(device)
+	migProfile, err := device.GetName()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get MIG profile name: %v", err)
 	}
@@ -227,7 +227,7 @@ func (rl resourceLabeler) replicationInfo() *spec.ReplicatedResource {
 
 type migAttributeLabeler struct {
 	resourceLabeler
-	device nvml.Device
+	device resource.Device
 }
 
 func (s migAttributeLabeler) Labels() (Labels, error) {
@@ -236,24 +236,14 @@ func (s migAttributeLabeler) Labels() (Labels, error) {
 		return nil, fmt.Errorf("unable to get attributes of MIG device: %v", err)
 	}
 
-	labels := s.resourceLabeler.labels(map[string]interface{}{
-		"memory":          attributes.MemorySizeMB,
-		"multiprocessors": attributes.MultiprocessorCount,
-		"slices.gi":       attributes.GpuInstanceSliceCount,
-		"slices.ci":       attributes.ComputeInstanceSliceCount,
-		"engines.copy":    attributes.SharedCopyEngineCount,
-		"engines.decoder": attributes.SharedDecoderCount,
-		"engines.encoder": attributes.SharedEncoderCount,
-		"engines.jpeg":    attributes.SharedJpegCount,
-		"engines.ofa":     attributes.SharedOfaCount,
-	})
+	labels := s.resourceLabeler.labels(attributes)
 
 	return labels, nil
 }
 
 type architectureLabeler struct {
 	resourceLabeler
-	device nvml.Device
+	device resource.Device
 }
 
 func (s architectureLabeler) Labels() (Labels, error) {

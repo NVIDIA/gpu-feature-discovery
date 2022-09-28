@@ -19,50 +19,42 @@ package lm
 import (
 	"testing"
 
-	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
+	rt "github.com/NVIDIA/gpu-feature-discovery/internal/resource/testing"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMigStrategyNoneLabels(t *testing.T) {
-	mockModel := "MOCKMODEL"
-	mockMemory := uint64(300)
-	// mockMigMemory := uint64(100)
-
 	testCases := []struct {
 		description    string
-		devices        []nvml.MockDevice
+		devices        []resource.Device
 		timeSlicing    spec.TimeSlicing
 		expectedError  bool
-		expectedLabels map[string]string
+		expectedLabels Labels
 	}{
 		{
 			description: "no devices returns empty labels",
 		},
 		{
 			description: "single non-mig device returns non-mig (none) labels",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
+			devices: []resource.Device{
+				rt.NewFullGPU(),
 			},
-			expectedLabels: map[string]string{
-				"nvidia.com/gpu.count":    "1",
-				"nvidia.com/gpu.replicas": "1",
-				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  mockModel,
+			expectedLabels: Labels{
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.count":         "1",
+				"nvidia.com/gpu.replicas":      "1",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL",
 			},
 		},
 		{
 			description: "sharing is applied to single device",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
+			devices: []resource.Device{
+				rt.NewFullGPU(),
 			},
 			timeSlicing: spec.TimeSlicing{
 				Resources: []spec.ReplicatedResource{
@@ -72,26 +64,21 @@ func TestMigStrategyNoneLabels(t *testing.T) {
 					},
 				},
 			},
-			expectedLabels: map[string]string{
-				"nvidia.com/gpu.count":    "1",
-				"nvidia.com/gpu.replicas": "2",
-				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  "MOCKMODEL-SHARED",
+			expectedLabels: Labels{
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.count":         "1",
+				"nvidia.com/gpu.replicas":      "2",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL-SHARED",
 			},
 		},
 		{
 			description: "sharing is applied to multiple devices",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
+			devices: []resource.Device{
+				rt.NewFullGPU(),
+				rt.NewFullGPU(),
 			},
 			timeSlicing: spec.TimeSlicing{
 				Resources: []spec.ReplicatedResource{
@@ -101,21 +88,20 @@ func TestMigStrategyNoneLabels(t *testing.T) {
 					},
 				},
 			},
-			expectedLabels: map[string]string{
-				"nvidia.com/gpu.count":    "2",
-				"nvidia.com/gpu.replicas": "2",
-				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  "MOCKMODEL-SHARED",
+			expectedLabels: Labels{
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.count":         "2",
+				"nvidia.com/gpu.replicas":      "2",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL-SHARED",
 			},
 		},
 		{
 			description: "sharing is not applied to single MIG device; replicas is zero",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(),
 			},
 			timeSlicing: spec.TimeSlicing{
 				Resources: []spec.ReplicatedResource{
@@ -125,26 +111,18 @@ func TestMigStrategyNoneLabels(t *testing.T) {
 					},
 				},
 			},
-			expectedLabels: map[string]string{
+			expectedLabels: Labels{
 				"nvidia.com/gpu.count":    "1",
 				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  mockModel,
+				"nvidia.com/gpu.product":  "MOCKMODEL",
 			},
 		},
 		{
 			description: "sharing is not applied to muliple MIG device; replicas is zero",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-				},
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(),
+				rt.NewMigEnabledDevice(),
 			},
 			timeSlicing: spec.TimeSlicing{
 				Resources: []spec.ReplicatedResource{
@@ -154,26 +132,18 @@ func TestMigStrategyNoneLabels(t *testing.T) {
 					},
 				},
 			},
-			expectedLabels: map[string]string{
+			expectedLabels: Labels{
 				"nvidia.com/gpu.count":    "2",
 				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  mockModel,
+				"nvidia.com/gpu.product":  "MOCKMODEL",
 			},
 		},
 		{
 			description: "sharing is applied to MIG device and non-MIG device",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-				},
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(),
+				rt.NewFullGPU(),
 			},
 			timeSlicing: spec.TimeSlicing{
 				Resources: []spec.ReplicatedResource{
@@ -183,23 +153,21 @@ func TestMigStrategyNoneLabels(t *testing.T) {
 					},
 				},
 			},
-			expectedLabels: map[string]string{
-				"nvidia.com/gpu.count":    "2",
-				"nvidia.com/gpu.replicas": "2",
-				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  "MOCKMODEL-SHARED",
+			expectedLabels: Labels{
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.count":         "2",
+				"nvidia.com/gpu.replicas":      "2",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL-SHARED",
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			nvmlMock := &nvml.Mock{
-				Devices:       tc.devices,
-				DriverVersion: "400.300",
-				CudaMajor:     1,
-				CudaMinor:     1,
-			}
+			nvmlMock := rt.NewManagerMockWithDevices(tc.devices...)
 
 			config := spec.Config{
 				Flags: spec.Flags{
@@ -227,82 +195,61 @@ func TestMigStrategyNoneLabels(t *testing.T) {
 }
 
 func TestMigStrategySingleLabels(t *testing.T) {
-	mockModel := "MOCKMODEL"
-	mockMemory := uint64(300)
-	mockMigMemory := uint64(100)
-
 	testCases := []struct {
 		description    string
-		devices        []nvml.MockDevice
+		devices        []resource.Device
 		expectedError  bool
-		expectedLabels map[string]string
+		expectedLabels Labels
+		isInvalid      bool
 	}{
 		{
 			description: "no devices returns empty labels",
 		},
 		{
 			description: "single non-mig device returns non-mig (none) labels",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
+			devices: []resource.Device{
+				rt.NewFullGPU(),
 			},
-			expectedLabels: map[string]string{
-				"nvidia.com/gpu.count":    "1",
-				"nvidia.com/gpu.replicas": "1",
-				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  mockModel,
-				"nvidia.com/mig.strategy": "single",
+			expectedLabels: Labels{
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.count":         "1",
+				"nvidia.com/gpu.replicas":      "1",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL",
+				"nvidia.com/mig.strategy":      "single",
 			},
 		},
 		{
 			description: "multiple non-mig device returns non-mig (none) labels",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
+			devices: []resource.Device{
+				rt.NewFullGPU(),
+				rt.NewFullGPU(),
 			},
-			expectedLabels: map[string]string{
-				"nvidia.com/gpu.count":    "2",
-				"nvidia.com/gpu.replicas": "1",
-				"nvidia.com/gpu.memory":   "300",
-				"nvidia.com/gpu.product":  mockModel,
-				"nvidia.com/mig.strategy": "single",
+			expectedLabels: Labels{
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.count":         "2",
+				"nvidia.com/gpu.replicas":      "1",
+				"nvidia.com/gpu.memory":        "300",
+				"nvidia.com/gpu.product":       "MOCKMODEL",
+				"nvidia.com/mig.strategy":      "single",
 			},
 		},
 		{
 			description: "single mig-enabled device returns mig labels",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-					MigDevices: []nvml.MockDevice{
-						{
-							Model: "MOCKMODEL",
-							Attributes: &nvml.DeviceAttributes{
-								MemorySizeMB:              mockMigMemory,
-								GpuInstanceSliceCount:     1,
-								ComputeInstanceSliceCount: 2,
-							},
-						},
-					},
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(
+					rt.NewMigDevice(1, 2, 100),
+				),
 			},
-			expectedLabels: map[string]string{
+			expectedLabels: Labels{
 				"nvidia.com/gpu.count":           "1",
 				"nvidia.com/gpu.replicas":        "1",
 				"nvidia.com/gpu.memory":          "100",
-				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb",
+				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.100gb",
 				"nvidia.com/mig.strategy":        "single",
 				"nvidia.com/gpu.multiprocessors": "0",
 				"nvidia.com/gpu.slices.gi":       "1",
@@ -316,55 +263,33 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "multiple mig-enabled devices returns mig labels",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-					MigDevices: []nvml.MockDevice{
-						{
-							Model: "MOCKMODEL",
-							Attributes: &nvml.DeviceAttributes{
-								MemorySizeMB:              mockMigMemory,
-								GpuInstanceSliceCount:     1,
-								ComputeInstanceSliceCount: 2,
-								MultiprocessorCount:       12,
-								SharedCopyEngineCount:     13,
-								SharedDecoderCount:        14,
-								SharedEncoderCount:        15,
-								SharedJpegCount:           16,
-								SharedOfaCount:            17,
-							},
-						},
-					},
-				},
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-					MigDevices: []nvml.MockDevice{
-						{
-							Model: "MOCKMODEL",
-							Attributes: &nvml.DeviceAttributes{
-								MemorySizeMB:              mockMigMemory,
-								GpuInstanceSliceCount:     1,
-								ComputeInstanceSliceCount: 2,
-								MultiprocessorCount:       12,
-								SharedCopyEngineCount:     13,
-								SharedDecoderCount:        14,
-								SharedEncoderCount:        15,
-								SharedJpegCount:           16,
-								SharedOfaCount:            17,
-							},
-						},
-					},
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(
+					rt.NewMigDevice(1, 2, 100, map[string]interface{}{
+						"multiprocessors": 12,
+						"engines.copy":    13,
+						"engines.decoder": 14,
+						"engines.encoder": 15,
+						"engines.jpeg":    16,
+						"engines.ofa":     17,
+					}),
+				),
+				rt.NewMigEnabledDevice(
+					rt.NewMigDevice(1, 2, 100, map[string]interface{}{
+						"multiprocessors": 12,
+						"engines.copy":    13,
+						"engines.decoder": 14,
+						"engines.encoder": 15,
+						"engines.jpeg":    16,
+						"engines.ofa":     17,
+					}),
+				),
 			},
-			expectedLabels: map[string]string{
+			expectedLabels: Labels{
 				"nvidia.com/gpu.count":           "2",
 				"nvidia.com/gpu.replicas":        "1",
 				"nvidia.com/gpu.memory":          "100",
-				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.1gb",
+				"nvidia.com/gpu.product":         "MOCKMODEL-MIG-1g.100gb",
 				"nvidia.com/mig.strategy":        "single",
 				"nvidia.com/gpu.multiprocessors": "12",
 				"nvidia.com/gpu.slices.gi":       "1",
@@ -378,14 +303,11 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "empty mig devices returns MIG invalid label",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(),
 			},
-			expectedLabels: map[string]string{
+			isInvalid: true,
+			expectedLabels: Labels{
 				"nvidia.com/gpu.count":    "0",
 				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "0",
@@ -395,32 +317,14 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "mixed mig config returns MIG invalid label",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-					MigDevices: []nvml.MockDevice{
-						{
-							Model: "MOCKMODEL",
-							Attributes: &nvml.DeviceAttributes{
-								MemorySizeMB:              mockMigMemory,
-								GpuInstanceSliceCount:     1,
-								ComputeInstanceSliceCount: 2,
-							},
-						},
-						{
-							Model: "MOCKMODEL",
-							Attributes: &nvml.DeviceAttributes{
-								MemorySizeMB:              mockMigMemory,
-								GpuInstanceSliceCount:     3,
-								ComputeInstanceSliceCount: 4,
-							},
-						},
-					},
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(
+					rt.NewMigDevice(1, 2, 100),
+					rt.NewMigDevice(3, 4, 100),
+				),
 			},
-			expectedLabels: map[string]string{
+			isInvalid: true,
+			expectedLabels: Labels{
 				"nvidia.com/gpu.count":    "0",
 				"nvidia.com/gpu.replicas": "0",
 				"nvidia.com/gpu.memory":   "0",
@@ -430,83 +334,50 @@ func TestMigStrategySingleLabels(t *testing.T) {
 		},
 		{
 			description: "mixed mig enabled and disabled returns invalid config",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-					MigDevices: []nvml.MockDevice{
-						{
-							Model: "MOCKMODEL",
-							Attributes: &nvml.DeviceAttributes{
-								MemorySizeMB:              mockMigMemory,
-								GpuInstanceSliceCount:     1,
-								ComputeInstanceSliceCount: 2,
-							},
-						},
-					},
-				},
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(
+					rt.NewMigDevice(1, 2, 100),
+				),
+				rt.NewFullGPU(),
 			},
-			expectedLabels: map[string]string{
-				"nvidia.com/gpu.count":    "0",
-				"nvidia.com/gpu.replicas": "0",
-				"nvidia.com/gpu.memory":   "0",
-				"nvidia.com/gpu.product":  "MOCKMODEL-MIG-INVALID",
-				"nvidia.com/mig.strategy": "single",
+			isInvalid: true,
+			expectedLabels: Labels{
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.count":         "0",
+				"nvidia.com/gpu.replicas":      "0",
+				"nvidia.com/gpu.memory":        "0",
+				"nvidia.com/gpu.product":       "MOCKMODEL-MIG-INVALID",
+				"nvidia.com/mig.strategy":      "single",
 			},
 		},
 		{
 			description: "enabled, disabled, and empty returns invalid config",
-			devices: []nvml.MockDevice{
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-					MigDevices: []nvml.MockDevice{
-						{
-							Model: "MOCKMODEL",
-							Attributes: &nvml.DeviceAttributes{
-								MemorySizeMB:              mockMigMemory,
-								GpuInstanceSliceCount:     1,
-								ComputeInstanceSliceCount: 2,
-							},
-						},
-					},
-				},
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  false,
-				},
-				{
-					Model:       "MOCKMODEL",
-					TotalMemory: mockMemory,
-					MigEnabled:  true,
-				},
+			devices: []resource.Device{
+				rt.NewMigEnabledDevice(
+					rt.NewMigDevice(1, 2, 100),
+				),
+				rt.NewFullGPU(),
+				rt.NewMigEnabledDevice(),
 			},
-			expectedLabels: map[string]string{
-				"nvidia.com/gpu.count":    "0",
-				"nvidia.com/gpu.replicas": "0",
-				"nvidia.com/gpu.memory":   "0",
-				"nvidia.com/gpu.product":  "MOCKMODEL-MIG-INVALID",
-				"nvidia.com/mig.strategy": "single",
+			isInvalid: true,
+			expectedLabels: Labels{
+				"nvidia.com/gpu.compute.major": "8",
+				"nvidia.com/gpu.compute.minor": "0",
+				"nvidia.com/gpu.family":        "ampere",
+				"nvidia.com/gpu.count":         "0",
+				"nvidia.com/gpu.replicas":      "0",
+				"nvidia.com/gpu.memory":        "0",
+				"nvidia.com/gpu.product":       "MOCKMODEL-MIG-INVALID",
+				"nvidia.com/mig.strategy":      "single",
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			nvmlMock := &nvml.Mock{
-				Devices:       tc.devices,
-				DriverVersion: "400.300",
-				CudaMajor:     1,
-				CudaMinor:     1,
-			}
+			nvmlMock := rt.NewManagerMockWithDevices(tc.devices...)
 
 			config := spec.Config{
 				Flags: spec.Flags{

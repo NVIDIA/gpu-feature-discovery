@@ -13,7 +13,7 @@ import (
 
 	"github.com/NVIDIA/gpu-feature-discovery/internal/info"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/lm"
-	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/urfave/cli/v2"
@@ -130,11 +130,14 @@ func start(c *cli.Context, flags []cli.Flag) error {
 		}
 		log.Printf("\nRunning with config:\n%v", string(configJSON))
 
-		nvml := nvml.Lib{}
+		manager, err := resource.NewManager(config)
+		if err != nil {
+			return fmt.Errorf("failed to construct resource manager: %v", err)
+		}
 		vgpul := vgpu.NewVGPULib(vgpu.NewNvidiaPCILib())
 
 		log.Print("Start running")
-		restart, err := run(nvml, vgpul, config, sigs)
+		restart, err := run(manager, vgpul, config, sigs)
 		if err != nil {
 			return err
 		}
@@ -145,7 +148,7 @@ func start(c *cli.Context, flags []cli.Flag) error {
 	}
 }
 
-func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config, sigs chan os.Signal) (bool, error) {
+func run(manager resource.Manager, vgpu vgpu.Interface, config *spec.Config, sigs chan os.Signal) (bool, error) {
 	defer func() {
 		if !*config.Flags.GFD.Oneshot {
 			err := removeOutputFile(*config.Flags.GFD.OutputFile)
@@ -157,7 +160,7 @@ func run(nvml nvml.Nvml, vgpu vgpu.Interface, config *spec.Config, sigs chan os.
 
 	timestampLabeler := lm.NewTimestampLabeler(config)
 rerun:
-	loopLabelers, err := lm.NewLabelers(nvml, vgpu, config, MachineTypePath)
+	loopLabelers, err := lm.NewLabelers(manager, vgpu, config, MachineTypePath)
 	if err != nil {
 		return false, err
 	}

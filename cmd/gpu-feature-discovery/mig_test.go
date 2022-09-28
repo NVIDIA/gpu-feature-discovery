@@ -8,33 +8,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/gpu-feature-discovery/internal/nvml"
+	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
+	rt "github.com/NVIDIA/gpu-feature-discovery/internal/resource/testing"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMigStrategyNone(t *testing.T) {
-	nvmlMock := NewTestNvmlMock()
+	devices := []resource.Device{
+		rt.NewMigEnabledDevice(
+			rt.NewMigDevice(3, 0, 20000),
+			rt.NewMigDevice(3, 0, 20000),
+		),
+	}
+	nvmlMock := rt.NewManagerMockWithDevices(devices...)
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
-
-	nvmlMock.Devices[0].MigEnabled = true
-	nvmlMock.Devices[0].MigDevices = []nvml.MockDevice{
-		{
-			Model: "MOCKMODEL",
-			Attributes: &nvml.DeviceAttributes{
-				GpuInstanceSliceCount: 3,
-				MemorySizeMB:          20000,
-			},
-		},
-		{
-			Model: "MOCKMODEL",
-			Attributes: &nvml.DeviceAttributes{
-				GpuInstanceSliceCount: 3,
-				MemorySizeMB:          20000,
-			},
-		},
-	}
 
 	conf := &spec.Config{
 		Flags: spec.Flags{
@@ -86,7 +75,7 @@ func TestMigStrategyNone(t *testing.T) {
 
 	require.Equal(t, labels["nvidia.com/gpu.count"], "1", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.product"], "MOCKMODEL", "Incorrect label")
-	require.Equal(t, labels["nvidia.com/gpu.memory"], "128", "Incorrect label")
+	require.Equal(t, labels["nvidia.com/gpu.memory"], "300", "Incorrect label")
 }
 
 func TestMigStrategySingleForNoMigDevices(t *testing.T) {
@@ -144,30 +133,19 @@ func TestMigStrategySingleForNoMigDevices(t *testing.T) {
 	require.Equal(t, labels["nvidia.com/mig.strategy"], "single", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.count"], "1", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.product"], "MOCKMODEL", "Incorrect label")
-	require.Equal(t, labels["nvidia.com/gpu.memory"], "128", "Incorrect label")
+	require.Equal(t, labels["nvidia.com/gpu.memory"], "300", "Incorrect label")
 }
 
 func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
-	nvmlMock := NewTestNvmlMock()
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
-	nvmlMock.Devices[0].MigEnabled = false
-	nvmlMock.Devices[0].MigDevices = []nvml.MockDevice{
-		{
-			Model: "MOCKMODEL",
-			Attributes: &nvml.DeviceAttributes{
-				GpuInstanceSliceCount: 3,
-				MemorySizeMB:          20000,
-			},
-		},
-		{
-			Model: "MOCKMODEL",
-			Attributes: &nvml.DeviceAttributes{
-				GpuInstanceSliceCount: 3,
-				MemorySizeMB:          20000,
-			},
-		},
+	devices := []resource.Device{
+		rt.NewDeviceMock(false).WithMigDevices(
+			rt.NewMigDevice(3, 0, 20000),
+			rt.NewMigDevice(3, 0, 20000),
+		),
 	}
+	nvmlMock := rt.NewManagerMockWithDevices(devices...)
 
 	conf := &spec.Config{
 		Flags: spec.Flags{
@@ -219,30 +197,19 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 	require.Equal(t, labels["nvidia.com/mig.strategy"], "single", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.count"], "1", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.product"], "MOCKMODEL", "Incorrect label")
-	require.Equal(t, labels["nvidia.com/gpu.memory"], "128", "Incorrect label")
+	require.Equal(t, labels["nvidia.com/gpu.memory"], "300", "Incorrect label")
 }
 
 func TestMigStrategySingle(t *testing.T) {
-	nvmlMock := NewTestNvmlMock()
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
-	nvmlMock.Devices[0].MigEnabled = true
-	nvmlMock.Devices[0].MigDevices = []nvml.MockDevice{
-		{
-			Model: "MOCKMODEL",
-			Attributes: &nvml.DeviceAttributes{
-				GpuInstanceSliceCount: 3,
-				MemorySizeMB:          20000,
-			},
-		},
-		{
-			Model: "MOCKMODEL",
-			Attributes: &nvml.DeviceAttributes{
-				GpuInstanceSliceCount: 3,
-				MemorySizeMB:          20000,
-			},
-		},
+	devices := []resource.Device{
+		rt.NewMigEnabledDevice(
+			rt.NewMigDevice(3, 0, 20),
+			rt.NewMigDevice(3, 0, 20),
+		),
 	}
+	nvmlMock := rt.NewManagerMockWithDevices(devices...)
 
 	conf := &spec.Config{
 		Flags: spec.Flags{
@@ -295,31 +262,20 @@ func TestMigStrategySingle(t *testing.T) {
 	require.Equal(t, labels["nvidia.com/mig.strategy"], "single", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.count"], "2", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.product"], "MOCKMODEL-MIG-3g.20gb", "Incorrect label")
-	require.Equal(t, labels["nvidia.com/gpu.memory"], "20000", "Incorrect label")
+	require.Equal(t, labels["nvidia.com/gpu.memory"], "20", "Incorrect label")
 }
 
 func TestMigStrategyMixed(t *testing.T) {
-	nvmlMock := NewTestNvmlMock()
 	// create VGPU mock library with empty vgpu devices
 	vgpuMock := NewTestVGPUMock()
-
-	nvmlMock.Devices[0].MigEnabled = true
-	nvmlMock.Devices[0].MigDevices = []nvml.MockDevice{
-		{
-			Model: "MOCKMODEL",
-			Attributes: &nvml.DeviceAttributes{
-				GpuInstanceSliceCount: 3,
-				MemorySizeMB:          20000,
-			},
-		},
-		{
-			Model: "MOCKMODEL",
-			Attributes: &nvml.DeviceAttributes{
-				GpuInstanceSliceCount: 1,
-				MemorySizeMB:          5000,
-			},
-		},
+	devices := []resource.Device{
+		rt.NewMigEnabledDevice(
+			rt.NewMigDevice(3, 0, 20),
+			rt.NewMigDevice(1, 0, 5),
+		),
 	}
+
+	nvmlMock := rt.NewManagerMockWithDevices(devices...)
 
 	conf := &spec.Config{
 		Flags: spec.Flags{
@@ -372,7 +328,7 @@ func TestMigStrategyMixed(t *testing.T) {
 	require.Equal(t, labels["nvidia.com/mig.strategy"], "mixed", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.count"], "1", "Incorrect label")
 	require.Equal(t, labels["nvidia.com/gpu.product"], "MOCKMODEL", "Incorrect label")
-	require.Equal(t, labels["nvidia.com/gpu.memory"], "128", "Incorrect label")
+	require.Equal(t, labels["nvidia.com/gpu.memory"], "300", "Incorrect label")
 	require.Contains(t, labels, "nvidia.com/mig-3g.20gb.count", "Missing label")
 	require.Contains(t, labels, "nvidia.com/mig-1g.5gb.count", "Missing label")
 }
