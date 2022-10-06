@@ -14,32 +14,26 @@
 # limitations under the License.
 **/
 
-package lm
+package info
 
-import (
-	"fmt"
-	"os"
-	"strings"
-)
+// Option defines a function for passing options to the New() call
+type Option func(*infolib)
 
-func newMachineTypeLabeler(machineTypePath string) (Labeler, error) {
-	machineType, err := getMachineType(machineTypePath)
-	if err != nil {
-		return nil, fmt.Errorf("error getting machine type: %v", err)
+// New creates a new instance of the 'info' interface
+func New(opts ...Option) Interface {
+	i := &infolib{}
+	for _, opt := range opts {
+		opt(i)
 	}
-	l := Labels{
-		"nvidia.com/gpu.machine": strings.Replace(machineType, " ", "-", -1),
+	if i.root == "" {
+		i.root = "/"
 	}
-	return l, nil
+	return i
 }
 
-func getMachineType(path string) (string, error) {
-	data, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
-		return "unknown", nil
+// WithRoot provides a Option to set the root of the 'info' interface
+func WithRoot(root string) Option {
+	return func(i *infolib) {
+		i.root = root
 	}
-	if err != nil {
-		return "", fmt.Errorf("could not open machine type file: %v", err)
-	}
-	return strings.TrimSpace(string(data)), nil
 }

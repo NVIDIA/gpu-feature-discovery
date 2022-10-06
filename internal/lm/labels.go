@@ -19,6 +19,7 @@ package lm
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -34,15 +35,34 @@ func (labels Labels) Labels() (Labels, error) {
 
 // WriteToFile writes labels to the specified path. The file is written atomocally
 func (labels Labels) WriteToFile(path string) error {
+	if path == "" {
+		_, err := labels.WriteTo(os.Stdout)
+		return err
+	}
+
 	output := new(bytes.Buffer)
-	for k, v := range labels {
-		fmt.Fprintf(output, "%s=%s\n", k, v)
+	if _, err := labels.WriteTo(output); err != nil {
+		return fmt.Errorf("error writing labels to buffer: %v", err)
 	}
 	err := writeFileAtomically(path, output.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("error atomically writing file '%s': %v", path, err)
 	}
 	return nil
+}
+
+// WriteTo writes labels to the specified writer
+func (labels Labels) WriteTo(output io.Writer) (int64, error) {
+	var total int64
+	for k, v := range labels {
+		n, err := fmt.Fprintf(output, "%s=%s\n", k, v)
+		total += int64(n)
+		if err != nil {
+			return total, err
+		}
+	}
+
+	return total, nil
 }
 
 func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {

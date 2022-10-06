@@ -62,7 +62,7 @@ func TestMigCapabilityLabeler(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			nvmlMock := rt.NewManagerMockWithDevices(tc.devices...)
 
-			migCapabilityLabeler, _ := NewMigCapabilityLabeler(nvmlMock)
+			migCapabilityLabeler, _ := newMigCapabilityLabeler(nvmlMock)
 
 			labels, err := migCapabilityLabeler.Labels()
 			if tc.expectedError {
