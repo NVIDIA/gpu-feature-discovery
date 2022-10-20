@@ -18,6 +18,7 @@ package resource
 
 import (
 	"fmt"
+	"strings"
 
 	"gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvlib/device"
 	"gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvml"
@@ -97,7 +98,9 @@ func (d nvmlMigDevice) GetName() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get MIG profile: %v", err)
 	}
-	return p.String(), nil
+
+	resourceName := strings.ReplaceAll(p.String(), "+", ".")
+	return resourceName, nil
 }
 
 // GetTotalMemoryMB returns the total memory on a device in MB

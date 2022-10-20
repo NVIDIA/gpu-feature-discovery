@@ -53,9 +53,9 @@ func NewGPUResourceLabeler(config *spec.Config, device resource.Device, count in
 		config:       config,
 	}
 
-	architectureLabeler := architectureLabeler{
-		resourceLabeler: resourceLabeler,
-		device:          device,
+	architectureLabels, err := newArchitectureLabels(resourceLabeler, device)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create architecture labels: %v", err)
 	}
 
 	memoryLabeler := (Labeler)(&empty{})
@@ -66,7 +66,7 @@ func NewGPUResourceLabeler(config *spec.Config, device resource.Device, count in
 	labelers := Merge(
 		resourceLabeler.baseLabeler(count, model),
 		memoryLabeler,
-		architectureLabeler,
+		architectureLabels,
 	)
 
 	return labelers, nil
@@ -97,14 +97,14 @@ func NewMIGResourceLabeler(resourceName spec.ResourceName, config *spec.Config, 
 		config:       config,
 	}
 
-	attributeLabeler := migAttributeLabeler{
-		resourceLabeler: resourceLabeler,
-		device:          device,
+	attributeLabels, err := newMigAttributeLabels(resourceLabeler, device)
+	if err != nil {
+		return nil, fmt.Errorf("faled to get MIG attribute labels: %v", err)
 	}
 
 	labelers := Merge(
 		resourceLabeler.baseLabeler(count, model, "MIG", migProfile),
-		attributeLabeler,
+		attributeLabels,
 	)
 
 	return labelers, nil
@@ -225,29 +225,19 @@ func (rl resourceLabeler) replicationInfo() *spec.ReplicatedResource {
 	return nil
 }
 
-type migAttributeLabeler struct {
-	resourceLabeler
-	device resource.Device
-}
-
-func (s migAttributeLabeler) Labels() (Labels, error) {
-	attributes, err := s.device.GetAttributes()
+func newMigAttributeLabels(rl resourceLabeler, device resource.Device) (Labels, error) {
+	attributes, err := device.GetAttributes()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get attributes of MIG device: %v", err)
 	}
 
-	labels := s.resourceLabeler.labels(attributes)
+	labels := rl.labels(attributes)
 
 	return labels, nil
 }
 
-type architectureLabeler struct {
-	resourceLabeler
-	device resource.Device
-}
-
-func (s architectureLabeler) Labels() (Labels, error) {
-	computeMajor, computeMinor, err := s.device.GetCudaComputeCapability()
+func newArchitectureLabels(rl resourceLabeler, device resource.Device) (Labels, error) {
+	computeMajor, computeMinor, err := device.GetCudaComputeCapability()
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine CUDA compute capability: %v", err)
 	}
@@ -258,7 +248,7 @@ func (s architectureLabeler) Labels() (Labels, error) {
 
 	family := getArchFamily(computeMajor, computeMinor)
 
-	labels := s.resourceLabeler.labels(map[string]interface{}{
+	labels := rl.labels(map[string]interface{}{
 		"family":        family,
 		"compute.major": computeMajor,
 		"compute.minor": computeMinor,
