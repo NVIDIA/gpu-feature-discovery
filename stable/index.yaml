@@ -2,8 +2,26 @@ apiVersion: v1
 entries:
   gpu-feature-discovery:
   - apiVersion: v2
+    appVersion: 0.7.0-rc.2
+    created: "2022-10-21T10:45:51.680214+02:00"
+    dependencies:
+    - alias: nfd
+      condition: nfd.deploy,nfd.enabled
+      name: node-feature-discovery
+      repository: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+      version: 0.11.0
+    description: A Helm chart for gpu-feature-discovery on Kubernetes
+    digest: 6a38e062cadb1d25f30e884241977462a7661d9051fcbb3939617b447f5aaeab
+    home: https://github.com/NVIDIA/gpu-feature-discovery
+    kubeVersion: '>= 1.10.0-0'
+    name: gpu-feature-discovery
+    type: application
+    urls:
+    - https://nvidia.github.io/gpu-feature-discovery/stable/gpu-feature-discovery-0.7.0-rc.2.tgz
+    version: 0.7.0-rc.2
+  - apiVersion: v2
     appVersion: 0.7.0-rc.1
-    created: "2022-10-06T17:18:00.437856+02:00"
+    created: "2022-10-21T10:45:51.678082+02:00"
     dependencies:
     - alias: nfd
       condition: nfd.deploy,nfd.enabled
@@ -21,7 +39,7 @@ entries:
     version: 0.7.0-rc.1
   - apiVersion: v2
     appVersion: 0.6.2
-    created: "2022-10-06T17:18:00.436573+02:00"
+    created: "2022-10-21T10:45:51.676802+02:00"
     dependencies:
     - alias: nfd
       condition: nfd.deploy,nfd.enabled
@@ -39,7 +57,7 @@ entries:
     version: 0.6.2
   - apiVersion: v2
     appVersion: 0.6.1
-    created: "2022-10-06T17:18:00.435064+02:00"
+    created: "2022-10-21T10:45:51.675403+02:00"
     dependencies:
     - alias: nfd
       condition: nfd.deploy,nfd.enabled
@@ -57,7 +75,7 @@ entries:
     version: 0.6.1
   - apiVersion: v2
     appVersion: 0.6.0
-    created: "2022-10-06T17:18:00.433319+02:00"
+    created: "2022-10-21T10:45:51.673851+02:00"
     dependencies:
     - alias: nfd
       condition: nfd.deploy,nfd.enabled
@@ -75,7 +93,7 @@ entries:
     version: 0.6.0
   - apiVersion: v2
     appVersion: 0.6.0-rc.1
-    created: "2022-10-06T17:18:00.431736+02:00"
+    created: "2022-10-21T10:45:51.672634+02:00"
     dependencies:
     - alias: nfd
       condition: nfd.deploy,nfd.enabled
@@ -93,7 +111,7 @@ entries:
     version: 0.6.0-rc.1
   - apiVersion: v2
     appVersion: 0.5.0
-    created: "2022-10-06T17:18:00.430051+02:00"
+    created: "2022-10-21T10:45:51.671093+02:00"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -110,7 +128,7 @@ entries:
     version: 0.5.0
   - apiVersion: v2
     appVersion: 0.4.1
-    created: "2022-10-06T17:18:00.428294+02:00"
+    created: "2022-10-21T10:45:51.6691+02:00"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -127,7 +145,7 @@ entries:
     version: 0.4.1
   - apiVersion: v2
     appVersion: 0.4.0
-    created: "2022-10-06T17:18:00.427339+02:00"
+    created: "2022-10-21T10:45:51.668295+02:00"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -144,7 +162,7 @@ entries:
     version: 0.4.0
   - apiVersion: v2
     appVersion: 0.3.0
-    created: "2022-10-06T17:18:00.426416+02:00"
+    created: "2022-10-21T10:45:51.667579+02:00"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -161,7 +179,7 @@ entries:
     version: 0.3.0
   - apiVersion: v2
     appVersion: 0.2.2
-    created: "2022-10-06T17:18:00.425527+02:00"
+    created: "2022-10-21T10:45:51.666754+02:00"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -178,7 +196,7 @@ entries:
     version: 0.2.2
   - apiVersion: v2
     appVersion: 0.2.1
-    created: "2022-10-06T17:18:00.424609+02:00"
+    created: "2022-10-21T10:45:51.665804+02:00"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -195,7 +213,7 @@ entries:
     version: 0.2.1
   - apiVersion: v2
     appVersion: 0.2.0
-    created: "2022-10-06T17:18:00.423725+02:00"
+    created: "2022-10-21T10:45:51.665176+02:00"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -212,7 +230,7 @@ entries:
     version: 0.2.0
   - apiVersion: v2
     appVersion: 0.2.0-rc.1
-    created: "2022-10-06T17:18:00.422882+02:00"
+    created: "2022-10-21T10:45:51.664546+02:00"
     dependencies:
     - condition: nfd.deploy
       name: node-feature-discovery
@@ -227,4 +245,4 @@ entries:
     urls:
     - https://nvidia.github.io/gpu-feature-discovery/stable/gpu-feature-discovery-0.2.0-rc.1.tgz
     version: 0.2.0-rc.1
-generated: "2022-10-06T17:18:00.421632+02:00"
+generated: "2022-10-21T10:45:51.663659+02:00"
