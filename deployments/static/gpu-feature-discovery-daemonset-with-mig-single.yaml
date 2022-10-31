@@ -24,8 +24,8 @@ spec:
           volumeMounts:
             - name: output-dir
               mountPath: "/etc/kubernetes/node-feature-discovery/features.d"
-            - name: dmi-product-name
-              mountPath: "/sys/class/dmi/id/product_name"
+            - name: host-sys
+              mountPath: "/sys"
           env:
             - name: NVIDIA_MIG_MONITOR_DEVICES
               value: all
@@ -59,6 +59,6 @@ spec:
         - name: output-dir
           hostPath:
             path: "/etc/kubernetes/node-feature-discovery/features.d"
-        - name: dmi-product-name
+        - name: host-sys
           hostPath:
-            path: "/sys/class/dmi/id/product_name"
+            path: "/sys"
