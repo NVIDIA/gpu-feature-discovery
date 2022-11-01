@@ -30,8 +30,8 @@ type Labeler interface {
 }
 
 // NewLabelers constructs the required labelers from the specified config
-func NewLabelers(manager resource.Manager, vgpu vgpu.Interface, config *spec.Config, machineTypePath string) (Labeler, error) {
-	nvmlLabeler, err := NewNVMLLabeler(manager, config, machineTypePath)
+func NewLabelers(manager resource.Manager, vgpu vgpu.Interface, config *spec.Config) (Labeler, error) {
+	nvmlLabeler, err := NewNVMLLabeler(manager, config)
 	if err != nil {
 		return nil, fmt.Errorf("error creating NVML labeler: %v", err)
 	}

@@ -49,6 +49,8 @@ type CommandLineFlags struct {
 	MigStrategy      *string                 `json:"migStrategy"                yaml:"migStrategy"`
 	FailOnInitError  *bool                   `json:"failOnInitError"            yaml:"failOnInitError"`
 	NvidiaDriverRoot *string                 `json:"nvidiaDriverRoot,omitempty" yaml:"nvidiaDriverRoot,omitempty"`
+	GDSEnabled       *bool                   `json:"gdsEnabled"                 yaml:"gdsEnabled"`
+	MOFEDEnabled     *bool                   `json:"mofedEnabled"               yaml:"mofedEnabled"`
 	Plugin           *PluginCommandLineFlags `json:"plugin,omitempty"           yaml:"plugin,omitempty"`
 	GFD              *GFDCommandLineFlags    `json:"gfd,omitempty"              yaml:"gfd,omitempty"`
 }
@@ -62,10 +64,11 @@ type PluginCommandLineFlags struct {
 
 // GFDCommandLineFlags holds the list of command line flags specific to GFD.
 type GFDCommandLineFlags struct {
-	Oneshot       *bool     `json:"oneshot"       yaml:"oneshot"`
-	NoTimestamp   *bool     `json:"noTimestamp"   yaml:"noTimestamp"`
-	SleepInterval *Duration `json:"sleepInterval" yaml:"sleepInterval"`
-	OutputFile    *string   `json:"outputFile"    yaml:"outputFile"`
+	Oneshot         *bool     `json:"oneshot"         yaml:"oneshot"`
+	NoTimestamp     *bool     `json:"noTimestamp"     yaml:"noTimestamp"`
+	SleepInterval   *Duration `json:"sleepInterval"   yaml:"sleepInterval"`
+	OutputFile      *string   `json:"outputFile"      yaml:"outputFile"`
+	MachineTypeFile *string   `json:"machineTypeFile" yaml:"machineTypeFile"`
 }
 
 // UpdateFromCLIFlags updates Flags from settings in the cli Flags if they are set.
@@ -80,6 +83,10 @@ func (f *Flags) UpdateFromCLIFlags(c *cli.Context, flags []cli.Flag) {
 				updateFromCLIFlag(&f.FailOnInitError, c, n)
 			case "nvidia-driver-root":
 				updateFromCLIFlag(&f.NvidiaDriverRoot, c, n)
+			case "gds-enabled":
+				updateFromCLIFlag(&f.GDSEnabled, c, n)
+			case "mofed-enabled":
+				updateFromCLIFlag(&f.MOFEDEnabled, c, n)
 			}
 			// Plugin specific flags
 			if f.Plugin == nil {
@@ -106,6 +113,8 @@ func (f *Flags) UpdateFromCLIFlags(c *cli.Context, flags []cli.Flag) {
 				updateFromCLIFlag(&f.GFD.SleepInterval, c, n)
 			case "no-timestamp":
 				updateFromCLIFlag(&f.GFD.NoTimestamp, c, n)
+			case "machine-type-file":
+				updateFromCLIFlag(&f.GFD.MachineTypeFile, c, n)
 			}
 		}
 	}

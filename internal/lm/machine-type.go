@@ -18,14 +18,20 @@ package lm
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
+)
+
+const (
+	machineTypeUnknown = "unknown"
 )
 
 func newMachineTypeLabeler(machineTypePath string) (Labeler, error) {
 	machineType, err := getMachineType(machineTypePath)
 	if err != nil {
-		return nil, fmt.Errorf("error getting machine type: %v", err)
+		log.Printf("WARNING: error getting machine type from %v: %v", machineTypePath, err)
+		machineType = machineTypeUnknown
 	}
 	l := Labels{
 		"nvidia.com/gpu.machine": strings.Replace(machineType, " ", "-", -1),
@@ -34,10 +40,10 @@ func newMachineTypeLabeler(machineTypePath string) (Labeler, error) {
 }
 
 func getMachineType(path string) (string, error) {
-	data, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
-		return "unknown", nil
+	if path == "" {
+		return machineTypeUnknown, nil
 	}
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("could not open machine type file: %v", err)
 	}

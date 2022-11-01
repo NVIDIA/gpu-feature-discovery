@@ -19,12 +19,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	// MachineTypePath : Path to the file describing the machine type
-	// This will be override during unit testing
-	MachineTypePath = "/sys/class/dmi/id/product_name"
-)
-
 func main() {
 	var configFile string
 
@@ -72,6 +66,12 @@ func main() {
 			Aliases: []string{"output", "o"},
 			Value:   "/etc/kubernetes/node-feature-discovery/features.d/gfd",
 			EnvVars: []string{"GFD_OUTPUT_FILE"},
+		},
+		&cli.StringFlag{
+			Name:    "machine-type-file",
+			Value:   "/sys/class/dmi/id/product_name",
+			Usage:   "a path to a file that contains the DMI (SMBIOS) information for the node",
+			EnvVars: []string{"GFD_MACHINE_TYPE_FILE"},
 		},
 		&cli.StringFlag{
 			Name:        "config-file",
@@ -157,7 +157,7 @@ func run(manager resource.Manager, vgpu vgpu.Interface, config *spec.Config, sig
 
 	timestampLabeler := lm.NewTimestampLabeler(config)
 rerun:
-	loopLabelers, err := lm.NewLabelers(manager, vgpu, config, MachineTypePath)
+	loopLabelers, err := lm.NewLabelers(manager, vgpu, config)
 	if err != nil {
 		return false, err
 	}

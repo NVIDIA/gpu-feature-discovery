@@ -23,15 +23,15 @@ spec:
           volumeMounts:
             - name: output-dir
               mountPath: "/etc/kubernetes/node-feature-discovery/features.d"
-            - name: dmi-product-name
-              mountPath: "/sys/class/dmi/id/product_name"
+            - name: host-sys
+              mountPath: "/sys"
           securityContext:
             privileged: true
       volumes:
         - name: output-dir
           hostPath:
             path: "/etc/kubernetes/node-feature-discovery/features.d"
-        - name: dmi-product-name
+        - name: host-sys
           hostPath:
-            path: "/sys/class/dmi/id/product_name"
+            path: "/sys"
       restartPolicy: Never

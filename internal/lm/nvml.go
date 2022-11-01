@@ -26,7 +26,7 @@ import (
 )
 
 // NewNVMLLabeler creates a new NVML-based labeler using the provided NVML library and config.
-func NewNVMLLabeler(manager resource.Manager, config *spec.Config, machineTypePath string) (Labeler, error) {
+func NewNVMLLabeler(manager resource.Manager, config *spec.Config) (Labeler, error) {
 	if err := manager.Init(); err != nil {
 		return nil, fmt.Errorf("failed to initialize NVML: %v", err)
 	}
@@ -41,7 +41,7 @@ func NewNVMLLabeler(manager resource.Manager, config *spec.Config, machineTypePa
 		return empty{}, nil
 	}
 
-	machineTypeLabeler, err := newMachineTypeLabeler(machineTypePath)
+	machineTypeLabeler, err := newMachineTypeLabeler(*config.Flags.GFD.MachineTypeFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct machine type labeler: %v", err)
 	}

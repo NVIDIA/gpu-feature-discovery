@@ -22,6 +22,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testMachineTypeFile = "/tmp/machine-type"
+)
+
 type testConfig struct {
 	root string
 }
@@ -93,24 +97,18 @@ func TestRunOneshot(t *testing.T) {
 				MigStrategy:     ptr("none"),
 				FailOnInitError: ptr(true),
 				GFD: &spec.GFDCommandLineFlags{
-					Oneshot:       ptr(true),
-					OutputFile:    ptr("./gfd-test-oneshot"),
-					SleepInterval: ptr(spec.Duration(time.Second)),
-					NoTimestamp:   ptr(false),
+					Oneshot:         ptr(true),
+					OutputFile:      ptr("./gfd-test-oneshot"),
+					SleepInterval:   ptr(spec.Duration(time.Second)),
+					NoTimestamp:     ptr(false),
+					MachineTypeFile: ptr(testMachineTypeFile),
 				},
 			},
 		},
 	}
 
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
-
-	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-	}()
+	setupMachineFile(t)
+	defer removeMachineFile(t)
 
 	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
@@ -145,24 +143,18 @@ func TestRunWithNoTimestamp(t *testing.T) {
 				MigStrategy:     ptr("none"),
 				FailOnInitError: ptr(true),
 				GFD: &spec.GFDCommandLineFlags{
-					Oneshot:       ptr(true),
-					OutputFile:    ptr("./gfd-test-with-no-timestamp"),
-					SleepInterval: ptr(spec.Duration(time.Second)),
-					NoTimestamp:   ptr(true),
+					Oneshot:         ptr(true),
+					OutputFile:      ptr("./gfd-test-with-no-timestamp"),
+					SleepInterval:   ptr(spec.Duration(time.Second)),
+					NoTimestamp:     ptr(true),
+					MachineTypeFile: ptr(testMachineTypeFile),
 				},
 			},
 		},
 	}
 
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
-
-	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-	}()
+	setupMachineFile(t)
+	defer removeMachineFile(t)
 
 	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
@@ -201,24 +193,21 @@ func TestRunSleep(t *testing.T) {
 				MigStrategy:     ptr("none"),
 				FailOnInitError: ptr(true),
 				GFD: &spec.GFDCommandLineFlags{
-					Oneshot:       ptr(false),
-					OutputFile:    ptr("./gfd-test-loop"),
-					SleepInterval: ptr(spec.Duration(time.Second)),
-					NoTimestamp:   ptr(false),
+					Oneshot:         ptr(false),
+					OutputFile:      ptr("./gfd-test-loop"),
+					SleepInterval:   ptr(spec.Duration(time.Second)),
+					NoTimestamp:     ptr(false),
+					MachineTypeFile: ptr(testMachineTypeFile),
 				},
 			},
 		},
 	}
 
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
+	setupMachineFile(t)
+	defer removeMachineFile(t)
 
 	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-		err = os.Remove(*conf.Flags.GFD.OutputFile)
+		err := os.Remove(*conf.Flags.GFD.OutputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
@@ -285,17 +274,12 @@ func TestFailOnNVMLInitError(t *testing.T) {
 	const outputFile = "./gfd-test-fail-on-nvml-init"
 	vgpuMock := NewTestVGPUMock()
 
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
-	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-	}()
+	setupMachineFile(t)
+	defer removeMachineFile(t)
+
 	defer func() {
 		// Remove the output file created by any "success" cases below
-		err = os.Remove(outputFile)
+		err := os.Remove(outputFile)
 		require.NoError(t, err, "Removing output file")
 	}()
 
@@ -372,10 +356,11 @@ func TestFailOnNVMLInitError(t *testing.T) {
 						MigStrategy:     ptr(tc.migStrategy),
 						FailOnInitError: ptr(tc.failOnInitError),
 						GFD: &spec.GFDCommandLineFlags{
-							Oneshot:       ptr(true),
-							OutputFile:    ptr(outputFile),
-							SleepInterval: ptr(spec.Duration(500 * time.Millisecond)),
-							NoTimestamp:   ptr(false),
+							Oneshot:         ptr(true),
+							OutputFile:      ptr(outputFile),
+							SleepInterval:   ptr(spec.Duration(500 * time.Millisecond)),
+							NoTimestamp:     ptr(false),
+							MachineTypeFile: ptr(testMachineTypeFile),
 						},
 					},
 				},
@@ -462,4 +447,15 @@ func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.Fi
 		return file, nil
 	}
 	return os.Open(fileName)
+}
+
+func setupMachineFile(t *testing.T) {
+	machineType := []byte("product-name\n")
+	err := ioutil.WriteFile(testMachineTypeFile, machineType, 0644)
+	require.NoError(t, err, "Write machine type mock file")
+}
+
+func removeMachineFile(t *testing.T) {
+	err := os.Remove(testMachineTypeFile)
+	require.NoError(t, err, "Removing machine type mock file")
 }

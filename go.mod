@@ -4,10 +4,10 @@ go 1.18
 
 require (
 	github.com/NVIDIA/go-nvml v0.11.6-0.0.20220823120812-7e2082095e82
-	github.com/NVIDIA/k8s-device-plugin v0.12.2-0.20220616130832-ff7dc6faca9d
+	github.com/NVIDIA/k8s-device-plugin v0.12.3-0.20221101181703-abb7275d9617
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.8.1
-	gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20220922133427-1049a7fa76a9
+	gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20221014100848-7222fea1a764
 )
 
 require (

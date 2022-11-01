@@ -31,24 +31,18 @@ func TestMigStrategyNone(t *testing.T) {
 				MigStrategy:     ptr("none"),
 				FailOnInitError: ptr(true),
 				GFD: &spec.GFDCommandLineFlags{
-					Oneshot:       ptr(true),
-					OutputFile:    ptr("./gfd-test-mig-none"),
-					SleepInterval: ptr(spec.Duration(time.Second)),
-					NoTimestamp:   ptr(false),
+					Oneshot:         ptr(true),
+					OutputFile:      ptr("./gfd-test-mig-none"),
+					SleepInterval:   ptr(spec.Duration(time.Second)),
+					NoTimestamp:     ptr(false),
+					MachineTypeFile: ptr(testMachineTypeFile),
 				},
 			},
 		},
 	}
 
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
-
-	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-	}()
+	setupMachineFile(t)
+	defer removeMachineFile(t)
 
 	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
@@ -89,23 +83,18 @@ func TestMigStrategySingleForNoMigDevices(t *testing.T) {
 				MigStrategy:     ptr("single"),
 				FailOnInitError: ptr(true),
 				GFD: &spec.GFDCommandLineFlags{
-					Oneshot:       ptr(true),
-					OutputFile:    ptr("./gfd-test-mig-single-no-mig"),
-					SleepInterval: ptr(spec.Duration(time.Second)),
-					NoTimestamp:   ptr(false),
+					Oneshot:         ptr(true),
+					OutputFile:      ptr("./gfd-test-mig-single-no-mig"),
+					SleepInterval:   ptr(spec.Duration(time.Second)),
+					NoTimestamp:     ptr(false),
+					MachineTypeFile: ptr(testMachineTypeFile),
 				},
 			},
 		},
 	}
 
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
-	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-	}()
+	setupMachineFile(t)
+	defer removeMachineFile(t)
 
 	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
@@ -153,23 +142,18 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 				MigStrategy:     ptr("single"),
 				FailOnInitError: ptr(true),
 				GFD: &spec.GFDCommandLineFlags{
-					Oneshot:       ptr(true),
-					OutputFile:    ptr("./gfd-test-mig-single-no-mig"),
-					SleepInterval: ptr(spec.Duration(time.Second)),
-					NoTimestamp:   ptr(false),
+					Oneshot:         ptr(true),
+					OutputFile:      ptr("./gfd-test-mig-single-no-mig"),
+					SleepInterval:   ptr(spec.Duration(time.Second)),
+					NoTimestamp:     ptr(false),
+					MachineTypeFile: ptr(testMachineTypeFile),
 				},
 			},
 		},
 	}
 
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
-	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-	}()
+	setupMachineFile(t)
+	defer removeMachineFile(t)
 
 	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
@@ -217,24 +201,18 @@ func TestMigStrategySingle(t *testing.T) {
 				MigStrategy:     ptr("single"),
 				FailOnInitError: ptr(true),
 				GFD: &spec.GFDCommandLineFlags{
-					Oneshot:       ptr(true),
-					OutputFile:    ptr("./gfd-test-mig-single"),
-					SleepInterval: ptr(spec.Duration(time.Second)),
-					NoTimestamp:   ptr(false),
+					Oneshot:         ptr(true),
+					OutputFile:      ptr("./gfd-test-mig-single"),
+					SleepInterval:   ptr(spec.Duration(time.Second)),
+					NoTimestamp:     ptr(false),
+					MachineTypeFile: ptr(testMachineTypeFile),
 				},
 			},
 		},
 	}
 
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
-
-	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-	}()
+	setupMachineFile(t)
+	defer removeMachineFile(t)
 
 	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")
@@ -283,24 +261,18 @@ func TestMigStrategyMixed(t *testing.T) {
 				MigStrategy:     ptr("mixed"),
 				FailOnInitError: ptr(true),
 				GFD: &spec.GFDCommandLineFlags{
-					Oneshot:       ptr(true),
-					OutputFile:    ptr("./gfd-test-mig-mixed"),
-					SleepInterval: ptr(spec.Duration(time.Second)),
-					NoTimestamp:   ptr(false),
+					Oneshot:         ptr(true),
+					OutputFile:      ptr("./gfd-test-mig-mixed"),
+					SleepInterval:   ptr(spec.Duration(time.Second)),
+					NoTimestamp:     ptr(false),
+					MachineTypeFile: ptr(testMachineTypeFile),
 				},
 			},
 		},
 	}
 
-	MachineTypePath = "/tmp/machine-type"
-	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile("/tmp/machine-type", machineType, 0644)
-	require.NoError(t, err, "Write machine type mock file")
-
-	defer func() {
-		err = os.Remove(MachineTypePath)
-		require.NoError(t, err, "Removing machine type mock file")
-	}()
+	setupMachineFile(t)
+	defer removeMachineFile(t)
 
 	restart, err := run(nvmlMock, vgpuMock, conf, nil)
 	require.NoError(t, err, "Error from run function")

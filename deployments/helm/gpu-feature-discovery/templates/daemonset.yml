@@ -89,8 +89,8 @@ spec:
           volumeMounts:
             - name: output-dir
               mountPath: "/etc/kubernetes/node-feature-discovery/features.d"
-            - name: dmi-product-name
-              mountPath: "/sys/class/dmi/id/product_name"
+            - name: host-sys
+              mountPath: "/sys"
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -99,9 +99,9 @@ spec:
         - name: output-dir
           hostPath:
             path: "/etc/kubernetes/node-feature-discovery/features.d"
-        - name: dmi-product-name
+        - name: host-sys
           hostPath:
-            path: "/sys/class/dmi/id/product_name"
+            path: "/sys"
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
