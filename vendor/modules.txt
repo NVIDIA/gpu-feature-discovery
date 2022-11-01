@@ -2,7 +2,7 @@
 ## explicit; go 1.15
 github.com/NVIDIA/go-nvml/pkg/dl
 github.com/NVIDIA/go-nvml/pkg/nvml
-# github.com/NVIDIA/k8s-device-plugin v0.12.2-0.20220616130832-ff7dc6faca9d
+# github.com/NVIDIA/k8s-device-plugin v0.12.3-0.20221101181703-abb7275d9617
 ## explicit; go 1.18
 github.com/NVIDIA/k8s-device-plugin/api/config/v1
 # github.com/cpuguy83/go-md2man/v2 v2.0.2
@@ -47,7 +47,7 @@ github.com/urfave/cli/v2
 # github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673
 ## explicit
 github.com/xrash/smetrics
-# gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20220922133427-1049a7fa76a9
+# gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20221014100848-7222fea1a764
 ## explicit; go 1.16
 gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvlib/device
 gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvlib/info
