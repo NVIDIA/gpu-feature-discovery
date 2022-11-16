@@ -74,7 +74,7 @@ func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
 	absDir := filepath.Dir(absPath)
 	tmpDir := filepath.Join(absDir, "gfd-tmp")
 
-	err = os.Mkdir(tmpDir, os.ModePerm)
+	err = os.MkdirAll(tmpDir, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
 		return fmt.Errorf("failed to create temporary directory: %v", err)
 	}
