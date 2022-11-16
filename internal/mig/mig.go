@@ -39,24 +39,27 @@ func NewDeviceInfo(manager resource.Manager) *DeviceInfo {
 // GetDevicesMap returns the list of devices separated by whether they have MIG enabled.
 // The first call will construct the map.
 func (di *DeviceInfo) GetDevicesMap() (map[bool][]resource.Device, error) {
-	if di.devicesMap == nil {
-		devices, err := di.manager.GetDevices()
+	if di.devicesMap != nil {
+		return di.devicesMap, nil
+	}
+
+	devices, err := di.manager.GetDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	migEnabledDevicesMap := make(map[bool][]resource.Device)
+	for _, d := range devices {
+		isMigEnabled, err := d.IsMigEnabled()
 		if err != nil {
 			return nil, err
 		}
 
-		migEnabledDevicesMap := make(map[bool][]resource.Device)
-		for _, d := range devices {
-			isMigEnabled, err := d.IsMigEnabled()
-			if err != nil {
-				return nil, err
-			}
-
-			migEnabledDevicesMap[isMigEnabled] = append(migEnabledDevicesMap[isMigEnabled], d)
-		}
-
-		di.devicesMap = migEnabledDevicesMap
+		migEnabledDevicesMap[isMigEnabled] = append(migEnabledDevicesMap[isMigEnabled], d)
 	}
+
+	di.devicesMap = migEnabledDevicesMap
+
 	return di.devicesMap, nil
 }
 
