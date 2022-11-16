@@ -17,8 +17,6 @@
 package resource
 
 import (
-	"fmt"
-
 	"gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvlib/device"
 	"gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvml"
 )
@@ -52,30 +50,23 @@ func (l nvmlLib) GetCudaDriverVersion() (*uint, *uint, error) {
 	return &major, &minor, nil
 }
 
-// GetDeviceByIndex returns the NVML device with the specified index as a Device
-func (l nvmlLib) GetDeviceByIndex(index int) (Device, error) {
-	handle, ret := l.Interface.DeviceGetHandleByIndex(index)
-	if ret != nvml.SUCCESS {
-		return nil, ret
-	}
-	d, err := l.devicelib.NewDevice(handle)
+// GetDevices returns the NVML devices for the manager
+func (l nvmlLib) GetDevices() ([]Device, error) {
+	libdevices, err := l.devicelib.GetDevices()
 	if err != nil {
-		return nil, fmt.Errorf("failed to construct device: %v", err)
+		return nil, err
 	}
-	device := nvmlDevice{
-		Device:    d,
-		devicelib: l.devicelib,
-	}
-	return device, nil
-}
 
-// GetDeviceCount returns the number of devices available
-func (l nvmlLib) GetDeviceCount() (int, error) {
-	count, ret := l.Interface.DeviceGetCount()
-	if ret != nvml.SUCCESS {
-		return 0, ret
+	var devices []Device
+	for _, d := range libdevices {
+		device := nvmlDevice{
+			Device:    d,
+			devicelib: l.devicelib,
+		}
+		devices = append(devices, device)
 	}
-	return count, nil
+
+	return devices, nil
 }
 
 // GetDriverVersion returns the driver version

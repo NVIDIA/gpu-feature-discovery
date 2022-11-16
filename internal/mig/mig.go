@@ -38,20 +38,15 @@ func NewDeviceInfo(manager resource.Manager) *DeviceInfo {
 
 // GetDevicesMap returns the list of devices separated by whether they have MIG enabled.
 // The first call will construct the map.
-func (devices *DeviceInfo) GetDevicesMap() (map[bool][]resource.Device, error) {
-	if devices.devicesMap == nil {
-		n, err := devices.manager.GetDeviceCount()
+func (di *DeviceInfo) GetDevicesMap() (map[bool][]resource.Device, error) {
+	if di.devicesMap == nil {
+		devices, err := di.manager.GetDevices()
 		if err != nil {
 			return nil, err
 		}
 
 		migEnabledDevicesMap := make(map[bool][]resource.Device)
-		for i := 0; i < n; i++ {
-			d, err := devices.manager.GetDeviceByIndex(i)
-			if err != nil {
-				return nil, err
-			}
-
+		for _, d := range devices {
 			isMigEnabled, err := d.IsMigEnabled()
 			if err != nil {
 				return nil, err
@@ -60,14 +55,14 @@ func (devices *DeviceInfo) GetDevicesMap() (map[bool][]resource.Device, error) {
 			migEnabledDevicesMap[isMigEnabled] = append(migEnabledDevicesMap[isMigEnabled], d)
 		}
 
-		devices.devicesMap = migEnabledDevicesMap
+		di.devicesMap = migEnabledDevicesMap
 	}
-	return devices.devicesMap, nil
+	return di.devicesMap, nil
 }
 
 // GetDevicesWithMigEnabled returns a list of devices with migEnabled=true
-func (devices *DeviceInfo) GetDevicesWithMigEnabled() ([]resource.Device, error) {
-	devicesMap, err := devices.GetDevicesMap()
+func (di *DeviceInfo) GetDevicesWithMigEnabled() ([]resource.Device, error) {
+	devicesMap, err := di.GetDevicesMap()
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +70,8 @@ func (devices *DeviceInfo) GetDevicesWithMigEnabled() ([]resource.Device, error)
 }
 
 // GetDevicesWithMigDisabled returns a list of devices with migEnabled=false
-func (devices *DeviceInfo) GetDevicesWithMigDisabled() ([]resource.Device, error) {
-	devicesMap, err := devices.GetDevicesMap()
+func (di *DeviceInfo) GetDevicesWithMigDisabled() ([]resource.Device, error) {
+	devicesMap, err := di.GetDevicesMap()
 	if err != nil {
 		return nil, err
 	}
@@ -84,8 +79,8 @@ func (devices *DeviceInfo) GetDevicesWithMigDisabled() ([]resource.Device, error
 }
 
 // AnyMigEnabledDeviceIsEmpty checks whether at least one MIG device has no MIG devices configured
-func (devices *DeviceInfo) AnyMigEnabledDeviceIsEmpty() (bool, error) {
-	devicesMap, err := devices.GetDevicesMap()
+func (di *DeviceInfo) AnyMigEnabledDeviceIsEmpty() (bool, error) {
+	devicesMap, err := di.GetDevicesMap()
 	if err != nil {
 		return false, err
 	}
@@ -108,8 +103,8 @@ func (devices *DeviceInfo) AnyMigEnabledDeviceIsEmpty() (bool, error) {
 }
 
 // GetAllMigDevices returns a list of all MIG devices.
-func (devices *DeviceInfo) GetAllMigDevices() ([]resource.Device, error) {
-	devicesMap, err := devices.GetDevicesMap()
+func (di *DeviceInfo) GetAllMigDevices() ([]resource.Device, error) {
+	devicesMap, err := di.GetDevicesMap()
 	if err != nil {
 		return nil, err
 	}

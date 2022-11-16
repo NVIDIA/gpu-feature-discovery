@@ -48,14 +48,9 @@ func (m *withFallBack) Shutdown() (err error) {
 	return m.wraps.Shutdown()
 }
 
-// GetDeviceCount delegates to the wrapped manager
-func (m *withFallBack) GetDeviceCount() (int, error) {
-	return m.wraps.GetDeviceCount()
-}
-
-// GetDeviceByIndex delegates to the wrapped manager
-func (m *withFallBack) GetDeviceByIndex(index int) (Device, error) {
-	return m.wraps.GetDeviceByIndex(index)
+// GetDevices delegates to the wrapped manager
+func (m *withFallBack) GetDevices() ([]Device, error) {
+	return m.wraps.GetDevices()
 }
 
 // GetCudaDriverVersion delegates to the wrapped manager
