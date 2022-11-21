@@ -147,7 +147,7 @@ func start(c *cli.Context, flags []cli.Flag) error {
 
 func run(manager resource.Manager, vgpu vgpu.Interface, config *spec.Config, sigs chan os.Signal) (bool, error) {
 	defer func() {
-		if !*config.Flags.GFD.Oneshot {
+		if !*config.Flags.GFD.Oneshot && *config.Flags.GFD.OutputFile != "" {
 			err := removeOutputFile(*config.Flags.GFD.OutputFile)
 			if err != nil {
 				log.Printf("Warning: Error removing output file: %v", err)

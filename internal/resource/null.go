@@ -31,19 +31,19 @@ func NewNullManager() Manager {
 	return &null{}
 }
 
-// Init is a no-op for the null library
+// Init is a no-op for the null manager
 func (l *null) Init() error {
 	return nil
 }
 
-// Shutdown is a no-op for the null library
+// Shutdown is a no-op for the null manager
 func (l *null) Shutdown() (err error) {
 	return nil
 }
 
-// GetDeviceCount always returns 0 for the null library
-func (l *null) GetDeviceCount() (int, error) {
-	return 0, nil
+// GetDevices returns a nil slice for the null manager
+func (l *null) GetDevices() ([]Device, error) {
+	return nil, nil
 }
 
 // GetCudaDriverVersion is not supported
@@ -54,9 +54,4 @@ func (l *null) GetCudaDriverVersion() (*uint, *uint, error) {
 // GetDriverVersion is not supported
 func (l *null) GetDriverVersion() (string, error) {
 	return "", fmt.Errorf("GetDriverVersion is unsupported")
-}
-
-// GetDeviceByIndex is unsupported for the null library
-func (l *null) GetDeviceByIndex(index int) (Device, error) {
-	return nil, fmt.Errorf("GetDeviceByIndex is unsupported")
 }

@@ -112,14 +112,8 @@ func NewManagerMockWithDevices(devices ...resource.Device) *ManagerMock {
 		GetDriverVersionFunc: func() (string, error) {
 			return "400.300", nil
 		},
-		GetDeviceCountFunc: func() (int, error) {
-			return len(devices), nil
-		},
-		GetDeviceByIndexFunc: func(n int) (resource.Device, error) {
-			if n >= 0 && n < len(devices) {
-				return devices[n], nil
-			}
-			return nil, fmt.Errorf("invalid device index %d", n)
+		GetDevicesFunc: func() ([]resource.Device, error) {
+			return devices, nil
 		},
 		GetCudaDriverVersionFunc: func() (*uint, *uint, error) {
 			var major uint = 8

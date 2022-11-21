@@ -31,26 +31,36 @@ func NewCudaManager() Manager {
 	return &cudaLib{}
 }
 
+// GetDevices returns the CUDA devices available on the system
+func (l *cudaLib) GetDevices() ([]Device, error) {
+	count, r := cuda.DeviceGetCount()
+	if r != cuda.SUCCESS {
+		return nil, fmt.Errorf("failed to get number of CUDA devices: %v", r)
+	}
+
+	var devices []Device
+	for i := 0; i < count; i++ {
+		d, r := cuda.DeviceGet(i)
+		if r != cuda.SUCCESS {
+			return nil, fmt.Errorf("failed to get CUDA device %v: %v", i, r)
+		}
+		devices = append(devices, NewCudaDevice(d))
+	}
+
+	return devices, nil
+}
+
 // GetCudaDriverVersion returns the CUDA driver version
 func (l *cudaLib) GetCudaDriverVersion() (*uint, *uint, error) {
 	version, r := cuda.DriverGetVersion()
 	if r != cuda.SUCCESS {
-		return nil, nil, fmt.Errorf("faile to get driver version: %v", r)
+		return nil, nil, fmt.Errorf("failed to get driver version: %v", r)
 	}
 
 	major := uint(version) / 1000
 	minor := uint(version) % 100 / 10
 
 	return &major, &minor, nil
-}
-
-// GetDeviceCount returns the number of CUDA devices
-func (l *cudaLib) GetDeviceCount() (int, error) {
-	count, r := cuda.DeviceGetCount()
-	if r != cuda.SUCCESS {
-		return 0, fmt.Errorf("%v", r)
-	}
-	return count, nil
 }
 
 // GetDriverVersion returns the driver version.
@@ -75,14 +85,4 @@ func (l *cudaLib) Shutdown() (err error) {
 		return fmt.Errorf("%v", r)
 	}
 	return nil
-}
-
-// GetDeviceByIndex returns the device for the given index.
-func (l *cudaLib) GetDeviceByIndex(index int) (Device, error) {
-	d, r := cuda.DeviceGet(index)
-	if r != cuda.SUCCESS {
-		return nil, fmt.Errorf("%v", r)
-	}
-
-	return NewCudaDevice(d), nil
 }

@@ -20,11 +20,8 @@ var _ Manager = &ManagerMock{}
 // 			GetCudaDriverVersionFunc: func() (*uint, *uint, error) {
 // 				panic("mock out the GetCudaDriverVersion method")
 // 			},
-// 			GetDeviceByIndexFunc: func(n int) (Device, error) {
-// 				panic("mock out the GetDeviceByIndex method")
-// 			},
-// 			GetDeviceCountFunc: func() (int, error) {
-// 				panic("mock out the GetDeviceCount method")
+// 			GetDevicesFunc: func() ([]Device, error) {
+// 				panic("mock out the GetDevices method")
 // 			},
 // 			GetDriverVersionFunc: func() (string, error) {
 // 				panic("mock out the GetDriverVersion method")
@@ -45,11 +42,8 @@ type ManagerMock struct {
 	// GetCudaDriverVersionFunc mocks the GetCudaDriverVersion method.
 	GetCudaDriverVersionFunc func() (*uint, *uint, error)
 
-	// GetDeviceByIndexFunc mocks the GetDeviceByIndex method.
-	GetDeviceByIndexFunc func(n int) (Device, error)
-
-	// GetDeviceCountFunc mocks the GetDeviceCount method.
-	GetDeviceCountFunc func() (int, error)
+	// GetDevicesFunc mocks the GetDevices method.
+	GetDevicesFunc func() ([]Device, error)
 
 	// GetDriverVersionFunc mocks the GetDriverVersion method.
 	GetDriverVersionFunc func() (string, error)
@@ -65,13 +59,8 @@ type ManagerMock struct {
 		// GetCudaDriverVersion holds details about calls to the GetCudaDriverVersion method.
 		GetCudaDriverVersion []struct {
 		}
-		// GetDeviceByIndex holds details about calls to the GetDeviceByIndex method.
-		GetDeviceByIndex []struct {
-			// N is the n argument value.
-			N int
-		}
-		// GetDeviceCount holds details about calls to the GetDeviceCount method.
-		GetDeviceCount []struct {
+		// GetDevices holds details about calls to the GetDevices method.
+		GetDevices []struct {
 		}
 		// GetDriverVersion holds details about calls to the GetDriverVersion method.
 		GetDriverVersion []struct {
@@ -84,8 +73,7 @@ type ManagerMock struct {
 		}
 	}
 	lockGetCudaDriverVersion sync.RWMutex
-	lockGetDeviceByIndex     sync.RWMutex
-	lockGetDeviceCount       sync.RWMutex
+	lockGetDevices           sync.RWMutex
 	lockGetDriverVersion     sync.RWMutex
 	lockInit                 sync.RWMutex
 	lockShutdown             sync.RWMutex
@@ -117,60 +105,29 @@ func (mock *ManagerMock) GetCudaDriverVersionCalls() []struct {
 	return calls
 }
 
-// GetDeviceByIndex calls GetDeviceByIndexFunc.
-func (mock *ManagerMock) GetDeviceByIndex(n int) (Device, error) {
-	if mock.GetDeviceByIndexFunc == nil {
-		panic("ManagerMock.GetDeviceByIndexFunc: method is nil but Manager.GetDeviceByIndex was just called")
-	}
-	callInfo := struct {
-		N int
-	}{
-		N: n,
-	}
-	mock.lockGetDeviceByIndex.Lock()
-	mock.calls.GetDeviceByIndex = append(mock.calls.GetDeviceByIndex, callInfo)
-	mock.lockGetDeviceByIndex.Unlock()
-	return mock.GetDeviceByIndexFunc(n)
-}
-
-// GetDeviceByIndexCalls gets all the calls that were made to GetDeviceByIndex.
-// Check the length with:
-//     len(mockedManager.GetDeviceByIndexCalls())
-func (mock *ManagerMock) GetDeviceByIndexCalls() []struct {
-	N int
-} {
-	var calls []struct {
-		N int
-	}
-	mock.lockGetDeviceByIndex.RLock()
-	calls = mock.calls.GetDeviceByIndex
-	mock.lockGetDeviceByIndex.RUnlock()
-	return calls
-}
-
-// GetDeviceCount calls GetDeviceCountFunc.
-func (mock *ManagerMock) GetDeviceCount() (int, error) {
-	if mock.GetDeviceCountFunc == nil {
-		panic("ManagerMock.GetDeviceCountFunc: method is nil but Manager.GetDeviceCount was just called")
+// GetDevices calls GetDevicesFunc.
+func (mock *ManagerMock) GetDevices() ([]Device, error) {
+	if mock.GetDevicesFunc == nil {
+		panic("ManagerMock.GetDevicesFunc: method is nil but Manager.GetDevices was just called")
 	}
 	callInfo := struct {
 	}{}
-	mock.lockGetDeviceCount.Lock()
-	mock.calls.GetDeviceCount = append(mock.calls.GetDeviceCount, callInfo)
-	mock.lockGetDeviceCount.Unlock()
-	return mock.GetDeviceCountFunc()
+	mock.lockGetDevices.Lock()
+	mock.calls.GetDevices = append(mock.calls.GetDevices, callInfo)
+	mock.lockGetDevices.Unlock()
+	return mock.GetDevicesFunc()
 }
 
-// GetDeviceCountCalls gets all the calls that were made to GetDeviceCount.
+// GetDevicesCalls gets all the calls that were made to GetDevices.
 // Check the length with:
-//     len(mockedManager.GetDeviceCountCalls())
-func (mock *ManagerMock) GetDeviceCountCalls() []struct {
+//     len(mockedManager.GetDevicesCalls())
+func (mock *ManagerMock) GetDevicesCalls() []struct {
 } {
 	var calls []struct {
 	}
-	mock.lockGetDeviceCount.RLock()
-	calls = mock.calls.GetDeviceCount
-	mock.lockGetDeviceCount.RUnlock()
+	mock.lockGetDevices.RLock()
+	calls = mock.calls.GetDevices
+	mock.lockGetDevices.RUnlock()
 	return calls
 }
 

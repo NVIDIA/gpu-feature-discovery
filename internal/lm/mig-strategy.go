@@ -43,12 +43,13 @@ type migResource struct {
 // NewResourceLabeler creates a labeler for available GPU resources.
 // These include full GPU labels as well as labels specific to the mig-strategy specified.
 func NewResourceLabeler(manager resource.Manager, config *spec.Config) (Labeler, error) {
-	count, err := manager.GetDeviceCount()
+	devices, err := manager.GetDevices()
 	if err != nil {
-		return nil, fmt.Errorf("error getting device count: %v", err)
+		return nil, fmt.Errorf("error getting devices: %v", err)
 	}
+
 	// If no GPUs are detected, we return an empty labeler
-	if count == 0 {
+	if len(devices) == 0 {
 		return empty{}, nil
 	}
 
@@ -194,7 +195,7 @@ func newMigStrategySingleLabeler(manager resource.Manager, config *spec.Config) 
 	}
 	// If any migEnabled=true device is empty, we return the set of mig-strategy-invalid labels.
 	if hasEmpty {
-		return newInvalidMigStrategyLabeler(manager, "at least one MIG device is enabled but empty")
+		return newInvalidMigStrategyLabeler(migEnabledDevices[0], "at least one MIG device is enabled but empty")
 	}
 
 	migDisabledDevices, err := deviceInfo.GetDevicesWithMigDisabled()
@@ -203,7 +204,7 @@ func newMigStrategySingleLabeler(manager resource.Manager, config *spec.Config) 
 	}
 	// If we have a mix of mig-enabled and mig-disabled device we return the set of mig-strategy-invalid labels
 	if len(migDisabledDevices) != 0 {
-		return newInvalidMigStrategyLabeler(manager, "devices with MIG enabled and disable detected")
+		return newInvalidMigStrategyLabeler(migEnabledDevices[0], "devices with MIG enabled and disable detected")
 	}
 
 	migs, err := deviceInfo.GetAllMigDevices()
@@ -233,19 +234,14 @@ func newMigStrategySingleLabeler(manager resource.Manager, config *spec.Config) 
 
 	// Multiple resources mean that we have more than one MIG profile defined. Return the set of mig-strategy-invalid labels.
 	if len(resources) != 1 {
-		return newInvalidMigStrategyLabeler(manager, "more than one MIG device type present on node")
+		return newInvalidMigStrategyLabeler(migEnabledDevices[0], "more than one MIG device type present on node")
 	}
 
 	return newMIGDeviceLabelers(resources, config)
 }
 
-func newInvalidMigStrategyLabeler(manager resource.Manager, reason string) (Labeler, error) {
+func newInvalidMigStrategyLabeler(device resource.Device, reason string) (Labeler, error) {
 	log.Printf("WARNING: Invalid configuration detected for mig-strategy=single: %v", reason)
-
-	device, err := manager.GetDeviceByIndex(0)
-	if err != nil {
-		return nil, fmt.Errorf("error getting device: %v", err)
-	}
 
 	model, err := device.GetName()
 	if err != nil {

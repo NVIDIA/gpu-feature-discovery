@@ -22,8 +22,7 @@ package resource
 type Manager interface {
 	Init() error
 	Shutdown() error
-	GetDeviceCount() (int, error)
-	GetDeviceByIndex(int) (Device, error)
+	GetDevices() ([]Device, error)
 	GetDriverVersion() (string, error)
 	GetCudaDriverVersion() (*uint, *uint, error)
 }

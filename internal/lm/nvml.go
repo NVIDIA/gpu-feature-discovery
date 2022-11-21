@@ -32,12 +32,12 @@ func NewNVMLLabeler(manager resource.Manager, config *spec.Config) (Labeler, err
 	}
 	defer manager.Shutdown()
 
-	count, err := manager.GetDeviceCount()
+	devices, err := manager.GetDevices()
 	if err != nil {
-		return nil, fmt.Errorf("error getting device count: %v", err)
+		return nil, fmt.Errorf("error getting devices: %v", err)
 	}
 
-	if count == 0 {
+	if len(devices) == 0 {
 		return empty{}, nil
 	}
 
@@ -109,22 +109,18 @@ func newVersionLabeler(manager resource.Manager) (Labeler, error) {
 // If any GPU on the node is mig-capable the label is set to true.
 func newMigCapabilityLabeler(manager resource.Manager) (Labeler, error) {
 	isMigCapable := false
-	n, err := manager.GetDeviceCount()
+
+	devices, err := manager.GetDevices()
 	if err != nil {
 		return nil, err
 	}
-	if n == 0 {
+	if len(devices) == 0 {
 		// no devices, return empty labels
 		return empty{}, nil
 	}
 
 	// loop through all devices to check if any one of them is MIG capable
-	for i := 0; i < n; i++ {
-		d, err := manager.GetDeviceByIndex(i)
-		if err != nil {
-			return nil, err
-		}
-
+	for _, d := range devices {
 		isMigCapable, err = d.IsMigCapable()
 		if err != nil {
 			return nil, fmt.Errorf("error getting mig capability: %v", err)
