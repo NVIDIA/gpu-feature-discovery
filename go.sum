@@ -86,8 +86,8 @@ github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 h1:bAn7/zixMGCfxrRT
 github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673/go.mod h1:N3UwUGtsrSj3ccvlPHLoLsHnpR27oXr4ZE984MbSER8=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
-gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20221116111358-0e10f084d1ed h1:8b+l2tfLdJJyREpK1853JqixJ8yqT0Ysecd108qdkdU=
-gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20221116111358-0e10f084d1ed/go.mod h1:GStidGxhaqJhYFW1YpOnLvYCbL2EsM0od7IW4u7+JgU=
+gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20221121203940-a27e593595a0 h1:mmDgwblU/B+6ej6ku3T1COrVnIQuehB4iQYdPJEuZN4=
+gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20221121203940-a27e593595a0/go.mod h1:GStidGxhaqJhYFW1YpOnLvYCbL2EsM0od7IW4u7+JgU=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
