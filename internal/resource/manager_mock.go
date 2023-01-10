@@ -13,31 +13,31 @@ var _ Manager = &ManagerMock{}
 
 // ManagerMock is a mock implementation of Manager.
 //
-// 	func TestSomethingThatUsesManager(t *testing.T) {
+//	func TestSomethingThatUsesManager(t *testing.T) {
 //
-// 		// make and configure a mocked Manager
-// 		mockedManager := &ManagerMock{
-// 			GetCudaDriverVersionFunc: func() (*uint, *uint, error) {
-// 				panic("mock out the GetCudaDriverVersion method")
-// 			},
-// 			GetDevicesFunc: func() ([]Device, error) {
-// 				panic("mock out the GetDevices method")
-// 			},
-// 			GetDriverVersionFunc: func() (string, error) {
-// 				panic("mock out the GetDriverVersion method")
-// 			},
-// 			InitFunc: func() error {
-// 				panic("mock out the Init method")
-// 			},
-// 			ShutdownFunc: func() error {
-// 				panic("mock out the Shutdown method")
-// 			},
-// 		}
+//		// make and configure a mocked Manager
+//		mockedManager := &ManagerMock{
+//			GetCudaDriverVersionFunc: func() (*uint, *uint, error) {
+//				panic("mock out the GetCudaDriverVersion method")
+//			},
+//			GetDevicesFunc: func() ([]Device, error) {
+//				panic("mock out the GetDevices method")
+//			},
+//			GetDriverVersionFunc: func() (string, error) {
+//				panic("mock out the GetDriverVersion method")
+//			},
+//			InitFunc: func() error {
+//				panic("mock out the Init method")
+//			},
+//			ShutdownFunc: func() error {
+//				panic("mock out the Shutdown method")
+//			},
+//		}
 //
-// 		// use mockedManager in code that requires Manager
-// 		// and then make assertions.
+//		// use mockedManager in code that requires Manager
+//		// and then make assertions.
 //
-// 	}
+//	}
 type ManagerMock struct {
 	// GetCudaDriverVersionFunc mocks the GetCudaDriverVersion method.
 	GetCudaDriverVersionFunc func() (*uint, *uint, error)
@@ -94,7 +94,8 @@ func (mock *ManagerMock) GetCudaDriverVersion() (*uint, *uint, error) {
 
 // GetCudaDriverVersionCalls gets all the calls that were made to GetCudaDriverVersion.
 // Check the length with:
-//     len(mockedManager.GetCudaDriverVersionCalls())
+//
+//	len(mockedManager.GetCudaDriverVersionCalls())
 func (mock *ManagerMock) GetCudaDriverVersionCalls() []struct {
 } {
 	var calls []struct {
@@ -120,7 +121,8 @@ func (mock *ManagerMock) GetDevices() ([]Device, error) {
 
 // GetDevicesCalls gets all the calls that were made to GetDevices.
 // Check the length with:
-//     len(mockedManager.GetDevicesCalls())
+//
+//	len(mockedManager.GetDevicesCalls())
 func (mock *ManagerMock) GetDevicesCalls() []struct {
 } {
 	var calls []struct {
@@ -146,7 +148,8 @@ func (mock *ManagerMock) GetDriverVersion() (string, error) {
 
 // GetDriverVersionCalls gets all the calls that were made to GetDriverVersion.
 // Check the length with:
-//     len(mockedManager.GetDriverVersionCalls())
+//
+//	len(mockedManager.GetDriverVersionCalls())
 func (mock *ManagerMock) GetDriverVersionCalls() []struct {
 } {
 	var calls []struct {
@@ -172,7 +175,8 @@ func (mock *ManagerMock) Init() error {
 
 // InitCalls gets all the calls that were made to Init.
 // Check the length with:
-//     len(mockedManager.InitCalls())
+//
+//	len(mockedManager.InitCalls())
 func (mock *ManagerMock) InitCalls() []struct {
 } {
 	var calls []struct {
@@ -198,7 +202,8 @@ func (mock *ManagerMock) Shutdown() error {
 
 // ShutdownCalls gets all the calls that were made to Shutdown.
 // Check the length with:
-//     len(mockedManager.ShutdownCalls())
+//
+//	len(mockedManager.ShutdownCalls())
 func (mock *ManagerMock) ShutdownCalls() []struct {
 } {
 	var calls []struct {
