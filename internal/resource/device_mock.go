@@ -13,40 +13,40 @@ var _ Device = &DeviceMock{}
 
 // DeviceMock is a mock implementation of Device.
 //
-// 	func TestSomethingThatUsesDevice(t *testing.T) {
+//	func TestSomethingThatUsesDevice(t *testing.T) {
 //
-// 		// make and configure a mocked Device
-// 		mockedDevice := &DeviceMock{
-// 			GetAttributesFunc: func() (map[string]interface{}, error) {
-// 				panic("mock out the GetAttributes method")
-// 			},
-// 			GetCudaComputeCapabilityFunc: func() (int, int, error) {
-// 				panic("mock out the GetCudaComputeCapability method")
-// 			},
-// 			GetDeviceHandleFromMigDeviceHandleFunc: func() (Device, error) {
-// 				panic("mock out the GetDeviceHandleFromMigDeviceHandle method")
-// 			},
-// 			GetMigDevicesFunc: func() ([]Device, error) {
-// 				panic("mock out the GetMigDevices method")
-// 			},
-// 			GetNameFunc: func() (string, error) {
-// 				panic("mock out the GetName method")
-// 			},
-// 			GetTotalMemoryMBFunc: func() (uint64, error) {
-// 				panic("mock out the GetTotalMemoryMB method")
-// 			},
-// 			IsMigCapableFunc: func() (bool, error) {
-// 				panic("mock out the IsMigCapable method")
-// 			},
-// 			IsMigEnabledFunc: func() (bool, error) {
-// 				panic("mock out the IsMigEnabled method")
-// 			},
-// 		}
+//		// make and configure a mocked Device
+//		mockedDevice := &DeviceMock{
+//			GetAttributesFunc: func() (map[string]interface{}, error) {
+//				panic("mock out the GetAttributes method")
+//			},
+//			GetCudaComputeCapabilityFunc: func() (int, int, error) {
+//				panic("mock out the GetCudaComputeCapability method")
+//			},
+//			GetDeviceHandleFromMigDeviceHandleFunc: func() (Device, error) {
+//				panic("mock out the GetDeviceHandleFromMigDeviceHandle method")
+//			},
+//			GetMigDevicesFunc: func() ([]Device, error) {
+//				panic("mock out the GetMigDevices method")
+//			},
+//			GetNameFunc: func() (string, error) {
+//				panic("mock out the GetName method")
+//			},
+//			GetTotalMemoryMBFunc: func() (uint64, error) {
+//				panic("mock out the GetTotalMemoryMB method")
+//			},
+//			IsMigCapableFunc: func() (bool, error) {
+//				panic("mock out the IsMigCapable method")
+//			},
+//			IsMigEnabledFunc: func() (bool, error) {
+//				panic("mock out the IsMigEnabled method")
+//			},
+//		}
 //
-// 		// use mockedDevice in code that requires Device
-// 		// and then make assertions.
+//		// use mockedDevice in code that requires Device
+//		// and then make assertions.
 //
-// 	}
+//	}
 type DeviceMock struct {
 	// GetAttributesFunc mocks the GetAttributes method.
 	GetAttributesFunc func() (map[string]interface{}, error)
@@ -124,7 +124,8 @@ func (mock *DeviceMock) GetAttributes() (map[string]interface{}, error) {
 
 // GetAttributesCalls gets all the calls that were made to GetAttributes.
 // Check the length with:
-//     len(mockedDevice.GetAttributesCalls())
+//
+//	len(mockedDevice.GetAttributesCalls())
 func (mock *DeviceMock) GetAttributesCalls() []struct {
 } {
 	var calls []struct {
@@ -150,7 +151,8 @@ func (mock *DeviceMock) GetCudaComputeCapability() (int, int, error) {
 
 // GetCudaComputeCapabilityCalls gets all the calls that were made to GetCudaComputeCapability.
 // Check the length with:
-//     len(mockedDevice.GetCudaComputeCapabilityCalls())
+//
+//	len(mockedDevice.GetCudaComputeCapabilityCalls())
 func (mock *DeviceMock) GetCudaComputeCapabilityCalls() []struct {
 } {
 	var calls []struct {
@@ -176,7 +178,8 @@ func (mock *DeviceMock) GetDeviceHandleFromMigDeviceHandle() (Device, error) {
 
 // GetDeviceHandleFromMigDeviceHandleCalls gets all the calls that were made to GetDeviceHandleFromMigDeviceHandle.
 // Check the length with:
-//     len(mockedDevice.GetDeviceHandleFromMigDeviceHandleCalls())
+//
+//	len(mockedDevice.GetDeviceHandleFromMigDeviceHandleCalls())
 func (mock *DeviceMock) GetDeviceHandleFromMigDeviceHandleCalls() []struct {
 } {
 	var calls []struct {
@@ -202,7 +205,8 @@ func (mock *DeviceMock) GetMigDevices() ([]Device, error) {
 
 // GetMigDevicesCalls gets all the calls that were made to GetMigDevices.
 // Check the length with:
-//     len(mockedDevice.GetMigDevicesCalls())
+//
+//	len(mockedDevice.GetMigDevicesCalls())
 func (mock *DeviceMock) GetMigDevicesCalls() []struct {
 } {
 	var calls []struct {
@@ -228,7 +232,8 @@ func (mock *DeviceMock) GetName() (string, error) {
 
 // GetNameCalls gets all the calls that were made to GetName.
 // Check the length with:
-//     len(mockedDevice.GetNameCalls())
+//
+//	len(mockedDevice.GetNameCalls())
 func (mock *DeviceMock) GetNameCalls() []struct {
 } {
 	var calls []struct {
@@ -254,7 +259,8 @@ func (mock *DeviceMock) GetTotalMemoryMB() (uint64, error) {
 
 // GetTotalMemoryMBCalls gets all the calls that were made to GetTotalMemoryMB.
 // Check the length with:
-//     len(mockedDevice.GetTotalMemoryMBCalls())
+//
+//	len(mockedDevice.GetTotalMemoryMBCalls())
 func (mock *DeviceMock) GetTotalMemoryMBCalls() []struct {
 } {
 	var calls []struct {
@@ -280,7 +286,8 @@ func (mock *DeviceMock) IsMigCapable() (bool, error) {
 
 // IsMigCapableCalls gets all the calls that were made to IsMigCapable.
 // Check the length with:
-//     len(mockedDevice.IsMigCapableCalls())
+//
+//	len(mockedDevice.IsMigCapableCalls())
 func (mock *DeviceMock) IsMigCapableCalls() []struct {
 } {
 	var calls []struct {
@@ -306,7 +313,8 @@ func (mock *DeviceMock) IsMigEnabled() (bool, error) {
 
 // IsMigEnabledCalls gets all the calls that were made to IsMigEnabled.
 // Check the length with:
-//     len(mockedDevice.IsMigEnabledCalls())
+//
+//	len(mockedDevice.IsMigEnabledCalls())
 func (mock *DeviceMock) IsMigEnabledCalls() []struct {
 } {
 	var calls []struct {
