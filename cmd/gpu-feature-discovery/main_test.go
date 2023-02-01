@@ -4,7 +4,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -124,7 +124,7 @@ func TestRunOneshot(t *testing.T) {
 		require.NoError(t, err, "Removing output file")
 	}()
 
-	result, err := ioutil.ReadAll(outFile)
+	result, err := io.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
 	err = checkResult(result, cfg.Path("tests/expected-output.txt"), false)
@@ -170,7 +170,7 @@ func TestRunWithNoTimestamp(t *testing.T) {
 		require.NoError(t, err, "Removing output file")
 	}()
 
-	result, err := ioutil.ReadAll(outFile)
+	result, err := io.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
 	err = checkResult(result, cfg.Path("tests/expected-output.txt"), false)
@@ -242,7 +242,7 @@ func TestRunSleep(t *testing.T) {
 		}
 		outFileModificationTime[i] = ts
 
-		output, err := ioutil.ReadAll(outFile)
+		output, err := io.ReadAll(outFile)
 		require.NoErrorf(t, err, "Read output file: %d", i)
 
 		err = outFile.Close()
@@ -401,7 +401,7 @@ func buildLabelMapFromOutput(output []byte) (map[string]string, error) {
 }
 
 func checkResult(result []byte, expectedOutputPath string, isVGPU bool) error {
-	expected, err := ioutil.ReadFile(expectedOutputPath)
+	expected, err := os.ReadFile(expectedOutputPath)
 	if err != nil {
 		return fmt.Errorf("opening expected output file: %v", err)
 	}
@@ -451,7 +451,7 @@ func waitForFile(fileName string, iter int, sleepInterval time.Duration) (*os.Fi
 
 func setupMachineFile(t *testing.T) {
 	machineType := []byte("product-name\n")
-	err := ioutil.WriteFile(testMachineTypeFile, machineType, 0644)
+	err := os.WriteFile(testMachineTypeFile, machineType, 0644)
 	require.NoError(t, err, "Write machine type mock file")
 }
 

@@ -18,7 +18,7 @@ package vgpu
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 )
@@ -68,7 +68,7 @@ func NewNvidiaPCILib() NvidiaPCI {
 
 // Devices returns all PCI devices on the system
 func (p *NvidiaPCILib) Devices() ([]*PCIDevice, error) {
-	deviceDirs, err := ioutil.ReadDir(PciDevicesRoot)
+	deviceDirs, err := os.ReadDir(PciDevicesRoot)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read PCI bus devices: %v", err)
 	}
@@ -78,7 +78,7 @@ func (p *NvidiaPCILib) Devices() ([]*PCIDevice, error) {
 		devicePath := path.Join(PciDevicesRoot, deviceDir.Name())
 		address := deviceDir.Name()
 
-		vendor, err := ioutil.ReadFile(path.Join(devicePath, "vendor"))
+		vendor, err := os.ReadFile(path.Join(devicePath, "vendor"))
 		if err != nil {
 			return nil, fmt.Errorf("unable to read PCI device vendor id for %s: %v", address, err)
 		}
@@ -87,12 +87,12 @@ func (p *NvidiaPCILib) Devices() ([]*PCIDevice, error) {
 			continue
 		}
 
-		class, err := ioutil.ReadFile(path.Join(devicePath, "class"))
+		class, err := os.ReadFile(path.Join(devicePath, "class"))
 		if err != nil {
 			return nil, fmt.Errorf("unable to read PCI device class for %s: %v", address, err)
 		}
 
-		config, err := ioutil.ReadFile(path.Join(devicePath, "config"))
+		config, err := os.ReadFile(path.Join(devicePath, "config"))
 		if err != nil {
 			return nil, fmt.Errorf("unable to read PCI configuration space for %s: %v", address, err)
 		}
