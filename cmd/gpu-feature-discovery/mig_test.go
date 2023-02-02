@@ -3,7 +3,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 	"time"
@@ -58,7 +58,7 @@ func TestMigStrategyNone(t *testing.T) {
 		require.NoError(t, err, "Removing output file")
 	}()
 
-	output, err := ioutil.ReadAll(outFile)
+	output, err := io.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
 	err = checkResult(output, cfg.Path("tests/expected-output-mig-none.txt"), false)
@@ -110,7 +110,7 @@ func TestMigStrategySingleForNoMigDevices(t *testing.T) {
 		require.NoError(t, err, "Removing output file")
 	}()
 
-	output, err := ioutil.ReadAll(outFile)
+	output, err := io.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
 	err = checkResult(output, cfg.Path("tests/expected-output-mig-single.txt"), false)
@@ -169,7 +169,7 @@ func TestMigStrategySingleForMigDeviceMigDisabled(t *testing.T) {
 		require.NoError(t, err, "Removing output file")
 	}()
 
-	output, err := ioutil.ReadAll(outFile)
+	output, err := io.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
 	err = checkResult(output, cfg.Path("tests/expected-output-mig-single.txt"), false)
@@ -228,7 +228,7 @@ func TestMigStrategySingle(t *testing.T) {
 		require.NoError(t, err, "Removing output file")
 	}()
 
-	output, err := ioutil.ReadAll(outFile)
+	output, err := io.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
 	err = checkResult(output, cfg.Path("tests/expected-output-mig-single.txt"), false)
@@ -288,7 +288,7 @@ func TestMigStrategyMixed(t *testing.T) {
 		require.NoError(t, err, "Removing output file")
 	}()
 
-	output, err := ioutil.ReadAll(outFile)
+	output, err := io.ReadAll(outFile)
 	require.NoError(t, err, "Reading output file")
 
 	err = checkResult(output, cfg.Path("tests/expected-output-mig-mixed.txt"), false)

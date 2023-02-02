@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -84,7 +83,7 @@ func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
 		}
 	}()
 
-	tmpFile, err := ioutil.TempFile(tmpDir, "gfd-")
+	tmpFile, err := os.CreateTemp(tmpDir, "gfd-")
 	if err != nil {
 		return fmt.Errorf("fail to create temporary output file: %v", err)
 	}
@@ -95,7 +94,7 @@ func writeFileAtomically(path string, contents []byte, perm os.FileMode) error {
 		}
 	}()
 
-	err = ioutil.WriteFile(tmpFile.Name(), contents, perm)
+	err = os.WriteFile(tmpFile.Name(), contents, perm)
 	if err != nil {
 		return fmt.Errorf("error writing temporary file '%v': %v", tmpFile.Name(), err)
 	}
