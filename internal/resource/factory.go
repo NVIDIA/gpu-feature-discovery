@@ -17,10 +17,9 @@
 package resource
 
 import (
-	"log"
-
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	"gitlab.com/nvidia/cloud-native/go-nvlib/pkg/nvlib/info"
+	"k8s.io/klog/v2"
 )
 
 // NewManager is a factory method that creates a resource Manager based on the specified config.
@@ -46,7 +45,7 @@ func getManager() Manager {
 		if !is {
 			tag = "non-" + tag
 		}
-		log.Printf("Detected %v platform: %v", tag, reason)
+		klog.Infof("Detected %v platform: %v", tag, reason)
 		return is
 	}
 
@@ -57,18 +56,18 @@ func getManager() Manager {
 
 	// The NVIDIA container stack does not yet support the use of integrated AND discrete GPUs on the same node.
 	if hasNVML && isTegra {
-		log.Printf("WARNING: Disabling Tegra-based resources on NVML system")
+		klog.Warning("Disabling Tegra-based resources on NVML system")
 		isTegra = false
 	}
 
 	if hasNVML {
-		log.Printf("Using NVML manager")
+		klog.Info("Using NVML manager")
 		return NewNVMLManager()
 	} else if isTegra {
-		log.Printf("Using CUDA manager")
+		klog.Info("Using CUDA manager")
 		return NewCudaManager()
 	}
 
-	log.Printf("WARNING: No valid resources detected; using empty manager.")
+	klog.Warning("No valid resources detected; using empty manager.")
 	return NewNullManager()
 }

@@ -5,7 +5,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -16,7 +15,9 @@ import (
 	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/vgpu"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
+
 	"github.com/urfave/cli/v2"
+	"k8s.io/klog/v2"
 )
 
 func main() {
@@ -81,10 +82,8 @@ func main() {
 		},
 	}
 
-	err := c.Run(os.Args)
-	if err != nil {
-		log.SetOutput(os.Stderr)
-		log.Printf("Error: %v", err)
+	if err := c.Run(os.Args); err != nil {
+		klog.Error(err)
 		os.Exit(1)
 	}
 }
@@ -108,15 +107,15 @@ func loadConfig(c *cli.Context, flags []cli.Flag) (*spec.Config, error) {
 
 func start(c *cli.Context, flags []cli.Flag) error {
 	defer func() {
-		log.Print("Exiting")
+		klog.Info("Exiting")
 	}()
 
-	log.Println("Starting OS watcher.")
+	klog.Info("Starting OS watcher.")
 	sigs := newOSWatcher(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	for {
 		// Load the configuration file
-		log.Println("Loading configuration.")
+		klog.Info("Loading configuration.")
 		config, err := loadConfig(c, flags)
 		if err != nil {
 			return fmt.Errorf("unable to load config: %v", err)
@@ -128,12 +127,12 @@ func start(c *cli.Context, flags []cli.Flag) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal config to JSON: %v", err)
 		}
-		log.Printf("\nRunning with config:\n%v", string(configJSON))
+		klog.Infof("\nRunning with config:\n%v", string(configJSON))
 
 		manager := resource.NewManager(config)
 		vgpul := vgpu.NewVGPULib(vgpu.NewNvidiaPCILib())
 
-		log.Print("Start running")
+		klog.Info("Start running")
 		restart, err := run(manager, vgpul, config, sigs)
 		if err != nil {
 			return err
@@ -150,7 +149,7 @@ func run(manager resource.Manager, vgpu vgpu.Interface, config *spec.Config, sig
 		if !*config.Flags.GFD.Oneshot && *config.Flags.GFD.OutputFile != "" {
 			err := removeOutputFile(*config.Flags.GFD.OutputFile)
 			if err != nil {
-				log.Printf("Warning: Error removing output file: %v", err)
+				klog.Warningf("Error removing output file: %v", err)
 			}
 		}
 	}()
@@ -173,10 +172,10 @@ rerun:
 	}
 
 	if len(labels) <= 1 {
-		log.Printf("Warning: no labels generated from any source")
+		klog.Warning("No labels generated from any source")
 	}
 
-	log.Print("Writing labels to output file")
+	klog.Info("Writing labels to output file")
 	err = labels.WriteToFile(*config.Flags.GFD.OutputFile)
 	if err != nil {
 		return false, fmt.Errorf("error writing file '%s': %v", *config.Flags.GFD.OutputFile, err)
@@ -186,7 +185,7 @@ rerun:
 		return false, nil
 	}
 
-	log.Print("Sleeping for ", *config.Flags.GFD.SleepInterval)
+	klog.Info("Sleeping for ", *config.Flags.GFD.SleepInterval)
 	rerunTimeout := time.After(time.Duration(*config.Flags.GFD.SleepInterval))
 
 	for {
@@ -199,10 +198,10 @@ rerun:
 		case s := <-sigs:
 			switch s {
 			case syscall.SIGHUP:
-				log.Println("Received SIGHUP, restarting.")
+				klog.Info("Received SIGHUP, restarting.")
 				return true, nil
 			default:
-				log.Printf("Received signal \"%v\", shutting down.", s)
+				klog.Infof("Received signal %v, shutting down.", s)
 				return false, nil
 			}
 		}
@@ -236,7 +235,7 @@ func removeOutputFile(path string) error {
 func disableResourceRenamingInConfig(config *spec.Config) {
 	// Disable resource renaming through config.Resource
 	if len(config.Resources.GPUs) > 0 || len(config.Resources.MIGs) > 0 {
-		log.Printf("Customizing the 'resources' field is not yet supported in the config. Ignoring...")
+		klog.Info("Customizing the 'resources' field is not yet supported in the config. Ignoring...")
 	}
 	config.Resources.GPUs = nil
 	config.Resources.MIGs = nil
@@ -262,9 +261,9 @@ func disableResourceRenamingInConfig(config *spec.Config) {
 		}
 	}
 	if setsNonDefaultRename {
-		log.Printf("Setting the 'rename' field in sharing.timeSlicing.resources is not yet supported in the config. Ignoring...")
+		klog.Info("Setting the 'rename' field in sharing.timeSlicing.resources is not yet supported in the config. Ignoring...")
 	}
 	if setsDevices {
-		log.Printf("Customizing the 'devices' field in sharing.timeSlicing.resources is not yet supported in the config. Ignoring...")
+		klog.Info("Customizing the 'devices' field in sharing.timeSlicing.resources is not yet supported in the config. Ignoring...")
 	}
 }

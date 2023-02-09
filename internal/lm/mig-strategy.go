@@ -18,11 +18,11 @@ package lm
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/NVIDIA/gpu-feature-discovery/internal/mig"
 	"github.com/NVIDIA/gpu-feature-discovery/internal/resource"
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
+	"k8s.io/klog/v2"
 )
 
 // Constants representing different MIG strategies.
@@ -148,7 +148,7 @@ func newGPULabelers(manager resource.Manager, config *spec.Config) (Labeler, err
 		for n := range counts {
 			names = append(names, n)
 		}
-		log.Printf("WARNING: Multiple device types detected: %v", names)
+		klog.Warningf("Multiple device types detected: %v", names)
 	}
 
 	var labelers list
@@ -241,7 +241,7 @@ func newMigStrategySingleLabeler(manager resource.Manager, config *spec.Config) 
 }
 
 func newInvalidMigStrategyLabeler(device resource.Device, reason string) (Labeler, error) {
-	log.Printf("WARNING: Invalid configuration detected for mig-strategy=single: %v", reason)
+	klog.Warningf("Invalid configuration detected for mig-strategy=single: %v", reason)
 
 	model, err := device.GetName()
 	if err != nil {

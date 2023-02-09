@@ -18,9 +18,10 @@ package lm
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
+
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -30,7 +31,7 @@ const (
 func newMachineTypeLabeler(machineTypePath string) (Labeler, error) {
 	machineType, err := getMachineType(machineTypePath)
 	if err != nil {
-		log.Printf("WARNING: error getting machine type from %v: %v", machineTypePath, err)
+		klog.Warningf("Error getting machine type from %v: %v", machineTypePath, err)
 		machineType = machineTypeUnknown
 	}
 	l := Labels{

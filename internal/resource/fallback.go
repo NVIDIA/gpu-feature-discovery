@@ -17,7 +17,7 @@
 package resource
 
 import (
-	"log"
+	"k8s.io/klog/v2"
 )
 
 type withFallBack struct {
@@ -37,7 +37,7 @@ func NewFallbackToNullOnInitError(m Manager) Manager {
 func (m *withFallBack) Init() error {
 	err := m.wraps.Init()
 	if err != nil {
-		log.Printf("Warning: failed to initialize resource manager: %v", err)
+		klog.Warningf("Failed to initialize resource manager: %v", err)
 		m.wraps = m.fallback
 	}
 	return nil
