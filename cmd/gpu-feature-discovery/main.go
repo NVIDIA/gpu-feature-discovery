@@ -20,6 +20,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
+var nodeFeatureAPI bool
+
 func main() {
 	var configFile string
 
@@ -79,6 +81,13 @@ func main() {
 			Usage:       "the path to a config file as an alternative to command line options or environment variables",
 			Destination: &configFile,
 			EnvVars:     []string{"GFD_CONFIG_FILE", "CONFIG_FILE"},
+		},
+		&cli.BoolFlag{
+			Name:        "use-node-feature-api",
+			Value:       false,
+			Destination: &nodeFeatureAPI,
+			Usage:       "Use NFD NodeFeature API to publish labels",
+			EnvVars:     []string{"GFD_USE_NODE_FEATURE_API"},
 		},
 	}
 
@@ -146,7 +155,7 @@ func start(c *cli.Context, flags []cli.Flag) error {
 
 func run(manager resource.Manager, vgpu vgpu.Interface, config *spec.Config, sigs chan os.Signal) (bool, error) {
 	defer func() {
-		if !*config.Flags.GFD.Oneshot && *config.Flags.GFD.OutputFile != "" {
+		if !nodeFeatureAPI && !*config.Flags.GFD.Oneshot && *config.Flags.GFD.OutputFile != "" {
 			err := removeOutputFile(*config.Flags.GFD.OutputFile)
 			if err != nil {
 				klog.Warningf("Error removing output file: %v", err)
@@ -175,10 +184,10 @@ rerun:
 		klog.Warning("No labels generated from any source")
 	}
 
-	klog.Info("Writing labels to output file")
-	err = labels.WriteToFile(*config.Flags.GFD.OutputFile)
+	klog.Info("Creating Labels")
+	err = labels.Output(*config.Flags.GFD.OutputFile, nodeFeatureAPI)
 	if err != nil {
-		return false, fmt.Errorf("error writing file '%s': %v", *config.Flags.GFD.OutputFile, err)
+		return false, err
 	}
 
 	if *config.Flags.GFD.Oneshot {
