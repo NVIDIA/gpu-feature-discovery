@@ -31,7 +31,7 @@ jobs:
     runs-on: blossom 
     outputs:
       args: ${{ env.args }}
-      
+    
     # This job only runs for pull request comments
     if: |
          contains( 'rorajani,', format('{0},', github.actor)) && 
