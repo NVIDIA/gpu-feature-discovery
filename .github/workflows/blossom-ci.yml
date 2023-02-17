@@ -43,7 +43,7 @@ jobs:
           OPERATION: 'AUTH'
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_KEY_DATA: ${{ secrets.BLOSSOM_KEY }}
-        
+      
   Vulnerability-scan:
     name: Vulnerability scan
     needs: [Authorization]
