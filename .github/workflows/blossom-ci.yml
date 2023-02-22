@@ -90,7 +90,7 @@ jobs:
           OPERATION: 'START-CI-JOB'
           CI_SERVER: ${{ secrets.CI_SERVER }}
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+              
   Upload-Log:
     name: Upload log
     runs-on: blossom
