@@ -78,7 +78,7 @@ jobs:
           args1: ${{ fromJson(needs.Authorization.outputs.args).args1 }}
           args2: ${{ fromJson(needs.Authorization.outputs.args).args2 }}
           args3: ${{ fromJson(needs.Authorization.outputs.args).args3 }}
-          
+
   Job-trigger:
     name: Start ci job
     needs: [Vulnerability-scan]
