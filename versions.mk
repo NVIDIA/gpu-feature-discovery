@@ -19,6 +19,6 @@ VERSION ?= v0.7.0
 vVERSION := v$(VERSION:v%=%)
 
 CUDA_VERSION := 11.8.0
-GOLANG_VERSION ?= 1.19.4
+GOLANG_VERSION ?= 1.20.1
 
 GIT_COMMIT ?= $(shell git describe --match="" --dirty --long --always --abbrev=40 2> /dev/null || echo "")
