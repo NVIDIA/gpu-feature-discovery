@@ -74,6 +74,10 @@ spec:
             - name: NVIDIA_MIG_MONITOR_DEVICES
               value: all
           {{- end }}
+          {{- if typeIs "bool" .Values.nfd.enableNodeFeatureApi }}
+            - name: GFD_USE_NODE_FEATURE_API
+              value: "true"
+          {{- end }}
           securityContext:
           {{- if ne (len .Values.securityContext) 0 }}
             {{- toYaml .Values.securityContext | nindent 12 }}
