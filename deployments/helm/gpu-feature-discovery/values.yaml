@@ -67,6 +67,7 @@ runtimeClassName: null
 
 nfd:
   nameOverride: node-feature-discovery
+  enableNodeFeatureApi: false
   master:
     extraLabelNs:
       - nvidia.com
