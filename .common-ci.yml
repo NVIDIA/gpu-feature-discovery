@@ -25,6 +25,7 @@ variables:
   BUILD_MULTI_ARCH_IMAGES: "true"
 
 stages:
+  - trigger
   - image
   - lint
   - go-checks
@@ -39,6 +40,33 @@ stages:
   - e2e_tests
   - aws_kube_clean
   - release
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH =~ /^release-.*$/
+    - if: $CI_COMMIT_TAG && $CI_COMMIT_TAG != ""
+
+.main-or-manual:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH =~ /^release-.*$/
+    - if: $CI_COMMIT_TAG && $CI_COMMIT_TAG != ""
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: manual
+
+trigger-pipeline:
+  stage: trigger
+  script:
+    - echo "starting pipeline"
+  rules:
+    - !reference [.main-or-manual, rules]
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: manual
+      allow_failure: false
+    - when: always
 
 # Define the distribution targets
 .dist-ubi8:
