@@ -18,7 +18,6 @@ include:
     file: aws-kube-ci.yml
     ref: 23.09.12
 
-
 build-dev-image:
   stage: image
   script:
