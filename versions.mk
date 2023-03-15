@@ -14,7 +14,7 @@
 
 MODULE := github.com/NVIDIA/gpu-feature-discovery
 
-VERSION ?= v0.7.0
+VERSION ?= v0.8.0-rc.1
 
 vVERSION := v$(VERSION:v%=%)
 
