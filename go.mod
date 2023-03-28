@@ -8,7 +8,7 @@ require (
 	github.com/NVIDIA/k8s-device-plugin v0.13.0
 	github.com/stretchr/testify v1.8.0
 	github.com/urfave/cli/v2 v2.8.1
-	gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20230314181732-4ea7dac0fae0
+	gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20230327171225-18ad7cd513cf
 	k8s.io/apimachinery v0.26.0
 	k8s.io/client-go v0.26.0
 	k8s.io/klog/v2 v2.90.0
