@@ -8,7 +8,7 @@ Publishing the container is automated through gitlab-ci and only requires one to
 Publishing the helm chart is currently manual, and we should move to an automated process ASAP
 
 # Release Process Checklist
-- [ ] Update the README to change occurances of the old version (e.g: `v0.7.0`) with the new version
+- [ ] Update the README to change occurances of the old version (e.g: `v0.8.0`) with the new version
 - [ ] Commit, Tag and Push to Gitlab
 - [ ] Build a new helm package with `helm package ./deployments/helm/gpu-feature-discovery`
 - [ ] Switch to the `gh-pages` branch and move the newly generated package to either the `stable` helm repo
