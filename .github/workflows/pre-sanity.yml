@@ -14,9 +14,9 @@ jobs:
           go-version: 'stable'
 
       - name: misspell
-        run: go fmt -v. ./...
+        run: go fmt -v ./...
         
-      - name: veet
+      - name: vet
         run: go vet -v ./...
         
       - name: Build
