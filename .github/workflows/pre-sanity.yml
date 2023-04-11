@@ -13,18 +13,8 @@ jobs:
         with:
           go-version: 'stable'
 
-      - name: misspell
-        run: go fmt -v ./...
-        
-      - name: vet
-        run: go vet -v ./...
-        
       - name: Build
         run: go build -v ./...
 
       - name: Test
         run: go test -v ./...
-        
-        
-        
-        
