@@ -10,6 +10,6 @@ home: https://github.com/NVIDIA/gpu-feature-discovery
 dependencies:
   - name: node-feature-discovery
     alias: nfd
-    version: "0.12.1"
+    version: "0.13"
     condition: nfd.deploy,nfd.enabled
     repository: https://kubernetes-sigs.github.io/node-feature-discovery/charts

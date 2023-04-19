@@ -76,7 +76,7 @@ spec:
           {{- end }}
           {{- if typeIs "bool" .Values.nfd.enableNodeFeatureApi }}
             - name: GFD_USE_NODE_FEATURE_API
-              value: "true"
+              value: "{{ .Values.nfd.enableNodeFeatureApi }}"
           {{- end }}
           securityContext:
           {{- if ne (len .Values.securityContext) 0 }}

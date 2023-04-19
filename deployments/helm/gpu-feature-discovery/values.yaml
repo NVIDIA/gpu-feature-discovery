@@ -68,11 +68,6 @@ runtimeClassName: null
 nfd:
   nameOverride: node-feature-discovery
   enableNodeFeatureApi: false
-  master:
-    extraLabelNs:
-      - nvidia.com
-    serviceAccount:
-      name: node-feature-discovery
   worker:
     tolerations:
     - key: "node-role.kubernetes.io/master"
@@ -94,3 +89,9 @@ nfd:
           - "0302"
           deviceLabelFields:
           - vendor
+  master:
+    serviceAccount:
+      name: node-feature-discovery
+      create: true
+    config: 
+      extraLabelNs: ["nvidia.com"]
