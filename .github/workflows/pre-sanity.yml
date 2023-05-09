@@ -12,7 +12,10 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: 'stable'
-
+      
+      - name: Build
+        run: make lint
+        
       - name: Build
         run: go build -v ./...
 
