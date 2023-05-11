@@ -60,6 +60,9 @@ $(CMD_TARGETS): cmd-%:
 
 build:
 	GOOS=$(GOOS) go build ./...
+	
+docker-build:
+	$(DOCKER) run $(BUILDIMAGE) GOOS=$(GOOS) go build ./...
 
 examples: $(EXAMPLE_TARGETS)
 $(EXAMPLE_TARGETS): example-%:
