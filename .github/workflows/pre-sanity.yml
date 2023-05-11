@@ -15,4 +15,7 @@ jobs:
           
       - name: Build docker image
         run: make .build-image
+      
+      - name: Build go
+        run: make docker-build
 
