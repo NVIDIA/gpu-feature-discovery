@@ -5,16 +5,14 @@ on: [pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: "docker/Dockerfile.devel"
     steps:
       - uses: actions/checkout@v3
-
+        
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: 'stable'
-
-      - name: Build
-        run: make build
+          
+      - name: Build docker image
+        run: make .build-image
 
