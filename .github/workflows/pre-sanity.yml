@@ -5,6 +5,8 @@ on: [pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: "docker/Dockerfile.devel"
     steps:
       - uses: actions/checkout@v3
 
@@ -12,12 +14,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: 'stable'
-      
-      - name: Build
-        run: make lint
-        
-      - name: Build
-        run: go build -v ./...
 
-      - name: Test
-        run: go test -v ./...
+      - name: Build
+        run: make build
+
