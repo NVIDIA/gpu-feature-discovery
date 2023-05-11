@@ -7,15 +7,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 'stable'
-          
-      - name: Build docker image
+             
+      - name: Build dev image
         run: make .build-image
       
-      - name: Build go
+      - name: Build
         run: make docker-build
+
+      - name: Tests
+        run: make docker-coverage
+
+      - name: Checks
+        run: make docker-check
 
