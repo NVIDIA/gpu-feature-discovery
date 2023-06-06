@@ -49,6 +49,9 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.nfd.enableNodeFeatureApi }}
+      serviceAccountName: gpu-feature-discovery        
+      {{- end }}
       containers:
         - image: {{ include "gpu-feature-discovery.fullimage" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
