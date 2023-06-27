@@ -57,6 +57,11 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           name: gpu-feature-discovery-ctr
           env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
           {{- if typeIs "bool" .Values.failOnInitError }}
             - name: FAIL_ON_INIT_ERROR
               value: "{{ .Values.failOnInitError }}"
