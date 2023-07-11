@@ -1554,8 +1554,8 @@ k8s.io/kube-scheduler v0.26.0/go.mod h1:FmptJbq36ATKYxeR+UqAvUtFaLeoFWgoDk1cdCpV
 k8s.io/kubectl v0.26.0/go.mod h1:eInP0b+U9XUJWSYeU9XZnTA+cVYuWyl3iYPGtru0qhQ=
 k8s.io/kubelet v0.26.0/go.mod h1:DluF+d8jS2nE/Hs7CC3QM+OZlIEb22NTOihQ3EDwCQ4=
 k8s.io/kubernetes v1.18.2/go.mod h1:z8xjOOO1Ljz+TaHpOxVGC7cxtF32TesIamoQ+BZrVS0=
-k8s.io/kubernetes v1.26.5 h1:hc/lcQCK7J2Q3fOqtU3cD8qJOKpi6oySEHPP39q/R7o=
-k8s.io/kubernetes v1.26.5/go.mod h1:nARWq2FQXUzRa+DQfF6hEp0dgZXu61MnjX+aiQaC8lk=
+k8s.io/kubernetes v1.26.6 h1:wj7+e03hcuEsrs2sA1YTGAdC+L/U0QVmnRkaCRO0Fh4=
+k8s.io/kubernetes v1.26.6/go.mod h1:baNC1jjusIrvJBaOYmefaoZNklGLvIYfOfScJ25KENw=
 k8s.io/legacy-cloud-providers v0.26.0/go.mod h1:dOOgYhHiMNWNla/XyM4Ppgjcrn3HulGa93/0vUO5/z4=
 k8s.io/metrics v0.26.0/go.mod h1:cf5MlG4ZgWaEFZrR9+sOImhZ2ICMpIdNurA+D8snIs8=
 k8s.io/repo-infra v0.0.1-alpha.1/go.mod h1:wO1t9WaB99V80ljbeENTnayuEEwNZt7gECYh/CEyOJ8=
