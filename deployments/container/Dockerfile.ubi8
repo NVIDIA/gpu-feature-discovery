@@ -40,7 +40,7 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 WORKDIR /build
 COPY . .
 
-RUN go test -v ./...
+RUN go test ./... -v
 
 RUN mkdir -p /artifacts
 ARG VERSION
