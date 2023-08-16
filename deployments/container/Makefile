@@ -74,10 +74,10 @@ build-%: DOCKERFILE = $(CURDIR)/deployments/container/Dockerfile.$(DOCKERFILE_SU
 
 # Use a generic build target to build the relevant images
 $(BUILD_TARGETS): build-%:
-	ifneq ("$(DOCKER_BUILD_NETWORK_OPTIONS)", "")
-		$(DOCKER) $(BUILDX) create --use --name network-host --driver-opt network=host \
-		--buildkitd-flags '--allow-insecure-entitlement network.host'
-	endif
+ifdef DOCKER_BUILD_NETWORK_OPTIONS
+$(DOCKER) $(BUILDX) create --use --name network-host --driver-opt network=host \
+--buildkitd-flags '--allow-insecure-entitlement network.host'
+endif
 	DOCKER_BUILDKIT=1 \
 		$(DOCKER) $(BUILDX) build --pull \
 		$(DOCKER_BUILD_OPTIONS) \
