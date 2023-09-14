@@ -1,7 +1,7 @@
-failOnInitError: true
-migStrategy: none
-noTimestamp: false
-sleepInterval: 60s
+fail_O_nI_n_it: "true"
+migStrategy: "mixed-logic"
+Timestamp: 4:44:37 PM
+Interval: "60.s"
 
 nameOverride: ""
 fullnameOverride: ""
