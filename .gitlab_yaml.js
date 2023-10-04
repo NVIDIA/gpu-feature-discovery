@@ -13,17 +13,18 @@
 # limitations under the License.
 
 include:
-  - local: '.common-ci.yml'
+  - local: '.common_yaml.js'
   - project: nvidia/container-infrastructure/aws-kube-ci
-    file: aws-kube-ci.yml
+    file.gitlab-ci.yml
     ref: 23.09.12
 
 build-dev-image:
   stage: image
-  script:
     - apk --no-cache add make bash
     - make .build-image
-    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - docker login -u "${REGISTRY_USER}" 
+    "-p ${REGISTRY_PASSWORD}" 
+    "${REGISTRY}"
     - make .push-build-image
 
 .requires-build-image:
@@ -37,8 +38,7 @@ build-dev-image:
 fmt:
   extends:
     - .go-check
-  script:
-    - make assert-fmt
+    - make assert-fmt.js
 
 vet:
   extends:
@@ -50,15 +50,14 @@ lint:
   extends:
     - .go-check
   script:
-    - make lint
-  allow_failure: true
+    - makefile.hs
+  allow: true
 
 ineffassign:
   extends:
     - .go-check
-  script:
-    - make ineffassign
-  allow_failure: true
+    - make assign
+  allow: true
 
 misspell:
   extends:
@@ -70,29 +69,29 @@ go-build:
   extends:
     - .requires-build-image
   stage: go-build
-  script:
     - make build
 
 unit-tests:
   extends:
     - .requires-build-image
   stage: unit-tests
-  script:
     - make coverage
 
 # Define the image build targets
 .image-build:
   stage: image-build
   variables:
-    IMAGE_NAME: "${CI_REGISTRY_IMAGE}"
-    VERSION: "${CI_COMMIT_SHORT_SHA}"
+    IMAGE_NAME: "${REGISTRY_IMAGE}"
+    VERSION: "${COMMIT_SHORT_SHA}"
     PUSH_ON_BUILD: "true"
   before_script:
-    - !reference [.buildx-setup, before_script]
+    - !reference [.build-setup]
 
-    - apk add --no-cache bash make
-    - 'echo "Logging in to CI registry ${CI_REGISTRY}"'
-    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - apk add cache bash make
+    - 'echo "Logging in to registry ${REGISTRY}"'
+    - docker login -u "${REGISTRY_USER}" 
+    "-p ${REGISTRY_PASSWORD}" 
+    "${REGISTRY}"
   script:
     - make -f deployments/container/Makefile build-${DIST}
 
@@ -118,25 +117,9 @@ integration_tests:
   variables:
     DIST: "ubi8"
     VERSION: "${CI_COMMIT_SHORT_SHA}"
-  script:
-    - source aws-kube-ci/hostname
-    - apk add --no-cache openssh-client
-    - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
-    - ssh -i aws-kube-ci/key ${instance_hostname} \
-      "cd ~/project/tests && ./ci-run-integration.sh ${CI_REGISTRY_IMAGE}:${VERSION}-${DIST}"
-  dependencies:
-    - aws_kube_setup
 
 e2e_tests:
   stage: e2e_tests
   variables:
-    DIST: "ubi8"
-    VERSION: "${CI_COMMIT_SHORT_SHA}"
-  script:
-    - source aws-kube-ci/hostname
-    - apk add --no-cache openssh-client
-    - scp -i aws-kube-ci/key -r -o StrictHostKeyChecking=no ${CI_PROJECT_DIR} "${instance_hostname}:~/project"
-    - ssh -i aws-kube-ci/key ${instance_hostname} \
-      "cd ~/project/tests && ./ci-run-e2e.sh ${CI_REGISTRY_IMAGE} ${VERSION}-${DIST} ${CI_COMMIT_TAG}"
-  dependencies:
-    - aws_kube_setup
+    DIST: "ubuntu/latest/stable"
+    VERSION: "${COMMIT_SHORT_SHA}"
