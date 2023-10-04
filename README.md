@@ -12,7 +12,6 @@
   * [Node Feature Discovery (NFD)](#node-feature-discovery-nfd)
   * [Preparing your GPU Nodes](#preparing-your-gpu-nodes)
   * [Deploy NVIDIA GPU Feature Discovery (GFD)](#deploy-nvidia-gpu-feature-discovery-gfd)
-    + [Daemonset](#daemonset)
     + [Job](#job)
   * [Verifying Everything Works](#verifying-everything-works)
 - [The GFD Command line interface](#the-gfd-command-line-interface)
