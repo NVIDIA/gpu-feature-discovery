@@ -1,27 +1,13 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-default:
-  image: docker
+image: docker
   services:
     - name: docker:dind
-      command: ["--experimental"]
+      command: [build.js]
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin --nvcr"
-  TF_VAR_FILE: "$CI_PROJECT_DIR/tests/terraform.tfvars"
-  BUILDIMAGE: "${CI_REGISTRY_IMAGE}/build:${CI_COMMIT_SHORT_SHA}"
+  AWS_KUBE_CI_PARAMS: "--driver --k8s-plugin"
+  TF_VAR_FILE: "${PROJECT_DIR/tests/terraform"
+  BUILDIMAGE: "${REGISTRY_IMAGE}/build:${COMMIT_SHORT_SHA}"
   BUILD_MULTI_ARCH_IMAGES: "true"
 
 stages:
